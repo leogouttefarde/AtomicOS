@@ -1,5 +1,7 @@
 #include "debugger.h"
 #include "cpu.h"
+#include "screen.h"
+#include <stdio.h>
 
 int fact(int n)
 {
@@ -13,6 +15,8 @@ int fact(int n)
 void kernel_start(void)
 {
 	int i;
+	printf("\f");
+	banner();
 //	call_debugger();
 
 	i = 10;
