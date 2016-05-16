@@ -2,29 +2,26 @@
 #include "cpu.h"
 #include "screen.h"
 #include <stdio.h>
-
-int fact(int n)
-{
-	if (n < 2)
-		return 1;
-
-	return n * fact(n-1);
-}
+#include <process.h>
+#include <time.h>
 
 
 void kernel_start(void)
 {
-	int i;
 	printf("\f");
 	banner();
 //	call_debugger();
 
-	i = 10;
+	init_idle();
+	init_temps();
+	idle();
 
-	i = fact(i);
+	// On ne doit jamais sortir de kernel_start
+	while (1) {
 
-	while(1)
-	  hlt();
+		// Cette fonction arrete le processeur
+		hlt();
+	}
 
 	return;
 }
