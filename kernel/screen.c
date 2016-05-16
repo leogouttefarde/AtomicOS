@@ -181,6 +181,7 @@ void banner()
 */
 ;
 
+	// set_fg_color(CYAN_CLAIR);
 	set_fg_color(BLEU_CLAIR);
 	printf(name);
 	reset_color();

@@ -23,7 +23,7 @@ user/$(PLATFORM_TOOLS):
 	$(MAKE) -C user/ $(PLATFORM_TOOLS)
 
 run: all
-	qemu-kvm -kernel kernel/kernel.bin
+	/usr/libexec/qemu-kvm -kernel kernel/kernel.bin
 
 clean:
 	$(MAKE) clean -C kernel/
