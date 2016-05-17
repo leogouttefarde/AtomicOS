@@ -11,3 +11,14 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 - wait_clock
 
 
+
+autres attentes :
+
+- cahier des charges (complété avec les extensions)
+- planning prévisionnel
+- planning effectif
+- journal de bord
+- code clair et commenté
+- messages de commit de qualité
+
+
