@@ -5,11 +5,11 @@
 #include "kbd.h"
 
 void traitant_IT_33();
-
+/*
 void init_clavier(void) {
         init_traitant_IT(33, traitant_IT_33);
         masque_IRQ(1,false);
-}
+}*/
 
 void traitant_clavier(void) {
         outb(0x20, 0x20);

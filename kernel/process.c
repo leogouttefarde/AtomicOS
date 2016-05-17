@@ -3,6 +3,7 @@
 #include <cpu.h>
 #include <stddef.h>
 #include <string.h>
+#include <queue.h>
 #include "process.h"
 #include "time.h"
 #include "mem.h"
@@ -20,13 +21,25 @@ enum state {
 	CHOSEN,
 	ACTIVABLE,
 	ASLEEP,
-	DYING
+	DYING,
+	ZOMBIE,
+	STANDBY	// Etat d'attente d'un fils
 };
+
+struct process;
+
+/* Liste de processus */
+typedef struct ListProc_ {
+	struct process *head;
+	struct process *tail;
+} ListProc;
 
 /* Processus */
 typedef struct process {
 	int pid;
 	int ppid;
+	int waitpid;	// pid à attendre si STANDBY
+	ListProc children;
 	char name[PROC_NAME_SIZE];
 	enum state state;
 	int regs[5];
@@ -36,12 +49,6 @@ typedef struct process {
 	uint32_t wake;
 	int prio;
 } Process;
-
-/* Liste de processus */
-typedef struct ListProc_ {
-	Process *head;
-	Process *tail;
-} ListProc;
 
 
 // Nombre de processus créés depuis le début
@@ -88,6 +95,10 @@ void affiche_etats(void)
 
 			case DYING:
 				state = "DYING";
+				break;
+
+			default:
+				break;
 			}
 
 			printf("    processus numero %d : %s dans l'etat %s\n", proc->pid, proc->name, state);
@@ -352,7 +363,15 @@ bool init_idle()
 	return (proc != NULL);
 }
 
-// Cree un processus générique
+/**
+ * Crée un nouveau processus dans l'état activable ou actif selon la priorité
+ * choisie. Retourne l'identifiant du processus, ou une valeur strictement
+ * négative en cas d'erreur.
+ * name  : programme associé au processus
+ * ssize : taille utilisable de la pile
+ * prio  : priorité du processus
+ * arg   : argument passé au programme
+ */
 int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_func)(void*))
 {
 	int32_t pid = -1;
@@ -386,6 +405,10 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
 				add_tail(&list_act, proc);
+
+				if (prio > cur_proc->prio) {
+					ordonnance();
+				}
 			}
 			else
 				mem_free(proc, sizeof(Process));
