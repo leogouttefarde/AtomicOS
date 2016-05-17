@@ -10,6 +10,7 @@
 #define PROC_NAME_SIZE 16
 #define STACK_SIZE 1024
 #define MAX_NB_PROCS 100
+#define MAX_PRIO 256
 
 /*
  * Etats de gestion
@@ -24,13 +25,16 @@ enum state {
 
 /* Processus */
 typedef struct process {
-	int32_t pid;
+	int pid;
+	int ppid;
 	char name[PROC_NAME_SIZE];
 	enum state state;
-	int32_t regs[5];
-	int32_t *stack;
+	int regs[5];
+	int *stack;
+	unsigned long ssize;
 	struct process *suiv;
 	uint32_t wake;
+	int prio;
 } Process;
 
 /* Liste de processus */
@@ -170,7 +174,7 @@ static inline char *mon_nom()
 	return cur_proc->name;
 }
 
-static inline int32_t mon_pid()
+int getpid()
 {
 	if (!cur_proc)    return -1;
 
@@ -195,7 +199,7 @@ static inline void kill_procs()
 		suiv = die->suiv;
 
 		if (die->stack)
-			mem_free(die->stack, STACK_SIZE * sizeof(int32_t));
+			mem_free(die->stack, die->ssize);
 
 		procs[die->pid] = NULL;
 		mem_free(die, sizeof(Process));
@@ -332,6 +336,7 @@ bool init_idle()
 	if (proc != NULL) {
 		const int32_t pid = 0;
 
+		proc->ppid = pid;
 		proc->pid = pid;
 		strcpy(proc->name, "idle");
 
@@ -348,7 +353,7 @@ bool init_idle()
 }
 
 // Cree un processus générique
-int32_t cree_processus(void (*code)(void), char *nom)
+int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_func)(void*))
 {
 	int32_t pid = -1;
 
@@ -356,21 +361,25 @@ int32_t cree_processus(void (*code)(void), char *nom)
 		Process *proc = mem_alloc(sizeof(Process));
 
 		if (proc != NULL) {
-			proc->stack = mem_alloc(STACK_SIZE * sizeof(int32_t));
+			proc->ssize = ssize + 3 * sizeof(int);
+			proc->stack = mem_alloc(proc->ssize);
 
 			if (proc->stack != NULL) {
 
-				//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), nom, pid);
+				//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
+				proc->prio = prio;
+				proc->ppid = getpid();
 				pid = proc->pid = nb_procs++;
-				strncpy(proc->name, nom, PROC_NAME_SIZE);
+				strncpy(proc->name, name, PROC_NAME_SIZE);
 
 				// On met l'adresse de terminaison du processus en sommet de pile
 				// pour permettre son auto-destruction
-				proc->stack[STACK_SIZE - 1] = (int32_t)fin_processus;
-				proc->stack[STACK_SIZE - 2] = (int32_t)code;
+				proc->stack[STACK_SIZE - 1] = (int32_t)arg;
+				proc->stack[STACK_SIZE - 2] = (int32_t)fin_processus;
+				proc->stack[STACK_SIZE - 3] = (int32_t)pt_func;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[1] = (int32_t)&proc->stack[STACK_SIZE - 2];
+				proc->regs[1] = (int32_t)&proc->stack[STACK_SIZE - 3];
 
 				procs[pid] = proc;
 

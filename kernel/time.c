@@ -9,13 +9,13 @@
 #include "process.h"
 
 #define IDT_ADDRESS 0x1000
+#define SCHEDFREQ 50
 
 
 // Déclaration du traitant asm
 void traitant_IT_32();
 
 // Variables internes
-static const uint32_t g_freq = 50;
 static uint32_t g_tics = 0;
 static uint32_t g_secs = 0;
 
@@ -73,7 +73,7 @@ static inline void masque_IRQ(uint8_t num_IRQ, bool masque)
 void init_temps()
 {
 	init_traitant_IT(32, traitant_IT_32);
-	init_freq(g_freq);
+	init_freq(SCHEDFREQ);
 	masque_IRQ(0, false);
 }
 
@@ -90,7 +90,7 @@ void tic_PIT(void)
 	outb(0x20, 0x20);
 
 	// Incrémentation des secondes
-	if (++g_tics == g_freq) {
+	if (++g_tics == SCHEDFREQ) {
 		g_secs++;
 		g_tics = 0;
 	}

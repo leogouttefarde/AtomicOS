@@ -5,12 +5,12 @@ Journal de bord
 Mardi 17 mai
 
 Léo :
-- adaptation du code de pratique du système aux besoins de phase 3
+- Début d'adaptation du code de pratique du système aux besoins de la phase 3
 
 Etienne :
-- Phase 4 : wait_clock ?
+- Début du pilote clavier
 
 Azizi :
-- Phase 4 : files de messages ?
+- Début de la phase 4 : files de messages
 
 
