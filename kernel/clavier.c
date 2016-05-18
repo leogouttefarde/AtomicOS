@@ -14,6 +14,7 @@ char tampon [TAILLE_TAMP];
 unsigned long cases_dispos=TAILLE_TAMP;
 int indice_ecr=0;
 int indice_lec=0;
+int nb_lig=0;
 
 
 void cons_echo(int on) {
@@ -31,17 +32,34 @@ void traitant_clavier(void) {
         do_scancode(caractere);
 }
 
+
+int cons_write(const char *str, long size) {       
+        console_putbytes(str,size);
+        return 0;
+}
+
+
 unsigned long cons_read(char *string, unsigned long length){
         if (length==0) return 0;
 
-        bool fin=false;
+        /*Si aucune ligne complète n'a été tapée, 
+          le processus appelant est endormi*/
+        //pas encore implémenté
+        while (nb_lig==0) {
+                
+        }
+
+
+        bool fin=false; /*Indique si on le dernier caractère était un \n*/
         unsigned long i=0;
         unsigned long max = (length>TAILLE_TAMP-cases_dispos) ? 
                 TAILLE_TAMP-cases_dispos : length;
 
         //Copie du tampon dans string
         while (i<max) {
-                if (tampon[indice_lec]!='\n') {
+
+
+                if (tampon[indice_lec]!=13) {
                         string [i]=tampon[indice_lec];
                         i++;
                 }
@@ -53,6 +71,7 @@ unsigned long cons_read(char *string, unsigned long length){
                 indice_lec=(indice_lec+1) % TAILLE_TAMP;
                 if (fin) break;
         }
+        if (fin) nb_lig--;
         return i;
         
 }
@@ -119,8 +138,10 @@ void keyboard_data(char *str) {
                 default:
                         //si le tampon n'est pas plein
                         if (cases_dispos>0) {
+                                cases_dispos--;
                                 tampon[indice_ecr]=str[i];
                                 indice_ecr=(indice_ecr+1) % TAILLE_TAMP;
+                                if (str[i]==13) nb_lig++;
                         }
                         break;
                 }
@@ -131,4 +152,17 @@ void keyboard_data(char *str) {
                 i++;
         }
 
+}
+int lancer_console (void *p) {
+        if (p==0){} 
+        sti(); //A mettre ici ?
+        while (true) {
+                char commandes [2] [80];
+                init_clavier();
+                cons_read(commandes[0],80);
+                cons_read(commandes[1],80);
+                cons_write(commandes[0],80);
+                cons_write(commandes[1],80);
+        }
+        return 0;
 }

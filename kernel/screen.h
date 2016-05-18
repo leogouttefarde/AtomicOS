@@ -28,7 +28,7 @@ void place_curseur(uint8_t lig, uint8_t col);
 void efface_ecran(void);
 void traite_car(char c);
 void defilement(void);
-void console_putbytes(char *chaine, int32_t taille);
+void console_putbytes(const char *chaine, int32_t taille);
 
 void banner();
 

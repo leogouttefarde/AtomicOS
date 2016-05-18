@@ -129,7 +129,7 @@ void defilement(void)
 		ecrit_car(NB_LIG - 1, j, 0);
 }
 
-void console_putbytes(char *chaine, int32_t taille)
+void console_putbytes(const char *chaine, int32_t taille)
 {
 	for (int32_t i = 0; i < taille; i++)
 		traite_car(chaine[i]);
