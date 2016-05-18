@@ -25,21 +25,19 @@ enum state {
 	STANDBY	// Etat d'attente d'un fils
 };
 
-struct process;
-
 /* Liste de processus */
 typedef struct ListProc_ {
-	struct process *head;
-	struct process *tail;
+	struct Process_ *head;
+	struct Process_ *tail;
 } ListProc;
 
 /* Processus */
-typedef struct process {
+typedef struct Process_ {
 	int pid;
 	int ppid;
 	int waitpid;	// pid à attendre si STANDBY
 	ListProc children;
-	struct process *sibling;
+	struct Process_ *sibling;
 	char name[PROC_NAME_SIZE];
 	enum state state;
 	int regs[5];
@@ -48,7 +46,7 @@ typedef struct process {
 	uint32_t wake;
 
 	union {
-		struct process *next;
+		struct Process_ *next;
 		link lnext;
 	} u;
 
@@ -64,8 +62,8 @@ static Process* procs[MAX_NB_PROCS];
 static Process *cur_proc = NULL;
 
 // Listes de gestion des processus
-// static link head_act = LIST_HEAD_INIT(head_act);
-static ListProc list_act   = { NULL, NULL };
+static link head_act = LIST_HEAD_INIT(head_act);
+// static ListProc list_act   = { NULL, NULL };
 static ListProc list_sleep = { NULL, NULL };
 static ListProc list_dead  = { NULL, NULL };
 
@@ -238,9 +236,9 @@ static inline void wake_procs()
 		pop_head(&list_sleep);
 
 		it->state = ACTIVABLE;
-		add_tail(&list_act, it);
-		// INIT_LINK(&it->u.lnext);
-		// queue_add(it, &head_act, Process, u.lnext, prio);
+		// add_tail(&list_act, it);
+		INIT_LINK(&it->u.lnext);
+		queue_add(it, &head_act, Process, u.lnext, prio);
 		//printf("ajout %s aux actifs, wake = %d, t = %d\n", it->name, it->wake, get_temps());
 
 		it = next;
@@ -269,14 +267,14 @@ void ordonnance()
 		// on le remet avec les activables
 		else if (prev->state != ASLEEP) {
 			prev->state = ACTIVABLE;
-			add_tail(&list_act, prev);
-			// INIT_LINK(&prev->u.lnext);
-			// queue_add(prev, &head_act, Process, u.lnext, prio);
+			// add_tail(&list_act, prev);
+			INIT_LINK(&prev->u.lnext);
+			queue_add(prev, &head_act, Process, u.lnext, prio);
 		}
 
 		// On extrait le processus suivant
-		cur_proc = pop_head(&list_act);
-		// cur_proc = queue_out(&head_act, Process, u.lnext);
+		// cur_proc = pop_head(&list_act);
+		cur_proc = queue_out(&head_act, Process, u.lnext);
 
 		// On passe au processus voulu
 		if (cur_proc) {
@@ -398,7 +396,9 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 
 			uint32_t stack_size = ssize/4 + 3;
 
-			if (ssize % 4)
+			// Si le nombre n'est pas multiple
+			// de sizeof(int), on ajoute une case
+			if (ssize % sizeof(int))
 				stack_size++;
 
 			proc->ssize = stack_size * sizeof(int);
@@ -427,13 +427,13 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
-				add_tail(&list_act, proc);
-				// INIT_LINK(&proc->u.lnext);
-				// queue_add(proc, &head_act, Process, u.lnext, prio);
+				// add_tail(&list_act, proc);
+				INIT_LINK(&proc->u.lnext);
+				queue_add(proc, &head_act, Process, u.lnext, prio);
 
-				// if (prio > cur_proc->prio) {
-				// 	ordonnance();
-				// }
+				if (prio > cur_proc->prio) {
+					ordonnance();
+				}
 			}
 			else
 				mem_free(proc, sizeof(Process));
