@@ -12,6 +12,14 @@ export OUTPUT
 PLATFORM_TOOLS := $(OUTPUT)/platform-tools.mk
 export PLATFORM_TOOLS
 
+# stub PXE : necessaire pour le demarrage via QEmu
+PXE = boot.pxe
+
+QEMU = /usr/libexec/qemu-kvm
+
+# QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 64M -gdb tcp::1234
+QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 64M -gdb tcp::1234
+
 all: | kernel/$(PLATFORM_TOOLS) user/$(PLATFORM_TOOLS)
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
@@ -23,7 +31,11 @@ user/$(PLATFORM_TOOLS):
 	$(MAKE) -C user/ $(PLATFORM_TOOLS)
 
 run: all
-	/usr/libexec/qemu-kvm -kernel kernel/kernel.bin
+	$(QEMU) -kernel kernel/kernel.bin
+
+debug: all
+	cd kernel && $(QEMU) $(QEMUOPTS) -S &
+	cd kernel && gdb -x gdb_debug kernel.bin
 
 clean:
 	$(MAKE) clean -C kernel/

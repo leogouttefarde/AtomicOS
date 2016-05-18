@@ -1,0 +1,16 @@
+
+Journal de bord
+
+
+Mardi 17 mai
+
+Léo :
+- Début d'adaptation du code de pratique du système aux besoins de la phase 3
+
+Etienne :
+- Début du pilote clavier
+
+Azizi :
+- Début de la phase 4 : files de messages
+
+
