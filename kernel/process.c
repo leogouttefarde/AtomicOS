@@ -9,7 +9,6 @@
 #include "mem.h"
 
 #define PROC_NAME_SIZE 16
-#define STACK_SIZE 1024
 #define MAX_NB_PROCS 100
 #define MAX_PRIO 256
 
@@ -40,13 +39,19 @@ typedef struct process {
 	int ppid;
 	int waitpid;	// pid à attendre si STANDBY
 	ListProc children;
+	struct process *sibling;
 	char name[PROC_NAME_SIZE];
 	enum state state;
 	int regs[5];
 	int *stack;
 	unsigned long ssize;
-	struct process *suiv;
 	uint32_t wake;
+
+	union {
+		struct process *next;
+		link lnext;
+	} u;
+
 	int prio;
 } Process;
 
@@ -59,6 +64,7 @@ static Process* procs[MAX_NB_PROCS];
 static Process *cur_proc = NULL;
 
 // Listes de gestion des processus
+// static link head_act = LIST_HEAD_INIT(head_act);
 static ListProc list_act   = { NULL, NULL };
 static ListProc list_sleep = { NULL, NULL };
 static ListProc list_dead  = { NULL, NULL };
@@ -115,7 +121,7 @@ static inline Process* pop_head(ListProc *list)
 	Process *head = list->head;
 
 	if (head) {
-		list->head = head->suiv;
+		list->head = head->u.next;
 
 		if (list->tail == head) {
 			list->head = NULL;
@@ -131,10 +137,10 @@ static inline void add_tail(ListProc *list, Process *proc)
 {
 	if (!list || !proc) return;
 
-	proc->suiv = NULL;
+	proc->u.next = NULL;
 
 	if (list->tail) {
-		list->tail->suiv = proc;
+		list->tail->u.next = proc;
 		list->tail = proc;
 	}
 	else {
@@ -148,7 +154,7 @@ static inline void add_head(ListProc *list, Process *proc)
 {
 	if (!list || !proc) return;
 
-	proc->suiv = list->head;
+	proc->u.next = list->head;
 
 	if (!list->head)
 		list->tail = proc;
@@ -167,11 +173,11 @@ static inline void insert(ListProc *list, Process *pos, Process *proc)
 		add_head(list, proc);
 
 	else {
-		Process *suiv = pos->suiv;
+		Process *next = pos->u.next;
 
-		if (suiv) {
-			pos->suiv = proc;
-			proc->suiv = suiv;
+		if (next) {
+			pos->u.next = proc;
+			proc->u.next = next;
 		}
 		else
 			add_tail(list, proc);
@@ -203,11 +209,11 @@ static inline int32_t nbr_secondes()
 static inline void kill_procs()
 {
 	Process *die = list_dead.head;
-	Process *suiv;
+	Process *next;
 
 	// Libération des processus un à un
 	while (die) {
-		suiv = die->suiv;
+		next = die->u.next;
 
 		if (die->stack)
 			mem_free(die->stack, die->ssize);
@@ -215,7 +221,7 @@ static inline void kill_procs()
 		procs[die->pid] = NULL;
 		mem_free(die, sizeof(Process));
 
-		die = suiv;
+		die = next;
 	}
 
 	memset(&list_dead, 0, sizeof(list_dead));
@@ -225,17 +231,19 @@ static inline void kill_procs()
 static inline void wake_procs()
 {
 	Process *it = list_sleep.head;
-	Process *suiv;
+	Process *next;
 
 	while (it && (it->wake <= get_temps())) {
-		suiv = it->suiv;
+		next = it->u.next;
 		pop_head(&list_sleep);
 
-		add_tail(&list_act, it);
 		it->state = ACTIVABLE;
+		add_tail(&list_act, it);
+		// INIT_LINK(&it->u.lnext);
+		// queue_add(it, &head_act, Process, u.lnext, prio);
 		//printf("ajout %s aux actifs, wake = %d, t = %d\n", it->name, it->wake, get_temps());
 
-		it = suiv;
+		it = next;
 	}
 }
 
@@ -260,20 +268,25 @@ void ordonnance()
 		// Si processus ni tué ni endormi,
 		// on le remet avec les activables
 		else if (prev->state != ASLEEP) {
-			add_tail(&list_act, prev);
 			prev->state = ACTIVABLE;
+			add_tail(&list_act, prev);
+			// INIT_LINK(&prev->u.lnext);
+			// queue_add(prev, &head_act, Process, u.lnext, prio);
 		}
 
 		// On extrait le processus suivant
 		cur_proc = pop_head(&list_act);
+		// cur_proc = queue_out(&head_act, Process, u.lnext);
 
 		// On passe au processus voulu
 		if (cur_proc) {
 			cur_proc->state = CHOSEN;
 
 			// Changement de processus courant si nécessaire.
-			if (cur_proc != prev)
+			if (cur_proc != prev) {
+				// affiche_etats();
 				ctx_sw(prev->regs, cur_proc->regs);
+			}
 		}
 	}
 }
@@ -303,7 +316,7 @@ void dors(uint32_t nbr_secs)
 		}
 
 		prec = it;
-		it = it->suiv;
+		it = it->u.next;
 	}
 
 	// Si le processus n'a toujours pas
@@ -347,6 +360,7 @@ bool init_idle()
 	if (proc != NULL) {
 		const int32_t pid = 0;
 
+		proc->prio = 0;
 		proc->ppid = pid;
 		proc->pid = pid;
 		strcpy(proc->name, "idle");
@@ -376,11 +390,18 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 {
 	int32_t pid = -1;
 
-	if (nb_procs < MAX_NB_PROCS) {
+	if (nb_procs < MAX_NB_PROCS && name != NULL
+		&& 0 < prio && prio <= MAX_PRIO) {
 		Process *proc = mem_alloc(sizeof(Process));
 
 		if (proc != NULL) {
-			proc->ssize = ssize + 3 * sizeof(int);
+
+			uint32_t stack_size = ssize/4 + 3;
+
+			if (ssize % 4)
+				stack_size++;
+
+			proc->ssize = stack_size * sizeof(int);
 			proc->stack = mem_alloc(proc->ssize);
 
 			if (proc->stack != NULL) {
@@ -389,26 +410,30 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				proc->prio = prio;
 				proc->ppid = getpid();
 				pid = proc->pid = nb_procs++;
+
 				strncpy(proc->name, name, PROC_NAME_SIZE);
+				proc->name[PROC_NAME_SIZE-1] = 0;
 
 				// On met l'adresse de terminaison du processus en sommet de pile
 				// pour permettre son auto-destruction
-				proc->stack[STACK_SIZE - 1] = (int32_t)arg;
-				proc->stack[STACK_SIZE - 2] = (int32_t)fin_processus;
-				proc->stack[STACK_SIZE - 3] = (int32_t)pt_func;
+				proc->stack[stack_size - 1] = (int)arg;
+				proc->stack[stack_size - 2] = (int)fin_processus;
+				proc->stack[stack_size - 3] = (int)pt_func;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[1] = (int32_t)&proc->stack[STACK_SIZE - 3];
+				proc->regs[1] = (int)&proc->stack[stack_size - 3];
 
 				procs[pid] = proc;
 
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
 				add_tail(&list_act, proc);
+				// INIT_LINK(&proc->u.lnext);
+				// queue_add(proc, &head_act, Process, u.lnext, prio);
 
-				if (prio > cur_proc->prio) {
-					ordonnance();
-				}
+				// if (prio > cur_proc->prio) {
+				// 	ordonnance();
+				// }
 			}
 			else
 				mem_free(proc, sizeof(Process));
