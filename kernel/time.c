@@ -9,7 +9,6 @@
 #include "process.h"
 #include "interruptions.h"
 
-
 #define SCHEDFREQ 50
 
 

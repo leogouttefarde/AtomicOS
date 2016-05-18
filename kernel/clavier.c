@@ -19,6 +19,7 @@ int indice_lec=0;
 void cons_echo(int on) {
         echo=(on==0) ? false : true;
 }
+
 void init_clavier(void) {
         init_traitant_IT(33, traitant_IT_33);
         masque_IRQ(1,false);

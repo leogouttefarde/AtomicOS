@@ -7,8 +7,6 @@
 #include <time.h>
 #include "clavier.h"
 
-
-
 // int hello_world(void *a)
 // {
 // 	while(1) {
@@ -28,7 +26,6 @@ void kernel_start(void)
 	init_idle();
 	init_temps();
         init_clavier();
-
 
 	// start("hw31", 1024, 7, (void*)31, hello_world);
 	// start("hw20", 1024, 2, (void*)20, hello_world);
