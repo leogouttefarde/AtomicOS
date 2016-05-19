@@ -4,6 +4,57 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <queue.h>
+
+#define PROC_NAME_SIZE 16
+#define MAX_NB_PROCS 100
+#define MAX_PRIO 256
+
+/*
+ * Etats de gestion
+ * des processus
+ */
+enum State {
+	CHOSEN,
+	ACTIVABLE,
+	ASLEEP,
+	DYING,
+	ZOMBIE,
+	WAITPID	// Etat d'attente d'un fils
+};
+
+/* Liste de processus */
+typedef struct ListProc_ {
+	struct Process_ *head;
+	struct Process_ *tail;
+} ListProc;
+
+/* Processus */
+typedef struct Process_ {
+	int pid;
+	int ppid;
+
+	union {
+		int retval;		// Valeur de retour de ZOMBIE
+		int waitpid;	// pid à attendre en WAITPID
+	} s;
+
+	ListProc children;
+	struct Process_ *sibling;
+	char name[PROC_NAME_SIZE];
+	enum State state;
+	int regs[5];
+	int *stack;
+	unsigned long ssize;
+	uint32_t wake;
+
+	union {
+		struct Process_ *next;
+		link lnext;
+	} u;
+
+	int prio;
+} Process;
 
 
 void idle();

@@ -4,13 +4,39 @@ Journal de bord
 
 Mardi 17 mai
 
-Léo :
-- Début d'adaptation du code de pratique du système aux besoins de la phase 3
+Azizi :
+Début de la phase 4 : files de messages
 
 Etienne :
-- Début du pilote clavier
+Début de la phase 6
+
+Léo :
+Début d'adaptation du code de pratique du système aux besoins de la phase 3.
+Ordonnancement par priorités terminé.
+
+
+Mercredi 18 mai
 
 Azizi :
-- Début de la phase 4 : files de messages
+Poursuite de la phase 4 : files de messages
+
+Etienne :
+Poursuite de la phase 6
+
+Léo :
+Poursuite de la phase 3.
+Gestion de la terminaison des processus et de la filiation quasi terminée.
+
+
+Jeudi 19 mai
+
+Azizi :
+
+Etienne :
+
+Léo :
+
+
+
 
 
