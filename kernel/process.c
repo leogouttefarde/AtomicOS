@@ -3,56 +3,9 @@
 #include <cpu.h>
 #include <stddef.h>
 #include <string.h>
-#include <queue.h>
 #include "process.h"
 #include "time.h"
 #include "mem.h"
-
-#define PROC_NAME_SIZE 16
-#define MAX_NB_PROCS 100
-#define MAX_PRIO 256
-
-/*
- * Etats de gestion
- * des processus
- */
-enum state {
-	CHOSEN,
-	ACTIVABLE,
-	ASLEEP,
-	DYING,
-	ZOMBIE,
-	STANDBY	// Etat d'attente d'un fils
-};
-
-/* Liste de processus */
-typedef struct ListProc_ {
-	struct Process_ *head;
-	struct Process_ *tail;
-} ListProc;
-
-/* Processus */
-typedef struct Process_ {
-	int pid;
-	int ppid;
-	int waitpid;	// pid à attendre si STANDBY
-	ListProc children;
-	struct Process_ *sibling;
-	char name[PROC_NAME_SIZE];
-	enum state state;
-	int regs[5];
-	int *stack;
-	unsigned long ssize;
-	uint32_t wake;
-
-	union {
-		struct Process_ *next;
-		link lnext;
-	} u;
-
-	int prio;
-} Process;
-
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -182,6 +135,28 @@ static inline void insert(ListProc *list, Process *pos, Process *proc)
 	}
 }
 
+/* Supprime l'élément de list qui suit l'élément last.
+ * S'il est NULL, supprime la tête */
+static inline void remove(ListProc *list, Process *last)
+{
+	Process **proc;
+
+	if (!list || !(proc = &last->u.next))
+		return;
+
+	if (last == NULL)
+		pop_head(list);
+
+	else {
+		Process *next = (*proc)->u.next;
+		*proc = next;
+
+		if (next == NULL) {
+			list->tail = last;
+		}
+	}
+}
+
 static inline char *mon_nom()
 {
 	if (!cur_proc)    return "";
@@ -189,9 +164,14 @@ static inline char *mon_nom()
 	return cur_proc->name;
 }
 
-int getpid()
+/**
+ * Renvoie le pid du processus actuel.
+ */
+int getpid(void)
 {
-	if (!cur_proc)    return -1;
+	// Cas impossible mais géré tout de même
+	if (cur_proc == NULL)
+		return -1;
 
 	return cur_proc->pid;
 }
@@ -236,7 +216,6 @@ static inline void wake_procs()
 		pop_head(&list_sleep);
 
 		it->state = ACTIVABLE;
-		// add_tail(&list_act, it);
 		INIT_LINK(&it->u.lnext);
 		queue_add(it, &head_act, Process, u.lnext, prio);
 		//printf("ajout %s aux actifs, wake = %d, t = %d\n", it->name, it->wake, get_temps());
@@ -263,17 +242,15 @@ void ordonnance()
 		if (prev->state == DYING)
 			add_tail(&list_dead, prev);
 
-		// Si processus ni tué ni endormi,
+		// Si l'état du processus reste inchangé,
 		// on le remet avec les activables
-		else if (prev->state != ASLEEP) {
+		else if (prev->state == CHOSEN) {
 			prev->state = ACTIVABLE;
-			// add_tail(&list_act, prev);
 			INIT_LINK(&prev->u.lnext);
 			queue_add(prev, &head_act, Process, u.lnext, prio);
 		}
 
 		// On extrait le processus suivant
-		// cur_proc = pop_head(&list_act);
 		cur_proc = queue_out(&head_act, Process, u.lnext);
 
 		// On passe au processus voulu
@@ -336,15 +313,98 @@ void idle(void)
 	}
 }
 
+bool is_killable(int pid)
+{
+	// Tous sauf idle
+	if (pid <= 0 || pid >= MAX_NB_PROCS)
+		return false;
+
+	return true;
+}
+
+// Réveil du WAITPID si besoin
+void waitpid_end(int pid)
+{
+	if (!is_killable(pid))
+		return;
+
+	const Process *proc = procs[pid];
+	const int ppid = proc->ppid;
+
+	// S'il y a un père
+	if (ppid > 0) {
+		Process *parent = procs[ppid];
+
+		// Réactivation du parent si besoin
+		if (parent->state == WAITPID
+			&& (parent->s.waitpid == pid || parent->s.waitpid < 0)) {
+			parent->s.waitpid = pid;
+			parent->state = ACTIVABLE;
+
+			INIT_LINK(&parent->u.lnext);
+			queue_add(parent, &head_act, Process, u.lnext, prio);
+		}
+	}
+}
+
+bool finish_process(int pid)
+{
+	// Si pas de processus à tuer différent de idle, abandon
+	if (!is_killable(pid))
+		return false;
+
+	Process *proc = procs[pid];
+
+	// On ignore les zombies
+	if (proc == NULL || proc->state == ZOMBIE)
+		return false;
+
+	ListProc *children = &proc->children;
+	Process *it = children->head;
+	Process *last = NULL;
+	Process *next;
+
+	while (it != NULL) {
+		next = it->u.next;
+
+		// On invalide le père des fils
+		it->ppid = -1;
+
+		// On détruit les zombies
+		if (it->state == ZOMBIE) {
+			remove(children, last);
+			add_tail(&list_dead, it);
+		}
+		else {
+			last = it;
+		}
+
+		it = next;
+	}
+
+	enum State state = DYING;
+
+	if (proc->ppid > 0) {
+		state = ZOMBIE;
+	}
+
+	proc->state = state;
+
+	waitpid_end(pid);
+
+	return true;
+}
+
 // Termine le processus courant
 void fin_processus()
 {
 	// Si pas de processus à tuer différent de idle, abandon
-	if (cur_proc == NULL || !cur_proc->pid)
+	if (cur_proc == NULL)
 		return;
 
+	finish_process(cur_proc->pid);
+
 	//printf("fin processus %s pid = %i\n", mon_nom(), mon_pid());
-	cur_proc->state = DYING;
 
 	ordonnance();
 }
@@ -427,7 +487,6 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
-				// add_tail(&list_act, proc);
 				INIT_LINK(&proc->u.lnext);
 				queue_add(proc, &head_act, Process, u.lnext, prio);
 
@@ -442,4 +501,150 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 
 	return pid;
 }
+
+/**
+ * Le processus appelant est terminé normalement et la valeur retval est passée
+ * à son père quand il appelle waitpid. La fonction exit ne retourne jamais à
+ * l'appelant.
+ */
+void _exit(int retval)
+{
+	cur_proc->s.retval = retval;
+	fin_processus();
+}
+
+/**
+ * La primitive kill termine le processus identifié par la valeur pid.
+ * Si la valeur de pid est invalide, la valeur de retour est strictement
+ * négative. En cas de succès, la valeur de retour est nulle.
+ */
+int kill(int pid)
+{
+	int ret = -1;
+
+	if (finish_process(pid)) {
+		Process *proc = procs[pid];
+		proc->s.retval = 0;
+
+		// Gestion des autres processus
+		if (proc != cur_proc)  {
+			enum State state = proc->state;
+
+			switch (state) {
+			case ACTIVABLE:
+				// On retire proc des activables
+				queue_del(proc, u.lnext);
+				break;
+
+			case ASLEEP:
+				// TODO : retirer proc des asleeps
+				// remplacer implém par dbly linked lists C IG
+				break;
+
+			default:
+				// Rien à faire
+				break;
+			}
+
+			add_tail(&list_dead, procs[pid]);
+		}
+
+		// En cas d'autokill
+		else {
+			ordonnance();
+		}
+
+		ret = 0;
+	}
+
+
+	return ret;
+}
+
+/**
+ * Si pid est négatif, le processus appelant attend qu'un
+ * de ses fils, n'importe lequel, soit terminé et récupère (le cas échéant)
+ * sa valeur de retour dans *retvalp, à moins que retvalp soit nul.
+ * Cette fonction renvoie une valeur strictement négative si aucun fils
+ * n'existe ou sinon le pid de celui dont elle a récupéré la valeur de retour.
+ *
+ * Si pid est positif, le processus appelant attend que son fils
+ * ayant ce pid soit terminé ou tué et récupère sa valeur de retour
+ * dans *retvalp, à moins que retvalp soit nul. Cette fonction échoue et
+ * renvoie une valeur strictement négative s'il n'existe pas de processus avec
+ * ce pid ou si ce n'est pas un fils du processus appelant. En cas de succès,
+ * elle retourne la valeur pid.
+ * Lorsque la valeur de retour d'un fils est récupérée, celui-ci est détruit,
+ * et enlevé de la liste des fils.
+ */
+int waitpid(int pid, int *retvalp)
+{
+	int ret = -1;
+	bool success = false;
+
+	if (pid > 0) {
+
+		// TODO : recherche du fils de pid correspondant dans children
+
+		success = true;
+	}
+
+	else if (pid < 0) {
+		success = true;
+	}
+
+	if (success) {
+
+		// On passe le processus en état d'attente
+		cur_proc->s.waitpid = pid;
+		cur_proc->state = WAITPID;
+
+		ordonnance();
+
+		// On récupère le pid et le retour du fils débloqué
+		ret = cur_proc->s.waitpid;
+
+		if (retvalp != NULL) {
+			*retvalp = procs[ret]->s.retval;
+		}
+
+		// Destruction du fils débloqué
+
+		// TODO : on le supprime des fils
+
+		// add_tail(&list_dead, fils_debloqué);
+	}
+
+	return ret;
+}
+
+/**
+ * Renvoie la priorité du processus de pid correspondant.
+ * Si le pid est invalide, renvoie une valeur négative.
+ */
+int getprio(int pid)
+{
+	if (0 <= pid && pid < MAX_NB_PROCS) {
+		Process *proc = procs[pid];
+
+		if (proc != NULL) {
+			return proc->prio;
+		}
+	}
+
+	return -1;
+}
+
+/**
+ * Donne la priorité newprio au processus identifié par la valeur de pid.
+ * Si la valeur de newprio ou de pid est invalide, la valeur de retour
+ * est strictement négative, sinon elle est égale à l'ancienne
+ * priorité du processus pid.
+ */
+// int chprio(int pid, int newprio)
+// {
+/* TODO
+http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#chprio_-_Changement_de_priorit.C3.A9_d.27un_processus
+*/
+// }
 
