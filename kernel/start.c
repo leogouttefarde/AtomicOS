@@ -16,11 +16,11 @@ void kernel_start(void)
 //	call_debugger();
 
 	init_idle();
-	init_temps();
+	init_time();
 	//init_clavier();
 
 	test_kill_exit();
-	//test_arg_stack();
+	// test_arg_stack();
 
 
 	start("console", 1024, 10, (void *)50, lancer_console);

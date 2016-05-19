@@ -15,6 +15,8 @@ int pexit(void *args)
 int pkill(void *args)
 {
 	while (1) { // problème si pas de while ni sleep : kill impossible sur un zombie (quid du test fourni?)
+		// en effet le processus est lancé avec une haute priorité et prend donc directement la main,
+		// puis se finit avant de revenir au père, devenant ainsi un zombie
 		// printf(" X");
 		sleep(1);
 	}

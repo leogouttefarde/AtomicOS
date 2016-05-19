@@ -200,7 +200,7 @@ static inline void wake_procs()
 
 		wake_process(&wakeup);
 
-		if (it->wake > get_temps())
+		if (it->wake > current_clock())
 			break;
 
 		wakeup = it;
@@ -252,8 +252,11 @@ void ordonnance()
 	}
 }
 
-// Endort le processus
-void sleep(uint32_t seconds)
+/**
+ * Passe le processus dans l'état endormi jusqu'à ce que l'interruption
+ * dont le numéro est passé en paramètre soit passée.
+ */
+void wait_clock(unsigned long clock)
 {
 	Process *proc_sleep = cur_proc;
 
@@ -261,10 +264,10 @@ void sleep(uint32_t seconds)
 	if (!proc_sleep || !proc_sleep->pid)
 		return;
 
-	//printf("ajout de %s aux dormants pour %d secondes\n", mon_nom(), nbr_secs);
+	//printf("ajout de %s aux dormants pour %d clocks\n", mon_nom(), clock);
 
 	proc_sleep->state = ASLEEP;
-	proc_sleep->wake = seconds + get_temps();
+	proc_sleep->wake = clock + current_clock();
 
 	// Insertion triée du proc_sleep
 	queue_add(proc_sleep, &head_sleep, Process, queue, wake);
@@ -289,6 +292,15 @@ void sleep(uint32_t seconds)
 	ordonnance();
 }
 
+/**
+ * Passe le processus dans l'état endormi
+ * pendant un certain nombre de secondes.
+ */
+void sleep(uint32_t seconds)
+{
+	wait_clock(seconds * SCHEDFREQ);
+}
+
 void idle(void)
 {
 	sti();
@@ -299,7 +311,7 @@ void idle(void)
 	}
 }
 
-bool is_killable(int pid)
+static inline bool is_killable(int pid)
 {
 	// Tous sauf idle
 	if (0 < pid || pid < MAX_NB_PROCS)
@@ -309,7 +321,7 @@ bool is_killable(int pid)
 }
 
 // Réveil du WAITPID si besoin
-void waitpid_end(int pid)
+static void waitpid_end(int pid)
 {
 	if (!is_killable(pid))
 		return;
@@ -694,7 +706,7 @@ int waitpid(int pid, int *retvalp)
  */
 int getprio(int pid)
 {
-	if (0 <= pid && pid < MAX_NB_PROCS) {
+	if (0 <= pid && pid < MAX_NB_PROCS && !is_zombie(pid)) {
 		Process *proc = procs[pid];
 
 		if (proc != NULL) {

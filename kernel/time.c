@@ -9,7 +9,7 @@
 #include "process.h"
 #include "interruptions.h"
 
-#define SCHEDFREQ 50
+#define QUARTZ 0x1234DD
 
 
 // Déclaration du traitant asm
@@ -34,24 +34,27 @@ static inline void affiche_temps(char *chaine)
 // Initialise la fréquence d'horloge
 static inline void init_freq(const uint32_t freq)
 {
-	const uint16_t freq_sig = 0x1234DD / freq;
+	const uint16_t freq_sig = QUARTZ / freq;
 
 	outb(0x34, 0x43);
 	outb(freq_sig, 0x40);
 	outb(freq_sig >> 8, 0x40);
 }
 
-
-// Initialise le module
-void init_temps()
+/**
+ * Initialise le module.
+ */
+void init_time()
 {
 	init_traitant_IT(32, traitant_IT_32);
 	init_freq(SCHEDFREQ);
 	masque_IRQ(0, false);
 }
 
-// Indique le temps depuis le début en secondes
-uint32_t get_temps()
+/**
+ * Retourne le nombre de secondes écoulées depuis le démarrage du noyau.
+ */
+uint32_t get_time()
 {
 	return g_secs;
 }
@@ -63,9 +66,8 @@ void tic_PIT(void)
 	outb(0x20, 0x20);
 
 	// Incrémentation des secondes
-	if (++g_tics == SCHEDFREQ) {
+	if (!(++g_tics % SCHEDFREQ)) {
 		g_secs++;
-		g_tics = 0;
 	}
 
 	char temps[9];
@@ -78,4 +80,21 @@ void tic_PIT(void)
 	ordonnance();
 }
 
+/**
+ * Retourne dans *quartz la fréquence du quartz du système et
+ * dans *ticks le nombre d'oscillations du quartz entre chaque interruption.
+ */
+void clock_settings(unsigned long *quartz, unsigned long *ticks)
+{
+	*quartz = QUARTZ;
+	*ticks = QUARTZ / SCHEDFREQ;
+}
+
+/**
+ * Retourne le nombre d'interruptions d'horloge depuis le démarrage du noyau.
+ */
+unsigned long current_clock()
+{
+	return g_tics;
+}
 
