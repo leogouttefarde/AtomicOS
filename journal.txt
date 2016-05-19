@@ -8,7 +8,7 @@ Azizi :
 Début de la phase 4 : files de messages
 
 Etienne :
-Début de la phase 6
+Début de la phase 6 : Gestion du clavier
 
 Léo :
 Début d'adaptation du code de pratique du système aux besoins de la phase 3.
@@ -21,7 +21,7 @@ Azizi :
 Poursuite de la phase 4 : files de messages
 
 Etienne :
-Poursuite de la phase 6
+Poursuite de la phase 6. Console presque terminée.
 
 Léo :
 Poursuite de la phase 3.
@@ -31,8 +31,10 @@ Gestion de la terminaison des processus et de la filiation quasi terminée.
 Jeudi 19 mai
 
 Azizi :
+Poursuite de la phase 4 : files de messages
 
-Etienne :
+Etienne : Console finie.
+Début du travail sur le shell
 
 Léo :
 
