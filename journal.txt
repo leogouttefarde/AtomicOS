@@ -33,12 +33,23 @@ Jeudi 19 mai
 Azizi :
 Poursuite de la phase 4 : files de messages
 
-Etienne : Console finie.
-Début du travail sur le shell
+Etienne :
+Console finie. Début du travail sur le shell.
 
 Léo :
+Phase 3 terminée (terminaison et filiation des processus fini).
+Implémentation de wait_clock (phase 4) réalisée.
 
 
+Vendredi 20 mai
+
+Azizi :
+
+
+Etienne :
+
+
+Léo :
 
 
 
