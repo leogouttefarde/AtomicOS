@@ -31,6 +31,7 @@ Gestion de la terminaison des processus et de la filiation quasi terminée.
 Jeudi 19 mai
 
 Azizi :
+Poursuite de la phase 4 : files de messages
 
 Etienne :
 
