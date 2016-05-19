@@ -4,57 +4,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <queue.h>
-
-#define PROC_NAME_SIZE 16
-#define MAX_NB_PROCS 100
-#define MAX_PRIO 256
-
-/*
- * Etats de gestion
- * des processus
- */
-enum State {
-	CHOSEN,
-	ACTIVABLE,
-	ASLEEP,
-	DYING,
-	ZOMBIE,
-	WAITPID	// Etat d'attente d'un fils
-};
-
-/* Liste de processus */
-typedef struct ListProc_ {
-	struct Process_ *head;
-	struct Process_ *tail;
-} ListProc;
-
-/* Processus */
-typedef struct Process_ {
-	int pid;
-	int ppid;
-
-	union {
-		int retval;		// Valeur de retour de ZOMBIE
-		int waitpid;	// pid à attendre en WAITPID
-	} s;
-
-	ListProc children;
-	struct Process_ *sibling;
-	char name[PROC_NAME_SIZE];
-	enum State state;
-	int regs[5];
-	int *stack;
-	unsigned long ssize;
-	uint32_t wake;
-
-	union {
-		struct Process_ *next;
-		link lnext;
-	} u;
-
-	int prio;
-} Process;
 
 
 void idle();
@@ -67,7 +16,7 @@ bool init_idle();
 void ordonnance();
 
 // Endort un processus
-void dors(uint32_t nbr_secs);
+void sleep(uint32_t seconds);
 
 // Affiche l'état des processus
 void affiche_etats(void);
@@ -108,7 +57,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
  * à son père quand il appelle waitpid. La fonction exit ne retourne jamais à
  * l'appelant.
  */
-void exit(int retval);
+void _exit(int retval);
 
 /**
  * La primitive kill termine le processus identifié par la valeur pid.
@@ -116,6 +65,29 @@ void exit(int retval);
  * négative. En cas de succès, la valeur de retour est nulle.
  */
 int kill(int pid);
+
+/**
+ * Si pid est négatif, le processus appelant attend qu'un
+ * de ses fils, n'importe lequel, soit terminé et récupère (le cas échéant)
+ * sa valeur de retour dans *retvalp, à moins que retvalp soit nul.
+ * Cette fonction renvoie une valeur strictement négative si aucun fils
+ * n'existe ou sinon le pid de celui dont elle a récupéré la valeur de retour.
+ *
+ * Si pid est positif, le processus appelant attend que son fils
+ * ayant ce pid soit terminé ou tué et récupère sa valeur de retour
+ * dans *retvalp, à moins que retvalp soit nul. Cette fonction échoue et
+ * renvoie une valeur strictement négative s'il n'existe pas de processus avec
+ * ce pid ou si ce n'est pas un fils du processus appelant. En cas de succès,
+ * elle retourne la valeur pid.
+ * Lorsque la valeur de retour d'un fils est récupérée, celui-ci est détruit,
+ * et enlevé de la liste des fils.
+ */
+int waitpid(int pid, int *retvalp);
+
+/**
+ * Renvoie le pid du processus actuel.
+ */
+int getpid(void);
 
 
 

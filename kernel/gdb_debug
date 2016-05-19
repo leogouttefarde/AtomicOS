@@ -1,6 +1,6 @@
 
 target remote :1234
-b process.c:289
+b process.c:362
 disp cur_proc
 continue
-disp prev
+disp proc

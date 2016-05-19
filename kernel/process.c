@@ -3,9 +3,62 @@
 #include <cpu.h>
 #include <stddef.h>
 #include <string.h>
+#include <queue.h>
 #include "process.h"
 #include "time.h"
 #include "mem.h"
+
+#define PROC_NAME_SIZE 16
+#define MAX_NB_PROCS 100
+#define MAX_PRIO 256
+
+// Macros de files
+#define cqueue_for_each(proc, head) queue_for_each(proc, head, Process, children)
+#define pqueue_for_each(proc, head) queue_for_each(proc, head, Process, queue)
+#define pqueue_for_each_prev(proc, head) queue_for_each_prev(proc, head, Process, queue)
+#define pqueue_add(proc, head) 							\
+	do {												\
+		INIT_LINK(&proc->queue);						\
+		queue_add(proc, head, Process, queue, prio);	\
+	} while (0)
+
+/*
+ * Etats de gestion
+ * des processus
+ */
+enum State {
+	CHOSEN,
+	ACTIVABLE,
+	ASLEEP,
+	DYING,
+	ZOMBIE,
+	WAITPID
+};
+
+/* Processus */
+typedef struct Process_ {
+	int pid;
+	int ppid;
+
+	union {
+		int retval;		// Valeur de retour de ZOMBIE
+		int waitpid;	// pid à attendre en WAITPID
+	} s;
+
+	link head_child;
+	link children;
+	link queue;
+	int prio;
+
+	struct Process_ *sibling;
+	char name[PROC_NAME_SIZE];
+	enum State state;
+	int regs[5];
+	int *stack;
+	unsigned long ssize;
+	uint32_t wake;
+} Process;
+
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -16,9 +69,8 @@ static Process *cur_proc = NULL;
 
 // Listes de gestion des processus
 static link head_act = LIST_HEAD_INIT(head_act);
-// static ListProc list_act   = { NULL, NULL };
-static ListProc list_sleep = { NULL, NULL };
-static ListProc list_dead  = { NULL, NULL };
+static link head_sleep = LIST_HEAD_INIT(head_sleep);
+static link head_dead = LIST_HEAD_INIT(head_dead);
 
 
 void ctx_sw(int32_t *old_ctx, int32_t *new_ctx);
@@ -63,100 +115,6 @@ void affiche_etats(void)
 	}
 }
 
-/* Extrait un élément en début de liste */
-static inline Process* pop_head(ListProc *list)
-{
-	if (list == NULL)
-		return NULL;
-
-	Process *head = list->head;
-
-	if (head) {
-		list->head = head->u.next;
-
-		if (list->tail == head) {
-			list->head = NULL;
-			list->tail = NULL;
-		}
-	}
-
-	return head;
-}
-
-/* Insère en fin de liste */
-static inline void add_tail(ListProc *list, Process *proc)
-{
-	if (!list || !proc) return;
-
-	proc->u.next = NULL;
-
-	if (list->tail) {
-		list->tail->u.next = proc;
-		list->tail = proc;
-	}
-	else {
-		list->head = proc;
-		list->tail = proc;
-	}
-}
-
-/* Insère en tête de liste */
-static inline void add_head(ListProc *list, Process *proc)
-{
-	if (!list || !proc) return;
-
-	proc->u.next = list->head;
-
-	if (!list->head)
-		list->tail = proc;
-
-	list->head = proc;
-}
-
-/* Insère proc dans list après l'élément pos.
- * Si pos == NULL, insère en tête */
-static inline void insert(ListProc *list, Process *pos, Process *proc)
-{
-	if (!list || !proc)
-		return;
-
-	if (pos == NULL)
-		add_head(list, proc);
-
-	else {
-		Process *next = pos->u.next;
-
-		if (next) {
-			pos->u.next = proc;
-			proc->u.next = next;
-		}
-		else
-			add_tail(list, proc);
-	}
-}
-
-/* Supprime l'élément de list qui suit l'élément last.
- * S'il est NULL, supprime la tête */
-static inline void remove(ListProc *list, Process *last)
-{
-	Process **proc;
-
-	if (!list || !(proc = &last->u.next))
-		return;
-
-	if (last == NULL)
-		pop_head(list);
-
-	else {
-		Process *next = (*proc)->u.next;
-		*proc = next;
-
-		if (next == NULL) {
-			list->tail = last;
-		}
-	}
-}
-
 static inline char *mon_nom()
 {
 	if (!cur_proc)    return "";
@@ -183,45 +141,72 @@ static inline int32_t nbr_secondes()
 	return cur_proc->wake;
 }
 
+static inline bool is_valid_prio(int prio)
+{
+	if (0 < prio && prio <= MAX_PRIO)
+		return true;
+
+	return false;
+}
+
+static inline void free_process(Process *proc)
+{
+	if (proc == NULL)
+		return;
+
+	if (proc->stack != NULL)
+		mem_free(proc->stack, proc->ssize);
+
+	procs[proc->pid] = NULL;
+	mem_free(proc, sizeof(Process));
+}
+
 // Détruit les processus mourants
 static inline void kill_procs()
 {
-	Process *die = list_dead.head;
-	Process *next;
+	Process *proc = NULL;
+	Process *die = NULL;
 
-	// Libération des processus un à un
-	while (die) {
-		next = die->u.next;
-
-		if (die->stack)
-			mem_free(die->stack, die->ssize);
-
-		procs[die->pid] = NULL;
-		mem_free(die, sizeof(Process));
-
-		die = next;
+	queue_for_each(proc, &head_dead, Process, queue) {
+		free_process(die);
+		die = proc;
 	}
 
-	memset(&list_dead, 0, sizeof(list_dead));
+	free_process(die);
+
+	// Reset de la liste des mourants
+	INIT_LIST_HEAD(&head_dead);
+}
+
+static inline void wake_process(Process **psleep)
+{
+	Process *proc = *psleep;
+
+	if (proc != NULL) {
+		*psleep = NULL;
+		queue_del(proc, queue);
+
+		proc->state = ACTIVABLE;
+		pqueue_add(proc, &head_act);
+	}
 }
 
 // Réveille les processus endormis dont l'heure de réveil est atteinte ou dépassée
 static inline void wake_procs()
 {
-	Process *it = list_sleep.head;
-	Process *next;
+	Process *it, *wakeup = NULL;
 
-	while (it && (it->wake <= get_temps())) {
-		next = it->u.next;
-		pop_head(&list_sleep);
+	queue_for_each(it, &head_sleep, Process, queue) {
 
-		it->state = ACTIVABLE;
-		INIT_LINK(&it->u.lnext);
-		queue_add(it, &head_act, Process, u.lnext, prio);
-		//printf("ajout %s aux actifs, wake = %d, t = %d\n", it->name, it->wake, get_temps());
+		wake_process(&wakeup);
 
-		it = next;
+		if (it->wake > get_temps())
+			break;
+
+		wakeup = it;
 	}
+
+	wake_process(&wakeup);
 }
 
 // Ordonnanceur
@@ -239,19 +224,20 @@ void ordonnance()
 
 		// On ajoute le processus courant aux mourants
 		// pour le tuer au prochain ordonnancement
-		if (prev->state == DYING)
-			add_tail(&list_dead, prev);
+		if (prev->state == DYING) {
+			pqueue_add(prev, &head_dead);
+		}
 
 		// Si l'état du processus reste inchangé,
 		// on le remet avec les activables
 		else if (prev->state == CHOSEN) {
 			prev->state = ACTIVABLE;
-			INIT_LINK(&prev->u.lnext);
-			queue_add(prev, &head_act, Process, u.lnext, prio);
+			pqueue_add(prev, &head_act);
 		}
 
 		// On extrait le processus suivant
-		cur_proc = queue_out(&head_act, Process, u.lnext);
+		cur_proc = queue_out(&head_act, Process, queue);
+		assert(cur_proc);
 
 		// On passe au processus voulu
 		if (cur_proc) {
@@ -266,8 +252,8 @@ void ordonnance()
 	}
 }
 
-// Endort un processus
-void dors(uint32_t nbr_secs)
+// Endort le processus
+void sleep(uint32_t seconds)
 {
 	Process *proc_sleep = cur_proc;
 
@@ -278,27 +264,27 @@ void dors(uint32_t nbr_secs)
 	//printf("ajout de %s aux dormants pour %d secondes\n", mon_nom(), nbr_secs);
 
 	proc_sleep->state = ASLEEP;
-	proc_sleep->wake = nbr_secs + get_temps();
+	proc_sleep->wake = seconds + get_temps();
 
-	Process *it = list_sleep.head;
-	Process *prec = NULL;
-	bool not_done = true;
+	// Insertion triée du proc_sleep
+	queue_add(proc_sleep, &head_sleep, Process, queue, wake);
+/*	Process *ptr_elem = proc_sleep;
+	link *head = &head_sleep;
 
-	while (it && not_done) {
-		if (it->wake > proc_sleep->wake) {
-			insert(&list_sleep, prec, proc_sleep);
-			not_done = false;
-		}
-
-		prec = it;
-		it = it->u.next;
-	}
-
-	// Si le processus n'a toujours pas
-	// été inséré, on l'insère en fin de liste
-	if (not_done) {
-		add_tail(&list_sleep, proc_sleep);
-	}
+	do {                                                                  \
+		link *__cur_link=head;                                        \
+		Process *__elem = (ptr_elem);                                    \
+		link *__elem_link=&((__elem)->queue);                     \
+                assert((__elem_link->prev == 0) && (__elem_link->next == 0)); \
+		do  __cur_link=__cur_link->next;                              \
+	   	while ( (__cur_link != head) &&                               \
+		        (((queue_entry(__cur_link,Process,queue))->wake)\
+	     	               < ((__elem)->wake)) );                    \
+	   	__elem_link->next=__cur_link;                                 \
+	   	__elem_link->prev=__cur_link->prev;                           \
+	   	__cur_link->prev->next=__elem_link;                           \
+	   	__cur_link->prev=__elem_link;                                 \
+	} while (0);*/
 
 	ordonnance();
 }
@@ -316,10 +302,10 @@ void idle(void)
 bool is_killable(int pid)
 {
 	// Tous sauf idle
-	if (pid <= 0 || pid >= MAX_NB_PROCS)
-		return false;
+	if (0 < pid || pid < MAX_NB_PROCS)
+		return true;
 
-	return true;
+	return false;
 }
 
 // Réveil du WAITPID si besoin
@@ -341,50 +327,62 @@ void waitpid_end(int pid)
 			parent->s.waitpid = pid;
 			parent->state = ACTIVABLE;
 
-			INIT_LINK(&parent->u.lnext);
-			queue_add(parent, &head_act, Process, u.lnext, prio);
+			pqueue_add(parent, &head_act);
 		}
 	}
 }
 
+static inline void del_child(Process **pchild)
+{
+	Process *child = *pchild;
+
+	if (child != NULL) {
+		queue_del(child, children);
+		*pchild = NULL;
+	}
+}
+
+bool is_zombie(int pid)
+{
+	if (is_killable(pid)) {
+		Process *proc = procs[pid];
+
+		if (proc != NULL && proc->state == ZOMBIE)
+			return true;
+	}
+
+	return false;
+}
+
 bool finish_process(int pid)
 {
-	// Si pas de processus à tuer différent de idle, abandon
-	if (!is_killable(pid))
+	// Gestion des erreurs
+	if (!is_killable(pid) || is_zombie(pid))
 		return false;
 
+	enum State state = DYING;
 	Process *proc = procs[pid];
+	Process *it = NULL;
+	Process *die = NULL;
 
-	// On ignore les zombies
-	if (proc == NULL || proc->state == ZOMBIE)
-		return false;
+	cqueue_for_each(it, &proc->head_child) {
 
-	ListProc *children = &proc->children;
-	Process *it = children->head;
-	Process *last = NULL;
-	Process *next;
-
-	while (it != NULL) {
-		next = it->u.next;
+		del_child(&die);
 
 		// On invalide le père des fils
 		it->ppid = -1;
 
 		// On détruit les zombies
 		if (it->state == ZOMBIE) {
-			remove(children, last);
-			add_tail(&list_dead, it);
+			die = it;
+			die->state = DYING;
+			pqueue_add(it, &head_dead);
 		}
-		else {
-			last = it;
-		}
-
-		it = next;
 	}
 
-	enum State state = DYING;
+	del_child(&die);
 
-	if (proc->ppid > 0) {
+	if (proc->ppid >= 0) {
 		state = ZOMBIE;
 	}
 
@@ -410,7 +408,7 @@ void fin_processus()
 }
 
 // Cree le processus idle (pas besoin de stack)
-// Il faut l'appeler en premier dans start
+// Il faut l'appeler en premier dans kernel_start
 bool init_idle()
 {
 	Process *proc = mem_alloc(sizeof(Process));
@@ -422,6 +420,7 @@ bool init_idle()
 		proc->ppid = pid;
 		proc->pid = pid;
 		strcpy(proc->name, "idle");
+		INIT_LIST_HEAD(&proc->head_child);
 
 		procs[pid] = proc;
 
@@ -448,8 +447,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 {
 	int32_t pid = -1;
 
-	if (nb_procs < MAX_NB_PROCS && name != NULL
-		&& 0 < prio && prio <= MAX_PRIO) {
+	if (nb_procs < MAX_NB_PROCS && name != NULL && is_valid_prio(prio)) {
 		Process *proc = mem_alloc(sizeof(Process));
 
 		if (proc != NULL) {
@@ -468,11 +466,20 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 
 				//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
 				proc->prio = prio;
-				proc->ppid = getpid();
 				pid = proc->pid = nb_procs++;
+				INIT_LIST_HEAD(&proc->head_child);
 
+				// Copie du nom de processus
 				strncpy(proc->name, name, PROC_NAME_SIZE);
 				proc->name[PROC_NAME_SIZE-1] = 0;
+
+				// On définit le père et on l'ajoute à la liste de ses fils
+				proc->ppid = getpid();
+
+				Process *parent = procs[proc->ppid];
+
+				if (parent != NULL)
+					queue_add(proc, &parent->head_child, Process, children, pid);
 
 				// On met l'adresse de terminaison du processus en sommet de pile
 				// pour permettre son auto-destruction
@@ -483,13 +490,15 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// On initialise esp sur le sommet de pile désiré
 				proc->regs[1] = (int)&proc->stack[stack_size - 3];
 
+				// Enregistrement dans la table des processus
 				procs[pid] = proc;
 
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
-				INIT_LINK(&proc->u.lnext);
-				queue_add(proc, &head_act, Process, u.lnext, prio);
+				pqueue_add(proc, &head_act);
 
+				// Si le processus créé est plus prioritaire,
+				// on lui passe la main
 				if (prio > cur_proc->prio) {
 					ordonnance();
 				}
@@ -522,31 +531,57 @@ int kill(int pid)
 {
 	int ret = -1;
 
+	if (!is_killable(pid) || is_zombie(pid))
+		return ret;
+
+	Process *proc = procs[pid];
+	proc->s.retval = 0;
+	bool is_other = (proc != cur_proc);
+
+	// Gestion des autres processus
+	if (is_other)  {
+		enum State state = proc->state;
+
+		switch (state) {
+		case ACTIVABLE:
+		case ASLEEP:
+			// On retire proc des activables / dormants
+			queue_del(proc, queue);
+			break;
+
+		case ZOMBIE:
+			// printf(" ZOMBIE");
+			break;
+
+		case WAITPID:
+			// printf(" WAITPID");
+			break;
+
+		case CHOSEN:
+			// printf(" CHOSEN");
+			break;
+
+		case DYING:
+			// printf(" DYING");
+			break;
+
+		default:
+			// printf(" ??");
+			// Rien à faire
+			break;
+		}
+	}
+
 	if (finish_process(pid)) {
-		Process *proc = procs[pid];
-		proc->s.retval = 0;
 
-		// Gestion des autres processus
-		if (proc != cur_proc)  {
-			enum State state = proc->state;
+		if (is_other) {
 
-			switch (state) {
-			case ACTIVABLE:
-				// On retire proc des activables
-				queue_del(proc, u.lnext);
-				break;
-
-			case ASLEEP:
-				// TODO : retirer proc des asleeps
-				// remplacer implém par dbly linked lists C IG
-				break;
-
-			default:
-				// Rien à faire
-				break;
+			// On le tue directement si ce n'est pas le processus actuel
+			// et qu'il n'est pas devenu un zombie
+			if (proc->state == DYING) {
+				//pqueue_add(proc, &head_dead); // quid crash observé sur ceci?
+				free_process(proc); // Intéret d'une liste de mourants?!!
 			}
-
-			add_tail(&list_dead, procs[pid]);
 		}
 
 		// En cas d'autokill
@@ -580,39 +615,74 @@ int kill(int pid)
 int waitpid(int pid, int *retvalp)
 {
 	int ret = -1;
-	bool success = false;
+	bool wait_child = false;
+	bool is_zombie = false;
+	Process *child = NULL;
 
-	if (pid > 0) {
+	// Si le pid est valide, il correspond à un pid réel
+	if (is_killable(pid)) {
 
-		// TODO : recherche du fils de pid correspondant dans children
+		// On s'assure que pid est l'un des fils du processus actuel
+		cqueue_for_each(child, &cur_proc->head_child) {
 
-		success = true;
+			if (child->pid == pid) {
+				child = procs[pid];
+
+				if (child != NULL) {
+					wait_child = true;
+
+					if (child->state == ZOMBIE) {
+						is_zombie = true;
+					}
+				}
+				break;
+			}
+		}
 	}
 
-	else if (pid < 0) {
-		success = true;
+	// Si pid est négatif et que le processus possède au moins un fils,
+	// on attend n'importe quel fils
+	else if (pid < 0 && !queue_empty(&cur_proc->head_child)) {
+		wait_child = true;
+
+		// On cherche si un zombie est déjà présent
+		cqueue_for_each(child, &cur_proc->head_child) {
+			child = procs[child->pid];
+
+			if (child && child->state == ZOMBIE) {
+				is_zombie = true;
+			}
+		}
 	}
 
-	if (success) {
+	if (wait_child) {
 
-		// On passe le processus en état d'attente
-		cur_proc->s.waitpid = pid;
-		cur_proc->state = WAITPID;
+		if (is_zombie) {
+			ret = child->pid;
+		}
+		else {
+			// On passe le processus en état d'attente
+			cur_proc->s.waitpid = pid;
+			cur_proc->state = WAITPID;
 
-		ordonnance();
+			ordonnance();
 
-		// On récupère le pid et le retour du fils débloqué
-		ret = cur_proc->s.waitpid;
-
-		if (retvalp != NULL) {
-			*retvalp = procs[ret]->s.retval;
+			// On récupère le pid et le retour du fils débloqué
+			ret = cur_proc->s.waitpid;
+			child = procs[ret];
 		}
 
-		// Destruction du fils débloqué
+		if (retvalp != NULL) {
+			*retvalp = child->s.retval;
+		}
 
-		// TODO : on le supprime des fils
+		// On supprime le fils débloqué des fils
+		queue_del(child, children);
 
-		// add_tail(&list_dead, fils_debloqué);
+		// On le détruit
+		// child->state = DYING;
+		// pqueue_add(child, &head_dead);
+		free_process(child);
 	}
 
 	return ret;
@@ -641,10 +711,26 @@ int getprio(int pid)
  * est strictement négative, sinon elle est égale à l'ancienne
  * priorité du processus pid.
  */
-// int chprio(int pid, int newprio)
-// {
-/* TODO
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#chprio_-_Changement_de_priorit.C3.A9_d.27un_processus
-*/
-// }
+int chprio(int pid, int newprio)
+{
+	if (!is_killable(pid) || is_zombie(pid) || !is_valid_prio(newprio))
+		return -1;
+
+	Process *proc = procs[pid];
+
+	if (proc == NULL)
+		return -2;
+
+	int prio = proc->prio;
+	proc->prio = newprio;
+
+	// Si la priorité d'un processus activable a changé,
+	// on le réinsère dans la file des activables
+	if (prio != newprio && proc->state == ACTIVABLE) {
+		queue_del(proc, queue);
+		pqueue_add(proc, &head_act);
+	}
+
+	return prio;
+}
 

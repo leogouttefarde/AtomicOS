@@ -1,9 +1,6 @@
 
 
 
-Phase 3 :
-- compléter le code de pratique du système pour répondre aux demandes
-
 Phase 4 :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
@@ -11,13 +8,16 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 - wait_clock
 
 
+Phase 5 :
+- 
+
 
 autres attentes :
 
-- cahier des charges (complété avec les extensions)
+- cahier des charges (complété avec les extensions) : fichier txt décrivant le travail réalisé
 - planning prévisionnel
 - planning effectif
-- journal de bord
+- journal de bord : fichier txt à compléter chaque jour
 - code clair et commenté
 - messages de commit de qualité
 
