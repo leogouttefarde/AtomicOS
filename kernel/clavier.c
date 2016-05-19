@@ -7,14 +7,34 @@
 
 #define TAILLE_TAMP 2000
 
-bool echo=true;
-
 void traitant_IT_33();
+
+bool echo=true;
 char tampon [TAILLE_TAMP];
-unsigned long cases_dispos=TAILLE_TAMP;
-int indice_ecr=0;
-int indice_lec=0;
-int nb_lig=0;
+
+/*Tableaux servant à memoriser les positions des cararacteres
+  à l'écran avant les tabulations*/
+bool anc_lig[TAILLE_TAMP]; //vrai si la ligne est celle d'au dessus
+uint8_t anc_col[TAILLE_TAMP];
+
+unsigned long cases_dispos=TAILLE_TAMP; //cases dans lesquelles on peut écrire
+unsigned long indice_ecr=0;
+unsigned long indice_lec=0;
+unsigned long nb_lig=0; //Nombre d'apparitions du caractère 13 dans le tampon
+
+
+//Avancer d'une case sur le tampon circulaire
+static void avancer(unsigned long *i) {
+        *i=(*i+1)%TAILLE_TAMP;
+}
+
+//Reculer d'une case sur le tampon circulaire
+static void reculer(unsigned long *i) {
+        if (*i > 0) 
+                *i=*i-1;
+        else 
+                *i=TAILLE_TAMP-1;
+}
 
 
 void cons_echo(int on) {
@@ -22,6 +42,7 @@ void cons_echo(int on) {
 }
 
 void init_clavier(void) {
+        //Activation des interruptions claviers
         init_traitant_IT(33, traitant_IT_33);
         masque_IRQ(1,false);
 }
@@ -50,32 +71,46 @@ unsigned long cons_read(char *string, unsigned long length){
         }
 
 
-        bool fin=false; /*Indique si on le dernier caractère était un \n*/
-        unsigned long i=0;
-        unsigned long max = (length>TAILLE_TAMP-cases_dispos) ? 
-                TAILLE_TAMP-cases_dispos : length;
+        bool fin=false; /*Indique si on le dernier caractère était 13*/
+        unsigned long i=0;    
 
-        //Copie du tampon dans string
-        while (i<max) {
 
+        while (i<length) {
+                //Parcours du tampon
 
                 if (tampon[indice_lec]!=13) {
                         string [i]=tampon[indice_lec];
                         i++;
                 }
-                else {
-                        fin=true;
-                }
+                else 
+                        fin=true;                
                 
                 cases_dispos++;
-                indice_lec=(indice_lec+1) % TAILLE_TAMP;
-                if (fin) break;
+                avancer(&indice_lec);
+
+                if (fin) {
+                        //Si on est sur un caractere 13
+                        nb_lig--;
+                        break;
+                }
         }
-        if (fin) nb_lig--;
         return i;
         
 }
 
+static void effacer_car_lig_cour() {
+        char bs [3];
+        bs[0]=8;
+        bs[1]=32;
+        bs[2]=8;
+        console_putbytes(bs,3);
+}
+
+static void effacer_car_lig_prec() {
+        place_curseur(lig_cour()-1,NB_COLS-1);
+        console_putbytes(" ",1);
+        place_curseur(lig_cour()-1,NB_COLS-1);
+}
 
 static void afficher_echo(char car) {
         //Caractères affichés normalement
@@ -95,20 +130,70 @@ static void afficher_echo(char car) {
         else  {
                 switch (car) {
                         char chaine[1];
-                        char bs [3];
+                        char bsctrl [6];
                 case 13 : 
-                        //caractère saut de ligne
+                        //caractère appui sur entrée
                         chaine[0]=10;
                         console_putbytes(chaine,1);
                         break;
                       
                 case 127:  
                         //caractère backspace
-                        //A COMPLETER
-                        bs[0]=8;
-                        bs[1]=32;
-                        bs[2]=8;
-                        console_putbytes(bs,3);
+
+                        if (tampon[indice_ecr]=='\t') {
+                                //Le caractere à effacer est une tabulation
+                                if (anc_lig[indice_ecr]) {
+                                        place_curseur(lig_cour()-1,
+                                                      anc_col[indice_ecr]);
+                                }
+                                else {
+                                        place_curseur(lig_cour(),
+                                                      anc_col[indice_ecr]);
+                                }
+
+                        }
+                        else if (tampon[indice_ecr]>=32) {
+                                //Le caractere à effacer est un caractere normal
+                                if (col_cour()==0 && lig_cour()>0) {
+                                        //Il se situe sur la ligne precedente
+                                        effacer_car_lig_prec();
+                                        
+                                }
+                                else {
+                                        //Il se situe sur la ligne actuelle
+                                        effacer_car_lig_cour();
+                                }
+                        }
+
+                        else {
+                                //le caractere à effacer est un caractere de ctl
+                                
+                                if (col_cour()==0 && lig_cour()>0) {
+                                        //Il se situe sur la ligne precedente
+                                        place_curseur(lig_cour()-1,NB_COLS-2);
+                                        console_putbytes("  ",2);
+                                        place_curseur(lig_cour()-1,NB_COLS-2);
+                                }
+                                
+                                else if (col_cour()==1 && lig_cour()>0) {
+                                        //Il se situe à cheval sur 2 lignes
+                                        effacer_car_lig_cour();
+                                        effacer_car_lig_prec();
+
+                                }
+                                
+                                else {
+                                        //Il se situe sur la ligne actuelle
+                                        bsctrl[0]=8;
+                                        bsctrl[1]=8;
+                                        bsctrl[2]=32;
+                                        bsctrl[3]=32;
+                                        bsctrl[4]=8;
+                                        bsctrl[5]=8;
+                                        console_putbytes(bsctrl,6);
+                                }                                        
+
+                        }
                         break;
                 default:
                         break;
@@ -119,36 +204,40 @@ static void afficher_echo(char car) {
 }
 
 void keyboard_data(char *str) {
-        int i = 0;
+        unsigned long i = 0;
         while (str[i]!=0)   {                
 
                 switch (str[i]) {
                 case 127:
-                        if (indice_ecr > 0) {
-                                indice_ecr--;
-                        }
-                        else {
-                                indice_ecr=TAILLE_TAMP-1;
-                        }
-                        
-                        if (cases_dispos<TAILLE_TAMP) {
+                        /*Cas du backspace : Si le tampon n'est pas vide 
+                          l'indice recule d'une case*/
+                        if (cases_dispos!=TAILLE_TAMP) {
+                                reculer(&indice_ecr);
                                 cases_dispos++;
+                                if (echo)
+                                        afficher_echo(str[i]);                
                         }
                         break;
                 default:
-                        //si le tampon n'est pas plein
+                        /* Autres cas : Si le tampon n'est pas plein, ajout
+                           du caractere au tampon*/
                         if (cases_dispos>0) {
                                 cases_dispos--;
                                 tampon[indice_ecr]=str[i];
-                                indice_ecr=(indice_ecr+1) % TAILLE_TAMP;
-                                if (str[i]==13) nb_lig++;
+                                if (str[i]==13) 
+                                        nb_lig++;
+                                else if (str[i]=='\t') {
+                                        anc_lig[indice_ecr]=(col_cour()>=73);
+                                        anc_col[indice_ecr]=col_cour();
+                                }
+                                avancer(&indice_ecr);                         
+                                if (echo)
+                                        afficher_echo(str[i]);
                         }
                         break;
                 }
                 
-                if (echo) {
-                        afficher_echo(str[i]);
-                }
+                
                 i++;
         }
 
@@ -157,6 +246,12 @@ int lancer_console (void *p) {
         if (p==0){} 
         sti(); //A mettre ici ?
         while (true) {
+                /*uint16_t freq=4560;
+                outb(0x43,182);
+                outb(0x42,(uint8_t) (freq));
+                outb(0x42,((uint8_t) (freq >> 8)));
+                uint8_t tmp=inb(0x61);
+                outb(0x61,tmp|3);*/
                 char commandes [2] [80];
                 init_clavier();
                 cons_read(commandes[0],80);

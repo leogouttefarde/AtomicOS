@@ -14,7 +14,13 @@ static const uint8_t clignotement = 0;
 static uint8_t cur_lig = 0;
 static uint8_t cur_col = 0;
 
+uint8_t col_cour() {
+        return cur_col;
+}
 
+uint8_t lig_cour() {
+        return cur_lig;
+}
 // Ecrit le caractère c aux coordonnées spécifiées, en spécifiant le style.
 void ecrit_car_style(uint32_t lig, uint32_t col, char c,
 			Couleur couleur, Couleur fond, uint8_t clignotement)
@@ -81,12 +87,6 @@ void traite_car(char c)
 {
 	bool saut_ligne = false;
 
-	if (cur_col >= NB_COLS) {
-		finir_ligne();
-		saut_ligne = true;
-	}
-
-
 	if (32 <= c && c <= 126)
 		ecrit_car(cur_lig, cur_col++, c);
 
@@ -115,6 +115,12 @@ void traite_car(char c)
 				break;
 		}
 	}
+
+        if (cur_col >= NB_COLS) {
+		finir_ligne();
+		saut_ligne = true;
+	}
+
 
 	place_curseur(cur_lig, cur_col);
 }

@@ -32,6 +32,8 @@ void console_putbytes(const char *chaine, int32_t taille);
 
 void banner();
 
+uint8_t col_cour();
+uint8_t lig_cour();
 
 // Couleurs
 enum Couleur_ {
