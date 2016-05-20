@@ -50,6 +50,8 @@ Etienne :
 
 
 Léo :
+Début de la phase 5.
+Lecture des documentations de l'ensiwiki pour pouvoir commencer à coder cette phase.
 
 
 

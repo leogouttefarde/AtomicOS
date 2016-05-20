@@ -5,11 +5,10 @@ Phase 4 :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
 - files de messages à coder
-- wait_clock
 
 
-Phase 5 :
-- 
+Phase 5
+
 
 
 autres attentes :

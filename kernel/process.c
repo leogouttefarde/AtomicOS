@@ -3,61 +3,9 @@
 #include <cpu.h>
 #include <stddef.h>
 #include <string.h>
-#include <queue.h>
 #include "process.h"
 #include "time.h"
 #include "mem.h"
-
-#define PROC_NAME_SIZE 16
-#define MAX_NB_PROCS 100
-#define MAX_PRIO 256
-
-// Macros de files
-#define cqueue_for_each(proc, head) queue_for_each(proc, head, Process, children)
-#define pqueue_for_each(proc, head) queue_for_each(proc, head, Process, queue)
-#define pqueue_for_each_prev(proc, head) queue_for_each_prev(proc, head, Process, queue)
-#define pqueue_add(proc, head) 							\
-	do {												\
-		INIT_LINK(&proc->queue);						\
-		queue_add(proc, head, Process, queue, prio);	\
-	} while (0)
-
-/*
- * Etats de gestion
- * des processus
- */
-enum State {
-	CHOSEN,
-	ACTIVABLE,
-	ASLEEP,
-	DYING,
-	ZOMBIE,
-	WAITPID
-};
-
-/* Processus */
-typedef struct Process_ {
-	int pid;
-	int ppid;
-
-	union {
-		int retval;		// Valeur de retour de ZOMBIE
-		int waitpid;	// pid à attendre en WAITPID
-	} s;
-
-	link head_child;
-	link children;
-	link queue;
-	int prio;
-
-	struct Process_ *sibling;
-	char name[PROC_NAME_SIZE];
-	enum State state;
-	int regs[5];
-	int *stack;
-	unsigned long ssize;
-	uint32_t wake;
-} Process;
 
 
 // Nombre de processus créés depuis le début
