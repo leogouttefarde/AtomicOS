@@ -6,6 +6,7 @@
 #include "process.h"
 #include "time.h"
 #include "mem.h"
+#include "userspace_apps.h"
 
 
 // Nombre de processus créés depuis le début
@@ -215,7 +216,7 @@ void wait_clock(unsigned long clock)
 	//printf("ajout de %s aux dormants pour %d clocks\n", mon_nom(), clock);
 
 	proc_sleep->state = ASLEEP;
-	proc_sleep->wake = clock + current_clock();
+	proc_sleep->wake = clock;
 
 	// Insertion triée du proc_sleep
 	queue_add(proc_sleep, &head_sleep, Process, queue, wake);
@@ -246,7 +247,7 @@ void wait_clock(unsigned long clock)
  */
 void sleep(uint32_t seconds)
 {
-	wait_clock(seconds * SCHEDFREQ);
+	wait_clock(seconds * SCHEDFREQ + current_clock());
 }
 
 void idle(void)

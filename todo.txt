@@ -9,6 +9,9 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
 Phase 5
 
+- Table de hachage des applications implémenter
+http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_m%C3%A9moire_virtuelle#Localiser_une_application
+
 
 
 autres attentes :
