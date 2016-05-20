@@ -22,10 +22,9 @@ unsigned long indice_ecr=0;
 unsigned long indice_lec=0;
 unsigned long nb_lig=0; //Nombre d'apparitions du caractère 13 dans le tampon
 
-
 //Avancer d'une case sur le tampon circulaire
 static void avancer(unsigned long *i) {
-        *i=(*i+1)%TAILLE_TAMP;
+	*i=(*i+1)%TAILLE_TAMP;
 }
 
 //Reculer d'une case sur le tampon circulaire
@@ -69,7 +68,6 @@ unsigned long cons_read(char *string, unsigned long length){
         while (nb_lig==0) {
                 
         }
-
 
         bool fin=false; /*Indique si on le dernier caractère était 13*/
         unsigned long i=0;    
@@ -226,6 +224,7 @@ void keyboard_data(char *str) {
                                 tampon[indice_ecr]=str[i];
                                 if (str[i]==13) 
                                         nb_lig++;
+				
                                 else if (str[i]=='\t') {
                                         anc_lig[indice_ecr]=(col_cour()>=73);
                                         anc_col[indice_ecr]=col_cour();
@@ -242,22 +241,7 @@ void keyboard_data(char *str) {
         }
 
 }
-int lancer_console (void *p) {
-        if (p==0){} 
+void lancer_console () {
         sti(); //A mettre ici ?
-        while (true) {
-                /*uint16_t freq=4560;
-                outb(0x43,182);
-                outb(0x42,(uint8_t) (freq));
-                outb(0x42,((uint8_t) (freq >> 8)));
-                uint8_t tmp=inb(0x61);
-                outb(0x61,tmp|3);*/
-                char commandes [2] [80];
-                init_clavier();
-                cons_read(commandes[0],80);
-                cons_read(commandes[1],80);
-                cons_write(commandes[0],80);
-                cons_write(commandes[1],80);
-        }
-        return 0;
+	init_clavier();
 }
