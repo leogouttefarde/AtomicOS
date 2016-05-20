@@ -26,8 +26,6 @@ void kernel_start(void)
 
 	lancer_console();
 	start("shell", 1024, 10, (void *)50, shell);
-
-	start("console", 1024, 10, (void *)50, lancer_console);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start
