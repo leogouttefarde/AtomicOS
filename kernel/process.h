@@ -31,7 +31,17 @@ enum State {
 	ASLEEP,
 	DYING,
 	ZOMBIE,
-	WAITPID
+	WAITPID//,
+	//WAITMSG,
+	//WAITIO
+};
+
+enum SavedRegisters {
+	EBX,
+	ESP,
+	EBP,
+	ESI,
+	EDI
 };
 
 /* Processus */
@@ -52,12 +62,13 @@ typedef struct Process_ {
 	struct Process_ *sibling;
 	char name[PROC_NAME_SIZE];
 	enum State state;
-	int regs[5];
+	int regs[6];
 	int *stack;
 	unsigned long ssize;
 	uint32_t wake;
 
-	// uint32_t ptable[];
+	int32_t *pdir;
+	// int32_t *ptable;
 } Process;
 
 
@@ -143,6 +154,15 @@ int waitpid(int pid, int *retvalp);
  * Renvoie le pid du processus actuel.
  */
 int getpid(void);
+
+
+__inline__ static void tlb_flush()
+{
+	__asm__ __volatile__(
+		"movl %cr3,%eax\n"
+		"movl %eax,%cr3"
+		:::"memory");
+}
 
 
 

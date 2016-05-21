@@ -6,7 +6,9 @@
 #include "process.h"
 #include "time.h"
 #include "mem.h"
+#include "userspace_apps.h"
 
+#define PAGESIZE 0x1000//==(4*1024)
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -21,7 +23,7 @@ static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
 
 
-void ctx_sw(int32_t *old_ctx, int32_t *new_ctx);
+void ctx_sw(int32_t *old_ctx, int32_t *new_ctx, int32_t **old_cr3, int32_t *new_cr3);
 
 
 // Affiche l'état des processus
@@ -103,10 +105,10 @@ static inline void free_process(Process *proc)
 		return;
 
 	if (proc->stack != NULL)
-		mem_free(proc->stack, proc->ssize);
+		mem_free_nolength(proc->stack);
 
 	procs[proc->pid] = NULL;
-	mem_free(proc, sizeof(Process));
+	mem_free_nolength(proc);
 }
 
 // Détruit les processus mourants
@@ -194,7 +196,7 @@ void ordonnance()
 			// Changement de processus courant si nécessaire.
 			if (cur_proc != prev) {
 				// affiche_etats();
-				ctx_sw(prev->regs, cur_proc->regs);
+				ctx_sw(prev->regs, cur_proc->regs, &prev->pdir, cur_proc->pdir);
 			}
 		}
 	}
@@ -215,7 +217,7 @@ void wait_clock(unsigned long clock)
 	//printf("ajout de %s aux dormants pour %d clocks\n", mon_nom(), clock);
 
 	proc_sleep->state = ASLEEP;
-	proc_sleep->wake = clock + current_clock();
+	proc_sleep->wake = clock;
 
 	// Insertion triée du proc_sleep
 	queue_add(proc_sleep, &head_sleep, Process, queue, wake);
@@ -246,7 +248,7 @@ void wait_clock(unsigned long clock)
  */
 void sleep(uint32_t seconds)
 {
-	wait_clock(seconds * SCHEDFREQ);
+	wait_clock(seconds * SCHEDFREQ + current_clock());
 }
 
 void idle(void)
@@ -394,6 +396,19 @@ bool init_idle()
 	return (proc != NULL);
 }
 
+//void *alloc_page()
+//{
+//	return mem_alloc(PAGESIZE*2);
+//}
+// TODO
+
+//void free_page(void *page)
+//{
+// TODO
+//}
+
+extern unsigned pgdir[];
+
 /**
  * Crée un nouveau processus dans l'état activable ou actif selon la priorité
  * choisie. Retourne l'identifiant du processus, ou une valeur strictement
@@ -448,7 +463,36 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				proc->stack[stack_size - 3] = (int)pt_func;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[1] = (int)&proc->stack[stack_size - 3];
+				proc->regs[ESP] = (int)&proc->stack[stack_size - 3];
+
+				/*
+				proc->pdir = (int32_t*)alloc_page();*/
+
+				//proc->pdir = (int32_t*)((int)proc->pdir + (PAGESIZE-(int)proc->pdir%PAGESIZE));
+				//printf("proc->pdir = %08X\n", (uint32_t)proc->pdir);
+
+				// proc->ptable = (int32_t*)alloc_page();
+
+				// Initialisation du page directory
+				// memset(proc->pdir, 0, PAGESIZE);
+
+				// // Initialisation de la table des pages
+				// memset(proc->ptable, 0, PAGESIZE);
+
+				// proc->pdir[0] = (uint32_t)pgdir;
+				// proc->pdir[1] = (uint32_t)proc->ptable;
+
+				// // Allocation d'une première page
+				// proc->ptable[0] = (uint32_t)alloc_page();
+
+				/*
+				// Copie du mapping kernel
+				memcpy(proc->pdir, pgdir, PAGESIZE);*/
+
+				// dummy for now
+				proc->pdir = (int32_t*)pgdir;
+				// proc->ptable
+
 
 				// Enregistrement dans la table des processus
 				procs[pid] = proc;
@@ -464,7 +508,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				}
 			}
 			else
-				mem_free(proc, sizeof(Process));
+				mem_free_nolength(proc);
 		}
 	}
 
