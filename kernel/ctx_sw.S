@@ -3,6 +3,8 @@
 # Structure de la pile en entree :
 #   %esp + 4 : adresse de l'ancien contexte
 #   %esp + 8 : adresse du nouveau contexte
+#   %esp + 12 : adresse du pointeur de l'ancien page directory
+#   %esp + 16 : pointeur du nouveau page directory
 ctx_sw:
 	# sauvegarde du contexte de l'ancien processus
 	movl 4(%esp), %eax
@@ -11,15 +13,18 @@ ctx_sw:
 	movl %ebp, 8(%eax)
 	movl %esi, 12(%eax)
 	movl %edi, 16(%eax)
-	#movl %cr3, 20(%eax)
+	movl 12(%esp), %eax
+	movl %cr3, %ebx
+	movl %ebx, (%eax)
 	# restauration du contexte du nouveau processus
+	movl 16(%esp), %eax
+	movl %eax, %cr3
 	movl 8(%esp), %eax
 	movl (%eax), %ebx
 	movl 4(%eax), %esp
 	movl 8(%eax), %ebp
 	movl 12(%eax), %esi
 	movl 16(%eax), %edi
-	#movl 20(%eax), %cr3
 	# on passe la main au nouveau processus
 	ret
 
