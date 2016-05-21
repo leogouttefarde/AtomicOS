@@ -8,7 +8,7 @@
 #include "console.h"
 #include "shell.h"
 #include "tests.h"
-
+#include "localisation.h"
 
 void kernel_start(void)
 {
@@ -23,7 +23,9 @@ void kernel_start(void)
 
 	test_kill_exit();
 	// test_arg_stack();
-
+	
+	init_hash_table();
+			
 	lancer_console();
 	start("shell", 1024, 10, (void *)50, shell);
 	idle();
