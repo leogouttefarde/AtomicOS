@@ -6,6 +6,7 @@
 #include "process.h"
 #include "time.h"
 #include "mem.h"
+#include "apps.h"
 #include "userspace_apps.h"
 
 #define PAGESIZE 0x1000//==(4*1024)
@@ -23,7 +24,7 @@ static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
 
 
-void ctx_sw(int32_t *old_ctx, int32_t *new_ctx, int32_t **old_cr3, int32_t *new_cr3);
+void ctx_sw(int32_t *old_ctx, int32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
 
 
 // Affiche l'état des processus
@@ -228,15 +229,15 @@ void wait_clock(unsigned long clock)
 		link *__cur_link=head;                                        \
 		Process *__elem = (ptr_elem);                                    \
 		link *__elem_link=&((__elem)->queue);                     \
-                assert((__elem_link->prev == 0) && (__elem_link->next == 0)); \
+				assert((__elem_link->prev == 0) && (__elem_link->next == 0)); \
 		do  __cur_link=__cur_link->next;                              \
-	   	while ( (__cur_link != head) &&                               \
-		        (((queue_entry(__cur_link,Process,queue))->wake)\
-	     	               < ((__elem)->wake)) );                    \
-	   	__elem_link->next=__cur_link;                                 \
-	   	__elem_link->prev=__cur_link->prev;                           \
-	   	__cur_link->prev->next=__elem_link;                           \
-	   	__cur_link->prev=__elem_link;                                 \
+		while ( (__cur_link != head) &&                               \
+				(((queue_entry(__cur_link,Process,queue))->wake)\
+						   < ((__elem)->wake)) );                    \
+		__elem_link->next=__cur_link;                                 \
+		__elem_link->prev=__cur_link->prev;                           \
+		__cur_link->prev->next=__elem_link;                           \
+		__cur_link->prev=__elem_link;                                 \
 	} while (0);*/
 
 	ordonnance();
@@ -393,19 +394,21 @@ bool init_idle()
 		nb_procs = 1;
 	}
 
+	phys_init();
+	init_apps();
+
 	return (proc != NULL);
 }
 
-//void *alloc_page()
-//{
-//	return mem_alloc(PAGESIZE*2);
-//}
-// TODO
+void *alloc_page()
+{
+	return phys_alloc(PAGESIZE);
+}
 
-//void free_page(void *page)
-//{
-// TODO
-//}
+void free_page(void *page)
+{
+	phys_free(page, PAGESIZE);
+}
 
 extern unsigned pgdir[];
 
@@ -421,6 +424,7 @@ extern unsigned pgdir[];
 int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_func)(void*))
 {
 	int32_t pid = -1;
+	pt_func = pt_func;
 
 	if (nb_procs < MAX_NB_PROCS && name != NULL && is_valid_prio(prio)) {
 		Process *proc = mem_alloc(sizeof(Process));
@@ -456,6 +460,12 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				if (parent != NULL)
 					queue_add(proc, &parent->head_child, Process, children, pid);
 
+				// struct uapps *app = (struct uapps*)get_app("test_app");
+				struct uapps *app = (struct uapps*)get_app(name);
+
+				if (app != NULL)
+					printf("test %s\n", app->name);
+
 				// On met l'adresse de terminaison du processus en sommet de pile
 				// pour permettre son auto-destruction
 				proc->stack[stack_size - 1] = (int)arg;
@@ -465,32 +475,27 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// On initialise esp sur le sommet de pile désiré
 				proc->regs[ESP] = (int)&proc->stack[stack_size - 3];
 
-				/*
-				proc->pdir = (int32_t*)alloc_page();*/
+				proc->pdir = (uint32_t*)alloc_page();
 
-				//proc->pdir = (int32_t*)((int)proc->pdir + (PAGESIZE-(int)proc->pdir%PAGESIZE));
 				//printf("proc->pdir = %08X\n", (uint32_t)proc->pdir);
 
-				// proc->ptable = (int32_t*)alloc_page();
+				proc->ptable = (uint32_t*)alloc_page();
 
 				// Initialisation du page directory
-				// memset(proc->pdir, 0, PAGESIZE);
+				memset(proc->pdir, 0, PAGESIZE);
+
+				// Copie du mapping kernel
+				memcpy(proc->pdir, pgdir, 64 * sizeof(int));
 
 				// // Initialisation de la table des pages
 				// memset(proc->ptable, 0, PAGESIZE);
 
-				// proc->pdir[0] = (uint32_t)pgdir;
-				// proc->pdir[1] = (uint32_t)proc->ptable;
+				proc->pdir[64] = (uint32_t)proc->ptable;
 
 				// // Allocation d'une première page
 				// proc->ptable[0] = (uint32_t)alloc_page();
 
-				/*
-				// Copie du mapping kernel
-				memcpy(proc->pdir, pgdir, PAGESIZE);*/
-
-				// dummy for now
-				proc->pdir = (int32_t*)pgdir;
+				//proc->pdir = (int32_t*)pgdir;
 				// proc->ptable
 
 
@@ -736,5 +741,61 @@ int chprio(int pid, int newprio)
 	}
 
 	return prio;
+}
+
+// Gets the physical address of a virtual address
+void *get_physaddr(void *virtualaddr)
+{
+	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
+	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+
+	uint32_t *pd = cur_proc->pdir;
+
+	// Check if the PD entry is present
+	if (pd[pdindex]) {
+		uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
+
+		// Check if the PT entry is present
+		if (pt[ptindex]) {
+			return (void*)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtualaddr & 0xFFF));
+		}
+	}
+
+	return NULL;
+}
+
+// Maps a virtual address to a physical address
+void map_page(void *physaddr, void *virtualaddr, uint16_t flags)
+{
+	// Make sure that both addresses are page-aligned.
+	if ((uint32_t)physaddr % PAGESIZE || (uint32_t)virtualaddr % PAGESIZE)
+		return;
+
+	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
+	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+
+	uint32_t *pd = cur_proc->pdir;
+
+	// If the PD entry is not present, create it
+	if (!pd[pdindex]) {
+
+		// TOCHECK
+		// Copy the User\Supervisor bit
+		uint16_t pdir_flags = flags & 4;
+		void *page = alloc_page();
+
+		memset(page, 0, PAGESIZE);
+		pd[pdindex] = ((uint32_t)page) | (pdir_flags & 0xFFF) | 1; // Present
+	}
+
+	uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
+
+	// If the PT entry is not present, map it
+	if (pt[ptindex]) {
+		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | 0x01; // Present
+
+		// Flush the entry in the TLB
+		tlb_flush();
+	}
 }
 

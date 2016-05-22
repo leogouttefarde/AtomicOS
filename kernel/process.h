@@ -67,8 +67,8 @@ typedef struct Process_ {
 	unsigned long ssize;
 	uint32_t wake;
 
-	int32_t *pdir;
-	// int32_t *ptable;
+	uint32_t *pdir;
+	uint32_t *ptable;
 } Process;
 
 
@@ -160,8 +160,7 @@ __inline__ static void tlb_flush()
 {
 	__asm__ __volatile__(
 		"movl %cr3,%eax\n"
-		"movl %eax,%cr3"
-		:::"memory");
+		"movl %eax,%cr3");
 }
 
 
