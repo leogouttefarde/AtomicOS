@@ -46,7 +46,8 @@ Vendredi 20 mai
 Azizi :
 
 
-Etienne :
+Etienne : Fin du travail sur le shell.
+Début du travail sur la localisation des applications (phase 5)
 
 
 Léo :
@@ -54,6 +55,15 @@ Début de la phase 5.
 Lecture des documentations de l'ensiwiki pour pouvoir commencer à coder cette phase.
 Début de la création des page directory avec copie du pgdir kernel.
 Prochaine étape : allocateur de pages dans le bon espace mémoire.
+
+Samedi 21 Mai
+Azizi :
+
+Etienne :
+Fin de l'implantaion de la localisation des applications.
+Installation des outils adéquats pour pouvoir poursuivre le projet sur ma machine personnelle
+
+Léo :
 
 
 
