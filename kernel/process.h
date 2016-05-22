@@ -64,6 +64,7 @@ typedef struct Process_ {
 	enum State state;
 	int regs[6];
 	int *stack;
+	uint32_t *kstack;
 	unsigned long ssize;
 	uint32_t wake;
 

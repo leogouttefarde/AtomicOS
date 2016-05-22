@@ -16,7 +16,7 @@ void liste_zl_add(Liste_zl *liste, void *zone_libre)
 
         if (liste->queue) {
             liste->queue->suiv = zone;
-            liste->queue = liste->queue->suiv;
+            liste->queue = zone;
         }
         else {
             liste->tete = zone;

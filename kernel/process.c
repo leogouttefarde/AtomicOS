@@ -370,6 +370,18 @@ void fin_processus()
 	ordonnance();
 }
 
+extern unsigned pgdir[];
+
+void *alloc_page()
+{
+	return phys_alloc(PAGESIZE);
+}
+
+void free_page(void *page)
+{
+	phys_free(page, PAGESIZE);
+}
+
 // Cree le processus idle (pas besoin de stack)
 // Il faut l'appeler en premier dans kernel_start
 bool init_idle()
@@ -397,20 +409,131 @@ bool init_idle()
 	phys_init();
 	init_apps();
 
+	uint32_t *test = (uint32_t*)alloc_page();
+
+	test[0] = 0xDEADBEEF;
+	assert(test[0] == 0xDEADBEEF);
+
+	free_page(test);
+	printf("phys test OK\n");
+
 	return (proc != NULL);
 }
 
-void *alloc_page()
+// Gets the physical address of a virtual address
+void *get_physaddr(uint32_t *pd, void *virtualaddr)
 {
-	return phys_alloc(PAGESIZE);
+	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
+	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+
+	// uint32_t *pd = cur_proc->pdir;
+	// printf("phys pd[%X] = %X\n", pdindex, pd[pdindex]);
+
+	// Check if the PD entry is present
+	if (pd[pdindex]) {
+		uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
+
+	// printf("phys pt[%X] = %X\n", ptindex, pt[ptindex]);
+		// Check if the PT entry is present
+		if (pt[ptindex]) {
+			return (void*)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtualaddr & 0xFFF));
+		}
+	}
+	// printf("get_physaddr fail\n");
+
+	return NULL;
 }
 
-void free_page(void *page)
+// Maps a virtual address to a physical address
+void map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 {
-	phys_free(page, PAGESIZE);
+	// Make sure that both addresses are page-aligned.
+	if ((uint32_t)physaddr % PAGESIZE || (uint32_t)virtualaddr % PAGESIZE)
+		return;
+
+	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
+	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+
+	// uint32_t *pd = cur_proc->pdir;
+	// printf("m pdindex %X\n", pdindex);
+
+	// If the PD entry is not present, create it
+	if (!pd[pdindex]) {
+	// printf("map %X\n", pdindex);
+
+		// TOCHECK
+		// Copy the User\Supervisor bit
+		uint16_t pdir_flags = flags & 4;
+		void *page = alloc_page();
+
+		assert(page);
+		memset(page, 0, PAGESIZE);
+		pd[pdindex] = ((uint32_t)page) | (pdir_flags & 0xFFF) | 1; // Present
+	// printf("pd[%X] = %X\n", pdindex, pd[pdindex]);
+	}
+
+	uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
+	// printf("pt[%X] = %X\n", ptindex, pt[ptindex]);
+
+	// If the PT entry is not present, map it
+	if (!pt[ptindex]) {
+		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | 0x01; // Present
+
+		// Flush the entry in the TLB
+		tlb_flush();
+	}
 }
 
-extern unsigned pgdir[];
+bool alloc_pages(Process *proc, struct uapps *app)
+{
+	bool success = true;
+	void *page = NULL;
+
+	proc->pdir = (uint32_t*)alloc_page();
+
+	// Initialisation du page directory
+	memset(proc->pdir, 0, PAGESIZE);
+
+	// Copie du mapping kernel
+	memcpy(proc->pdir, pgdir, 64 * sizeof(int));
+
+	// alloc_map(proc->ssize, )
+	// User stack allocation + mapping
+	uint8_t stack_pages = proc->ssize / PAGESIZE;
+
+	if (proc->ssize % PAGESIZE)
+		stack_pages++;
+
+	for (uint8_t i = 0; i < stack_pages; i++) {
+		page = alloc_page();
+		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), 0x06);
+	}
+
+	proc->stack = (int*)page;
+	printf("ustack OK\n");
+
+	// Kernel stack allocation
+	proc->kstack = (uint32_t*)phys_alloc(2 * PAGESIZE);
+
+	// Code allocation + mapping + copy
+	const uint32_t code_size = (uint32_t)app->end - (uint32_t)app->start;
+	uint8_t code_pages = code_size / PAGESIZE;
+
+	if (code_size % PAGESIZE)
+		code_pages++;
+
+	for (uint8_t i = 0; i < code_pages; i++) {
+		page = alloc_page();
+		// printf("page = %X\n", (int)page);
+		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), 4);
+	}
+
+	// printf("addr = %X\n", (int)get_physaddr(proc->pdir, (void*)0x40000000));
+	memcpy(get_physaddr(proc->pdir, (void*)0x40000000), app->start, code_size);
+	printf("ucode OK\n");
+
+	return success;
+}
 
 /**
  * Crée un nouveau processus dans l'état activable ou actif selon la priorité
@@ -439,9 +562,15 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				stack_size++;
 
 			proc->ssize = stack_size * sizeof(int);
-			proc->stack = mem_alloc(proc->ssize);
+			// proc->stack = mem_alloc(proc->ssize);
 
-			if (proc->stack != NULL) {
+			struct uapps *app = (struct uapps*)get_app("test_app");
+			// struct uapps *app = (struct uapps*)get_app(name);
+
+			if (app != NULL)
+				printf("test %s\n", app->name);
+
+			if (alloc_pages(proc, app)) {
 
 				//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
 				proc->prio = prio;
@@ -458,39 +587,27 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				Process *parent = procs[proc->ppid];
 
 				if (parent != NULL)
-					queue_add(proc, &parent->head_child, Process, children, pid);
-
-				// struct uapps *app = (struct uapps*)get_app("test_app");
-				struct uapps *app = (struct uapps*)get_app(name);
-
-				if (app != NULL)
-					printf("test %s\n", app->name);
+					queue_add(proc, &parent->head_child,
+						Process, children, pid);
 
 				// On met l'adresse de terminaison du processus en sommet de pile
 				// pour permettre son auto-destruction
-				proc->stack[stack_size - 1] = (int)arg;
-				proc->stack[stack_size - 2] = (int)fin_processus;
-				proc->stack[stack_size - 3] = (int)pt_func;
+				proc->stack[0x400 - 1] = (int)arg;
+				proc->stack[0x400 - 2] = (int)fin_processus; // pb : kernel func, non ok en user
+				proc->stack[0x400 - 3] = (int)0x40000000;//(int)pt_func;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[ESP] = (int)&proc->stack[stack_size - 3];
+				proc->regs[ESP] = 0x7FFFFFF4;//(int)&proc->stack[stack_size - 3];
 
-				proc->pdir = (uint32_t*)alloc_page();
 
 				//printf("proc->pdir = %08X\n", (uint32_t)proc->pdir);
 
-				proc->ptable = (uint32_t*)alloc_page();
-
-				// Initialisation du page directory
-				memset(proc->pdir, 0, PAGESIZE);
-
-				// Copie du mapping kernel
-				memcpy(proc->pdir, pgdir, 64 * sizeof(int));
+				// proc->ptable = (uint32_t*)alloc_page();
 
 				// // Initialisation de la table des pages
 				// memset(proc->ptable, 0, PAGESIZE);
 
-				proc->pdir[64] = (uint32_t)proc->ptable;
+				// proc->pdir[64] = (uint32_t)proc->ptable;
 
 				// // Allocation d'une première page
 				// proc->ptable[0] = (uint32_t)alloc_page();
@@ -505,12 +622,14 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
 				pqueue_add(proc, &head_act);
+				printf("start OK\n");
 
 				// Si le processus créé est plus prioritaire,
 				// on lui passe la main
 				if (prio > cur_proc->prio) {
 					ordonnance();
 				}
+				printf("start END\n");
 			}
 			else
 				mem_free_nolength(proc);
@@ -741,61 +860,5 @@ int chprio(int pid, int newprio)
 	}
 
 	return prio;
-}
-
-// Gets the physical address of a virtual address
-void *get_physaddr(void *virtualaddr)
-{
-	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
-	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
-
-	uint32_t *pd = cur_proc->pdir;
-
-	// Check if the PD entry is present
-	if (pd[pdindex]) {
-		uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
-
-		// Check if the PT entry is present
-		if (pt[ptindex]) {
-			return (void*)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtualaddr & 0xFFF));
-		}
-	}
-
-	return NULL;
-}
-
-// Maps a virtual address to a physical address
-void map_page(void *physaddr, void *virtualaddr, uint16_t flags)
-{
-	// Make sure that both addresses are page-aligned.
-	if ((uint32_t)physaddr % PAGESIZE || (uint32_t)virtualaddr % PAGESIZE)
-		return;
-
-	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
-	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
-
-	uint32_t *pd = cur_proc->pdir;
-
-	// If the PD entry is not present, create it
-	if (!pd[pdindex]) {
-
-		// TOCHECK
-		// Copy the User\Supervisor bit
-		uint16_t pdir_flags = flags & 4;
-		void *page = alloc_page();
-
-		memset(page, 0, PAGESIZE);
-		pd[pdindex] = ((uint32_t)page) | (pdir_flags & 0xFFF) | 1; // Present
-	}
-
-	uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
-
-	// If the PT entry is not present, map it
-	if (pt[ptindex]) {
-		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | 0x01; // Present
-
-		// Flush the entry in the TLB
-		tlb_flush();
-	}
 }
 

@@ -159,7 +159,7 @@ void set_fg_color(Couleur color)
 
 void banner()
 {
-  const char *name =
+	const char *name =
 ///*
 "\n      _____     __                    .__         /\\________     _________\n"\
 "     /  _  \\  _/  |_   ____    _____  |__|  ____  )/\\_____  \\   /   _____/\n"\
@@ -189,7 +189,9 @@ void banner()
 
 	// set_fg_color(CYAN_CLAIR);
 	set_fg_color(BLEU_CLAIR);
-	console_putbytes(name,strlen(name));
+
+	// quid pb printf gcc ??
+	console_putbytes(name, strlen(name));
 	reset_color();
 
 	printf("        Welcome to the ultimate last resort system.\n\n");

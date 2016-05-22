@@ -18,7 +18,7 @@ PXE = boot.pxe
 QEMU = /usr/libexec/qemu-kvm
 
 # QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 64M -gdb tcp::1234
-QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 64M -gdb tcp::1234
+QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 256M -gdb tcp::1234
 
 all: | kernel/$(PLATFORM_TOOLS) user/$(PLATFORM_TOOLS)
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
