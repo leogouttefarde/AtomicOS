@@ -71,6 +71,7 @@ traitant_IT_49:
 	call set_user_protection
 	iret
 
+
 	.text
 	.globl set_user_protection
 set_user_protection:

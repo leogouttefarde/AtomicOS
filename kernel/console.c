@@ -242,6 +242,6 @@ void keyboard_data(char *str) {
 
 }
 void lancer_console () {
-        sti(); //A mettre ici ?
+        // sti(); //A mettre ici ?
 	init_clavier();
 }

@@ -287,10 +287,12 @@ void sleep(uint32_t seconds)
 
 void idle(void)
 {
-	sti();
+	// sti();
 
 	for (;;) {
+		sti();
 		hlt();
+		cli();
 		//affiche_etats();
 	}
 }
@@ -444,13 +446,13 @@ bool init_idle()
 	phys_init();
 	init_apps();
 
-	uint32_t *test = (uint32_t*)alloc_page();
+	// uint32_t *test = (uint32_t*)alloc_page();
 
-	test[0] = 0xDEADBEEF;
-	assert(test[0] == 0xDEADBEEF);
+	// test[0] = 0xDEADBEEF;
+	// assert(test[0] == 0xDEADBEEF);
 
-	free_page(test);
-	printf("phys test OK\n");
+	// free_page(test);
+	// printf("phys test OK\n");
 
 	init_traitant_IT_user(49, traitant_IT_49);
 
@@ -500,12 +502,13 @@ void map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 
 		// TOCHECK
 		// Copy the User\Supervisor bit
-		uint16_t pdir_flags = (flags & 4) | 2;
+		uint16_t pdir_flags = (flags & P_USERSUP) | P_RW;
 		void *page = alloc_page();
+		// printf("new pt -> %X\n", (uint32_t)page);
 
 		assert(page);
 		memset(page, 0, PAGESIZE);
-		pd[pdindex] = ((uint32_t)page) | (pdir_flags & 0xFFF) | 1; // Present
+		pd[pdindex] = ((uint32_t)page) | (pdir_flags & 0xFFF) | P_PRESENT;
 	// printf("pd[%X] = %X\n", pdindex, pd[pdindex]);
 	}
 
@@ -514,7 +517,8 @@ void map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 
 	// If the PT entry is not present, map it
 	if (!pt[ptindex]) {
-		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | 1; // Present
+		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | P_PRESENT;
+		// printf("map : v %X <- p %X\n", (uint32_t)virtualaddr, (uint32_t)physaddr);
 
 		// Flush the entry in the TLB
 		tlb_flush();
@@ -526,7 +530,13 @@ bool alloc_pages(Process *proc, struct uapps *app)
 	bool success = true;
 	void *page = NULL;
 
+	if (proc == NULL || app == NULL)
+		return false;
+
+	// printf("starting %s\n", app->name);
+
 	proc->pdir = (uint32_t*)alloc_page();
+	// printf("proc->pdir -> %X\n", (uint32_t)proc->pdir);
 
 	// Initialisation du page directory
 	memset(proc->pdir, 0, PAGESIZE);
@@ -541,9 +551,11 @@ bool alloc_pages(Process *proc, struct uapps *app)
 	if (proc->ssize % PAGESIZE)
 		stack_pages++;
 
+	// printf("ustack -> %d\n", stack_pages);
+
 	for (uint8_t i = 0; i < stack_pages; i++) {
 		page = alloc_page();
-		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), 6);
+		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), P_USERSUP | P_RW);
 	}
 
 	proc->stack = (int*)page;
@@ -551,6 +563,7 @@ bool alloc_pages(Process *proc, struct uapps *app)
 
 	// Kernel stack allocation
 	proc->kstack = (uint32_t*)phys_alloc(2 * PAGESIZE);
+	// proc->kstack = (uint32_t*)mem_alloc(2 * PAGESIZE);
 
 	// Code allocation + mapping + copy
 	const uint32_t code_size = (uint32_t)app->end - (uint32_t)app->start;
@@ -559,17 +572,19 @@ bool alloc_pages(Process *proc, struct uapps *app)
 	if (code_size % PAGESIZE)
 		code_pages++;
 
+	// printf("code -> %d\n", code_pages);
+
 	for (uint8_t i = 0; i < code_pages; i++) {
 		page = alloc_page();
 		// printf("page = %X\n", (int)page);
-		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), 6);
+		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), P_USERSUP);
 
-		// TODO : stopper la copie de la dernière page au bon endroit
-		memcpy(page, (void*)((uint32_t)app->start + i * PAGESIZE), PAGESIZE);
+		const uint32_t code_mod = code_size % PAGESIZE;
+		const uint32_t size = (code_mod && i == code_pages-1) ? code_mod : PAGESIZE;
+
+		memcpy(page, (void*)((uint32_t)app->start + i * PAGESIZE), size);
 	}
 
-	// printf("addr = %X\n", (int)get_physaddr(proc->pdir, (void*)0x40000000));
-	memcpy(get_physaddr(proc->pdir, (void*)0x40000000), app->start, code_size);
 	// printf("ucode OK\n");
 
 	return success;
@@ -607,9 +622,6 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 			// struct uapps *app = (struct uapps*)get_app("test_app");
 			struct uapps *app = (struct uapps*)get_app(name);
 
-			if (app != NULL)
-				printf("test %s\n", app->name);
-
 			if (alloc_pages(proc, app)) {
 
 				//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
@@ -637,26 +649,10 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				proc->stack[0x400 - 3] = (int)start_proc;//(int)pt_func;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[ESP] = 0x80000000 - 4 * 3;//(int)&proc->stack[stack_size - 3];
+				proc->regs[ESP] = 0x80000000 - 4 * 3;
 
 				// On initialise le sommet de pile kernel
-				proc->regs[ESP0] = (int)&proc->kstack[1023];//(int)&proc->stack[stack_size - 3];
-
-
-				//printf("proc->pdir = %08X\n", (uint32_t)proc->pdir);
-
-				// proc->ptable = (uint32_t*)alloc_page();
-
-				// // Initialisation de la table des pages
-				// memset(proc->ptable, 0, PAGESIZE);
-
-				// proc->pdir[64] = (uint32_t)proc->ptable;
-
-				// // Allocation d'une première page
-				// proc->ptable[0] = (uint32_t)alloc_page();
-
-				//proc->pdir = (int32_t*)pgdir;
-				// proc->ptable
+				proc->regs[ESP0] = (int)&proc->kstack[2047];
 
 
 				// Enregistrement dans la table des processus

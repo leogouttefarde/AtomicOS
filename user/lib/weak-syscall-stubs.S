@@ -16,7 +16,7 @@ WEAK_STUB(chprio)
 WEAK_STUB(kill)
 WEAK_STUB(waitpid)
 WEAK_STUB(exit)
-WEAK_STUB(cons_write)
+# WEAK_STUB(cons_write)
 WEAK_STUB(cons_read)
 WEAK_STUB(cons_echo)
 WEAK_STUB(scount)
@@ -43,5 +43,6 @@ WEAK_STUB(shm_release)
 
 .weak __do_a_fault
 __do_a_fault:
+    movl $0xB00B1E50, %eax
     int $3
     ret

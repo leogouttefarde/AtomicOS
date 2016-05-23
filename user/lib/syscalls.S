@@ -4,13 +4,12 @@
 	.text
 	.globl cons_write
 cons_write:
-	movl %esp, %ebp
 	pushl %eax
 	pushl %ebx
 	pushl %ecx
-	movl CONS_WRITE, %eax
-	movl 4(%ebp), %ebx
-	movl 8(%ebp), %ecx
+	movl $CONS_WRITE, %eax
+	movl 16(%esp), %ebx
+	movl 20(%esp), %ecx
 	int $49
 	popl %ecx
 	popl %ebx

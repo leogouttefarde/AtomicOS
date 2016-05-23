@@ -1,6 +1,12 @@
 
 
 
+Pour vendredi :
+
+doc de 2p sur le cadrage à rendre
+
+
+
 Phase 4 :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
@@ -9,17 +15,8 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
 Phase 5
 
-- Table de hachage des applications à implémenter
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_m%C3%A9moire_virtuelle#Localiser_une_application
-
 - Partage de mémoire
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Partage_de_m.C3.A9moire
-
-- Pagination :
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Empreinte_m.C3.A9moire_du_noyau
-Création d'un allocateur mémoire sous la forme d'une liste chaînée de pages vides,
-Chaque page fait 4Ko et l'allocateur mémoire doit travaille sur tout l'espace de mémoire physique libre (entre 64MB et 256MB)
-
 
 
 

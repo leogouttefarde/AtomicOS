@@ -15,7 +15,6 @@ int main(void *arg)
         register unsigned reg4 = 0xDEADBEEFu;
 
 
-        // while(1);
         printf("I'm a simple process running ...");
 
         unsigned i;
@@ -27,6 +26,7 @@ int main(void *arg)
         }
 
         printf(" and I'm healthy. Leaving.\n");
+        while (1);
 
         return 0;
 }

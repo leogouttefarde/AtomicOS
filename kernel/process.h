@@ -47,6 +47,12 @@ enum SavedRegisters {
 	NB_REGS
 };
 
+enum PagingFlags {
+	P_PRESENT = 1,
+	P_RW = 2,
+	P_USERSUP = 4
+};
+
 /* Processus */
 typedef struct Process_ {
 	int pid;

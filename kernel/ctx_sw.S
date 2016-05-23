@@ -61,7 +61,7 @@ start_proc:
 	# push $0x10
 	# pushf
 	# push $0x7ffffff8
-	push %esp
+	pushl %esp
 	pushl $0x202
 	pushl $0x43
 	# push $0x18
