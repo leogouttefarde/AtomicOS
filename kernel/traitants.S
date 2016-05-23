@@ -39,6 +39,7 @@ traitant_IT_33:
 # fin du traitant
 	iret
 
+
 #traitant d'appels système
 	.text
 # cette directive sert a rendre l'etiquette publique
@@ -66,9 +67,11 @@ traitant_IT_49:
 	pushl %ebx
 	pushl %eax
 	call syscall
+	movl %eax, %ecx
 	add $24, %esp
 
 	call set_user_protection
+	movl %ecx, %eax
 	iret
 
 

@@ -7,6 +7,7 @@
  */
 
 extern int main(void);
+extern void exit(int retval);
 
 /* Tell the compiler the function is in a special section */
 void _start(void) __attribute__((section(".text.init")));
@@ -17,5 +18,7 @@ void _start(void) {
          * ignore the return value. This is the right place to handle this
          * value and call standard library functions if needed.
          */
-        (void) main();
+        const int ret = main();
+
+        exit(ret);
 }

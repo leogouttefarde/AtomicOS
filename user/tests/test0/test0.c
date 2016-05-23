@@ -26,7 +26,6 @@ int main(void *arg)
         }
 
         printf(" and I'm healthy. Leaving.\n");
-        while (1);
 
         return 0;
 }

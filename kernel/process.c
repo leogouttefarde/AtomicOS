@@ -901,23 +901,96 @@ int chprio(int pid, int newprio)
 	return prio;
 }
 
-void syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
+int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 {
-	// // Acquittement de l'interruption
-	// outb(0x20, 0x20);
+	bool error = false;
+	int ret = 0;
 
 	arg2 = arg2;
 	arg3 = arg3;
 	arg4 = arg4;
 
 	switch (num) {
-	case CONS_WRITE:
-		cons_write((const char*)arg0, arg1);
+	case START:
+
+	case GETPID:
+
+	case GETPRIO:
+
+	case CHPRIO:
+
+	case KILL:
+
+	case WAITPID:
+		printf("Unknown syscall : %d\n", num);
+		error = true;
 		break;
+
+	case EXIT:
+		_exit(arg0);
+		break;
+
+	case CONS_WRITE:
+		ret = cons_write((const char*)arg0, arg1);
+		break;
+
+	case CONS_READ:
+
+	case CONS_ECHO:
+
+	case SCOUNT:
+
+	case SCREATE:
+
+	case SDELETE:
+
+	case SIGNAL:
+
+	case SIGNALN:
+
+	case SRESET:
+
+	case TRY_WAIT:
+
+	case WAIT:
+
+	case PCOUNT:
+
+	case PCREATE:
+
+	case PDELETE:
+
+	case PRECEIVE:
+
+	case PRESET:
+
+	case PSEND:
+
+	case CLOCK_SETTINGS:
+
+	case CURRENT_CLOCK:
+
+	case WAIT_CLOCK:
+
+	case SYS_INFO:
+
+	case SHM_CREATE:
+
+	case SHM_ACQUIRE:
+
+	case SHM_RELEASE:
+
 
 	default:
 		printf("Unknown syscall : %d\n", num);
+		error = true;
 		break;
 	}
+
+	if (error) {
+		ret = -1;
+	}
+
+	return ret;
 }
 
