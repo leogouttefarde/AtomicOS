@@ -21,7 +21,7 @@ void kernel_start(void)
 	init_time();
 	//init_clavier();
 
-	test_kill_exit();
+	// test_kill_exit();
 	// test_arg_stack();
 	
 	init();
@@ -30,6 +30,7 @@ void kernel_start(void)
 	//start("prod", 50000, 10, (void *)50, producteur);
 	//start ("conso", 50000, 10, (void *)50, consommateur);
 
+	
 	start("shell", 1024, 10, (void *)50, shell);
 	idle();
 

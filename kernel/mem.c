@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 // We manage physical memory between 64MB and 256MB = 192MB ~ 2^27.6
 // Therefore the maximum buddy index is 27
@@ -21,7 +22,7 @@ static Liste_zl tzl[BUDDY_MAX_INDEX + 1 - NB_UNUSED_SIZES];
 
 // Physical memory
 static void *zone_memoire = NULL;
-extern void *mem_end;
+extern char mem_end[];
 
 /* Kernel heap boundaries */
 extern char mem_heap[];
@@ -142,9 +143,10 @@ static inline uint8_t get_block_size(uint32_t size)
 static inline bool valid_address(void *ptr)
 {
     if (!zone_memoire || !ptr || ptr < zone_memoire
-        || ptr >= mem_end)
+        || ptr >= (void*)mem_end) {
         // || ptr >= (zone_memoire + ALLOC_MEM_SIZE))
         return false;
+    }
 
     return true;
 }
@@ -209,8 +211,15 @@ int phys_free(void *ptr, unsigned long size)
 
     /* Sinon, on fusionne les buddies */
     else {
-        void *fusion = min(ptr, buddy);
-        mem_free(fusion, 1 << (taille + 1));
+        // min génère une instruction non supportée en debug,
+        // calcul manuel donc
+        // void *fusion = min(ptr, buddy);
+        void *fusion = buddy;
+
+        if (ptr < buddy)
+            fusion = ptr;
+
+        phys_free(fusion, 1 << (taille + 1));
     }
 
     return 0;

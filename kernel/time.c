@@ -52,7 +52,9 @@ void init_time()
 	init_traitant_IT(32, traitant_IT_32);
 	init_freq(SCHEDFREQ);
 	masque_IRQ(0, false);
-	read_rtc();
+
+	// Crashes gdb somehow, enable later
+	if (0)	read_rtc();
 }
 
 /**
