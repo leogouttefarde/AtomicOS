@@ -24,7 +24,8 @@ void kernel_start(void)
 	// test_arg_stack();
 
 	// lancer_console();
-	start("shell", 1024, 10, (void *)50, shell);
+	// start("shell", 1024, 10, (void *)50, shell);
+	start("test0", 1024, 10, NULL, NULL);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start

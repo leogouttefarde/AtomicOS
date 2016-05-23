@@ -1,3 +1,4 @@
+
 #ifndef __CLAVIER_H__
 #define __CLAVIER_H__
 
@@ -6,4 +7,5 @@ void lancer_console();
 unsigned long cons_read(char *string, unsigned long length);
 void cons_echo(int on);
 int cons_write(const char *str, long size);
+
 #endif

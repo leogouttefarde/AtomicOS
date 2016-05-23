@@ -7,7 +7,10 @@
 #include "time.h"
 #include "mem.h"
 #include "apps.h"
+#include "interruptions.h"
 #include "userspace_apps.h"
+#include "console.h"
+#include "syscalls.h"
 
 #define PAGESIZE 0x1000//==(4*1024)
 
@@ -25,6 +28,7 @@ static link head_dead = LIST_HEAD_INIT(head_dead);
 
 
 void ctx_sw(int32_t *old_ctx, int32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
+void start_proc();
 
 
 // Affiche l'état des processus
@@ -382,6 +386,8 @@ void free_page(void *page)
 	phys_free(page, PAGESIZE);
 }
 
+void traitant_IT_49();
+
 // Cree le processus idle (pas besoin de stack)
 // Il faut l'appeler en premier dans kernel_start
 bool init_idle()
@@ -416,6 +422,8 @@ bool init_idle()
 
 	free_page(test);
 	printf("phys test OK\n");
+
+	init_traitant_IT_user(49, traitant_IT_49);
 
 	return (proc != NULL);
 }
@@ -463,7 +471,7 @@ void map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 
 		// TOCHECK
 		// Copy the User\Supervisor bit
-		uint16_t pdir_flags = flags & 4;
+		uint16_t pdir_flags = (flags & 4) | 2;
 		void *page = alloc_page();
 
 		assert(page);
@@ -477,7 +485,7 @@ void map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 
 	// If the PT entry is not present, map it
 	if (!pt[ptindex]) {
-		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | 0x01; // Present
+		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | 1; // Present
 
 		// Flush the entry in the TLB
 		tlb_flush();
@@ -506,11 +514,11 @@ bool alloc_pages(Process *proc, struct uapps *app)
 
 	for (uint8_t i = 0; i < stack_pages; i++) {
 		page = alloc_page();
-		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), 0x06);
+		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), 6);
 	}
 
 	proc->stack = (int*)page;
-	printf("ustack OK\n");
+	// printf("ustack OK\n");
 
 	// Kernel stack allocation
 	proc->kstack = (uint32_t*)phys_alloc(2 * PAGESIZE);
@@ -525,12 +533,15 @@ bool alloc_pages(Process *proc, struct uapps *app)
 	for (uint8_t i = 0; i < code_pages; i++) {
 		page = alloc_page();
 		// printf("page = %X\n", (int)page);
-		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), 4);
+		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), 6);
+
+		// TODO : stopper la copie de la dernière page au bon endroit
+		memcpy(page, (void*)((uint32_t)app->start + i * PAGESIZE), PAGESIZE);
 	}
 
 	// printf("addr = %X\n", (int)get_physaddr(proc->pdir, (void*)0x40000000));
 	memcpy(get_physaddr(proc->pdir, (void*)0x40000000), app->start, code_size);
-	printf("ucode OK\n");
+	// printf("ucode OK\n");
 
 	return success;
 }
@@ -564,8 +575,8 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 			proc->ssize = stack_size * sizeof(int);
 			// proc->stack = mem_alloc(proc->ssize);
 
-			struct uapps *app = (struct uapps*)get_app("test_app");
-			// struct uapps *app = (struct uapps*)get_app(name);
+			// struct uapps *app = (struct uapps*)get_app("test_app");
+			struct uapps *app = (struct uapps*)get_app(name);
 
 			if (app != NULL)
 				printf("test %s\n", app->name);
@@ -594,10 +605,13 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// pour permettre son auto-destruction
 				proc->stack[0x400 - 1] = (int)arg;
 				proc->stack[0x400 - 2] = (int)fin_processus; // pb : kernel func, non ok en user
-				proc->stack[0x400 - 3] = (int)0x40000000;//(int)pt_func;
+				proc->stack[0x400 - 3] = (int)start_proc;//(int)pt_func;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[ESP] = 0x7FFFFFF4;//(int)&proc->stack[stack_size - 3];
+				proc->regs[ESP] = 0x80000000 - 4 * 3;//(int)&proc->stack[stack_size - 3];
+
+				// On initialise le sommet de pile kernel
+				proc->regs[ESP0] = (int)&proc->kstack[1023];//(int)&proc->stack[stack_size - 3];
 
 
 				//printf("proc->pdir = %08X\n", (uint32_t)proc->pdir);
@@ -860,5 +874,25 @@ int chprio(int pid, int newprio)
 	}
 
 	return prio;
+}
+
+void syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
+{
+	// // Acquittement de l'interruption
+	// outb(0x20, 0x20);
+
+	arg2 = arg2;
+	arg3 = arg3;
+	arg4 = arg4;
+
+	switch (num) {
+	case CONS_WRITE:
+		cons_write((const char*)arg0, arg1);
+		break;
+
+	default:
+		printf("Unknown syscall : %d\n", num);
+		break;
+	}
 }
 

@@ -41,7 +41,9 @@ enum SavedRegisters {
 	ESP,
 	EBP,
 	ESI,
-	EDI
+	EDI,
+	ESP0, // 4(TSS)
+	NB_REGS
 };
 
 /* Processus */
@@ -62,7 +64,7 @@ typedef struct Process_ {
 	struct Process_ *sibling;
 	char name[PROC_NAME_SIZE];
 	enum State state;
-	int regs[6];
+	int regs[NB_REGS];
 	int *stack;
 	uint32_t *kstack;
 	unsigned long ssize;

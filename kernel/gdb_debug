@@ -1,6 +1,7 @@
 
 target remote :1234
-b process.c:489
+b process.c:640
+b ctx_sw
 disp cur_proc
 continue
 disp proc

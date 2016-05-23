@@ -14,10 +14,16 @@ ctx_sw:
 	movl %esi, 12(%eax)
 	movl %edi, 16(%eax)
 
+	# sauvegarde de 4(TSS) comme sommet de la pile kernel (ESP0)
+	mov $tss, %ebx
+	mov 4(%ebx), %ebx
+	movl %ebx, 20(%eax)
+
 	# sauvegarde de cr3 comme ancien pgdir
 	movl 12(%esp), %eax
 	movl %cr3, %ebx
 	movl %ebx, (%eax)
+
 
 	# restauration du contexte du nouveau processus
 
@@ -29,11 +35,15 @@ ctx_sw:
 	mov $tss, %ebx
 	mov %eax, 28(%ebx)
 
-	# TODO : stockage du sommet de la pile kernel dans 4(TSS)
-	# movl 20(%esp), %eax
-	# movl %eax, 4(%ebx)
-
 	movl 8(%esp), %eax
+
+	# stockage du sommet de la pile kernel (ESP0) dans 4(TSS)
+	movl 20(%eax), %ecx
+	movl %ecx, 4(%ebx)
+
+	# SS0
+	movl   $0x18, 8(%ebx)
+
 	movl (%eax), %ebx
 	movl 4(%eax), %esp
 	movl 8(%eax), %ebp
@@ -42,4 +52,20 @@ ctx_sw:
 
 	# on passe la main au nouveau processus
 	ret
+
+
+	.text
+	.globl start_proc
+start_proc:
+	pushl $0x4b
+	# push $0x10
+	# pushf
+	# push $0x7ffffff8
+	push %esp
+	pushl $0x202
+	pushl $0x43
+	# push $0x18
+	pushl $0x40000000
+	call set_user_protection
+	iret
 
