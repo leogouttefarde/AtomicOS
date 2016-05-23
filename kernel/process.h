@@ -31,7 +31,8 @@ enum State {
 	ASLEEP,
 	DYING,
 	ZOMBIE,
-	WAITPID//,
+	WAITPID,
+	BLOCKEDSEMA//,
 	//WAITMSG,
 	//WAITIO
 };
@@ -83,6 +84,12 @@ bool init_idle();
 
 // Ordonnanceur
 void ordonnance();
+
+//Bloque un processus par le biais d'un sémaphore
+void bloque_sema();
+
+//Debloque un processus bloqué par un sémaphore
+void debloque_sema(int pid);
 
 // Endort un processus
 void sleep(uint32_t seconds);

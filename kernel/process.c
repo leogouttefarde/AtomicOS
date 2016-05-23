@@ -25,11 +25,11 @@ static Process *cur_proc = NULL;
 static link head_act = LIST_HEAD_INIT(head_act);
 static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
+static link head_sema = LIST_HEAD_INIT(head_sema);
 
 
 void ctx_sw(int32_t *old_ctx, int32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
 void start_proc();
-
 
 // Affiche l'état des processus
 void affiche_etats(void)
@@ -207,6 +207,35 @@ void ordonnance()
 	}
 }
 
+void bloque_sema () {
+	Process *proc_sema = cur_proc;
+
+	proc_sema->state=BLOCKEDSEMA;
+	queue_add(proc_sema, &head_sema, Process, queue, prio);
+	sti();
+	ordonnance();
+}
+
+void debloque_sema(int pid) {
+	Process *p = NULL;
+
+	queue_for_each(p, &head_sema, Process, queue) {
+
+		if (p->pid == pid)
+			break;
+	}
+
+	Process *proc=p;
+	
+	if (proc != NULL) {
+		p = NULL;
+		queue_del(proc, queue);
+		proc->state = ACTIVABLE;
+		pqueue_add(proc, &head_act);
+	}
+}
+
+
 /**
  * Passe le processus dans l'état endormi jusqu'à ce que l'interruption
  * dont le numéro est passé en paramètre soit passée.
@@ -226,23 +255,23 @@ void wait_clock(unsigned long clock)
 
 	// Insertion triée du proc_sleep
 	queue_add(proc_sleep, &head_sleep, Process, queue, wake);
-/*	Process *ptr_elem = proc_sleep;
-	link *head = &head_sleep;
+	/*	Process *ptr_elem = proc_sleep;
+		link *head = &head_sleep;
 
-	do {                                                                  \
+		do {                                                                  \
 		link *__cur_link=head;                                        \
 		Process *__elem = (ptr_elem);                                    \
 		link *__elem_link=&((__elem)->queue);                     \
-				assert((__elem_link->prev == 0) && (__elem_link->next == 0)); \
+		assert((__elem_link->prev == 0) && (__elem_link->next == 0)); \
 		do  __cur_link=__cur_link->next;                              \
 		while ( (__cur_link != head) &&                               \
-				(((queue_entry(__cur_link,Process,queue))->wake)\
-						   < ((__elem)->wake)) );                    \
+		(((queue_entry(__cur_link,Process,queue))->wake)\
+		< ((__elem)->wake)) );                    \
 		__elem_link->next=__cur_link;                                 \
 		__elem_link->prev=__cur_link->prev;                           \
 		__cur_link->prev->next=__elem_link;                           \
 		__cur_link->prev=__elem_link;                                 \
-	} while (0);*/
+		} while (0);*/
 
 	ordonnance();
 }
@@ -262,7 +291,7 @@ void idle(void)
 
 	for (;;) {
 		hlt();
-		// affiche_etats();
+		//affiche_etats();
 	}
 }
 
@@ -290,7 +319,7 @@ static void waitpid_end(int pid)
 
 		// Réactivation du parent si besoin
 		if (parent->state == WAITPID
-			&& (parent->s.waitpid == pid || parent->s.waitpid < 0)) {
+		    && (parent->s.waitpid == pid || parent->s.waitpid < 0)) {
 			parent->s.waitpid = pid;
 			parent->state = ACTIVABLE;
 

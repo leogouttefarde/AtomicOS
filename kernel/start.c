@@ -8,12 +8,13 @@
 #include "console.h"
 #include "shell.h"
 #include "tests.h"
+#include "test_prod_conso.h"
 
 void kernel_start(void)
 {
 	printf("\f");
 	banner();
-//	call_debugger();
+	//	call_debugger();
 
 	init_idle();
 
@@ -24,6 +25,11 @@ void kernel_start(void)
 	// test_arg_stack();
 
 	// lancer_console();
+
+	// init();
+	//start("prod", 50000, 10, (void *)50, producteur);
+	//start ("conso", 50000, 10, (void *)50, consommateur);
+
 	// start("shell", 1024, 10, (void *)50, shell);
 	start("test0", 1024, 10, NULL, NULL);
 	idle();
