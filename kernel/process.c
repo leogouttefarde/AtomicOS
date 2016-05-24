@@ -211,7 +211,6 @@ void bloque_sema () {
 
 	proc_sema->state = BLOCKEDSEMA;
 	queue_add(proc_sema, &head_sema, Process, queue, prio);
-	sti();
 	ordonnance();
 }
 
@@ -781,15 +780,17 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case CONS_WRITE:
-		ret = cons_write((const char*)arg0, arg1);
+		ret = cons_write((const char*)arg0,arg1);
 		break;
 
 	case CONS_READ:
-
+		ret = (unsigned long) cons_read((char *)arg0,(unsigned long)arg1); 
+		break;
 	case CONS_ECHO:
-
+		cons_echo(arg0);
+		break;
 	case SCOUNT:
-
+		
 	case SCREATE:
 
 	case SDELETE:
@@ -799,9 +800,9 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 	case SIGNALN:
 
 	case SRESET:
-
+		
 	case TRY_WAIT:
-
+		
 	case WAIT:
 
 	case PCOUNT:
@@ -817,11 +818,14 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 	case PSEND:
 
 	case CLOCK_SETTINGS:
-
+		clock_settings((unsigned long*)arg0,(unsigned long*) arg1);
+		break;
 	case CURRENT_CLOCK:
-
+		ret = current_clock();
+		break;
 	case WAIT_CLOCK:
-
+		wait_clock(arg0);
+		break;
 	case SYS_INFO:
 
 	case SHM_CREATE:

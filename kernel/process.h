@@ -84,6 +84,9 @@ typedef struct Process_ {
 
 void idle();
 
+void wait_clock(unsigned long clock);
+
+
 // A appeler en premier dans kernel_start
 bool init_process();
 
