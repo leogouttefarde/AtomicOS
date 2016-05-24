@@ -33,8 +33,8 @@ enum State {
 	DYING,
 	ZOMBIE,
 	WAITPID,
-	BLOCKEDSEMA//,
-	//WAITMSG,
+	BLOCKEDSEMA,
+	WAITMSG//,
 	//WAITIO
 };
 
@@ -67,6 +67,8 @@ typedef struct Process_ {
 	link head_child;
 	link children;
 	link queue;
+	link queueRead; //Le chainage pour la file de processus bloqué en lecture
+	link queueWrite; //Le chainage pour la file de processus bloqué en écriture
 	int prio;
 
 	struct Process_ *sibling;
@@ -190,5 +192,10 @@ __inline__ static void tlb_flush()
 
 Process *get_cur_proc();
 
+//Ajout d'un processus dans la liste des processus activable
+void addProcActivable(Process *proc);
+
+//Trouver le processus à partir du pid
+Process *pidToProc(int pid);
 
 #endif

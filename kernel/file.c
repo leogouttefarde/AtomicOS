@@ -24,19 +24,21 @@
 /* File */
 typedef struct file {
 	int fid;
-	bool isDeleted;
-	bool isReseted;
+	bool isDeleted; //pour savoir si la file est supprimée
+	bool isReseted; //pour savoir si la file est réinitialisée
 	int *messages;
 	int sizeMessage;
 	int sizeMessageUsed;
 	int numProcReadBlocked;
-	link *listProcReadBlocked; //Liste des processus bloqués en lecture (à cause de la file vide)
+	link *listProcReadBlocked; //File des processus bloqués en lecture 
+	                           //(à cause de la file vide)
 	int numProcWriteBlocked;
-	link *listProcWriteBlocked; //Liste des processus bloqués en écriture (à cause de la file pleine)
+	link *listProcWriteBlocked; //File des processus bloqués en écriture 
+	                            //(à cause de la file pleine)
 	struct file *next;
 } File;
 
-/* Liste fixe de files */
+/* Liste complete de files */
 static File *files[NBQUEUE];
 
 // Nombre de file créées depuis le début

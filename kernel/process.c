@@ -952,3 +952,14 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 	return ret;
 }
 
+//Ajout d'un processus dans la liste des processus activable
+void addProcActivable(Process *proc)
+{
+	pqueue_add(proc, &head_act);
+}
+
+//Trouver le processus à partir du pid
+Process *pidToProc(int pid)
+{
+	return procs[pid];
+}
