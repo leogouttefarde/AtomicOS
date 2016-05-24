@@ -16,7 +16,6 @@ void init_apps()
 		hash_set(&table, (void*)symbols_table[i].name,
 			(void*)&symbols_table[i]);
 	}
-
 }
 
 // Renvoie l'adresse du début de la zone mémoire de l'application
@@ -30,4 +29,9 @@ struct uapps *get_app(const char *name)
 	}
 
 	return app;
+}
+
+void free_apps()
+{
+	hash_destroy(&table);
 }

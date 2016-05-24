@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "userspace_apps.h"
 
+#define PD_SIZE  0x400
 #define PAGESIZE  0x1000
 #define KERNELSSIZE 0x2000
 #define USERCODE  0x40000000
@@ -23,6 +24,8 @@ void *get_physaddr(uint32_t *pd, void *virtualaddr);
 
 // Maps a virtual address to a physical address
 bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags);
+
+bool unmap_vpage(uint32_t *pd, void *virtualaddr);
 
 bool alloc_pages(Process *proc);
 

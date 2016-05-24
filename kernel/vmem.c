@@ -44,6 +44,7 @@ void *get_physaddr(uint32_t *pd, void *virtualaddr)
 // Maps a virtual address to a physical address
 bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 {
+	// TODO : check address validity
 	// Make sure that both addresses are page-aligned.
 	if ((uint32_t)physaddr % PAGESIZE || (uint32_t)virtualaddr % PAGESIZE)
 		return false;
@@ -77,6 +78,36 @@ bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 	if (!pt[ptindex]) {
 		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | P_PRESENT;
 		// printf("map : v %X <- p %X\n", (uint32_t)virtualaddr, (uint32_t)physaddr);
+
+		// Flush the entry in the TLB
+		tlb_flush();
+
+		return true;
+	}
+
+	return false;
+}
+
+bool unmap_vpage(uint32_t *pd, void *virtualaddr)
+{
+	// TODO : check address validity
+	// Make sure that address is page-aligned
+	if ((uint32_t)virtualaddr % PAGESIZE)
+		return false;
+
+	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
+	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
+
+	// Ensure the PD entry is present
+	if (!pd[pdindex]) {
+		return false;
+	}
+
+	uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
+
+	// If the PT entry is present, unmap it
+	if (!pt[ptindex]) {
+		pt[ptindex] = (uint32_t)NULL;
 
 		// Flush the entry in the TLB
 		tlb_flush();

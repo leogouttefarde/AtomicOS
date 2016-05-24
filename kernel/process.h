@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <queue.h>
+#include <hash.h>
 
 #define PROC_NAME_SIZE 16
 #define MAX_NB_PROCS 100
@@ -81,6 +82,9 @@ typedef struct Process_ {
 
 	uint32_t *pdir;
 	uint32_t *ptable;
+
+	hash_t shmem;
+	uint32_t shm_idx;
 } Process;
 
 
@@ -182,6 +186,9 @@ __inline__ static void tlb_flush()
 	"movl %cr3,%eax\n"
 	"movl %eax,%cr3");
 }
+
+
+Process *get_cur_proc();
 
 
 #endif

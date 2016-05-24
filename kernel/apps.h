@@ -4,5 +4,6 @@
 
 void init_apps();
 struct uapps *get_app(const char *name);
+void free_apps();
 
 #endif

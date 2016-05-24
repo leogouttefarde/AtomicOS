@@ -10,6 +10,7 @@
 #include "interrupts.h"
 #include "console.h"
 #include "syscalls.h"
+#include "shmem.h"
 #include "vmem.h"
 
 // Nombre de processus créés depuis le début
@@ -68,6 +69,11 @@ void affiche_etats(void)
 	}
 }
 
+Process *get_cur_proc()
+{
+	return cur_proc;
+}
+
 static inline char *mon_nom()
 {
 	if (!cur_proc)    return "";
@@ -102,6 +108,12 @@ static inline bool is_valid_prio(int prio)
 	return false;
 }
 
+// Libération de chaque zone partagée utilisée
+void free_process_shmem(void *key, __attribute__((__unused__)) void *value)
+{
+	shm_release((const char*)key);
+}
+
 static inline void free_process(Process *proc)
 {
 	if (proc == NULL || proc->pdir == NULL)
@@ -121,6 +133,23 @@ static inline void free_process(Process *proc)
 	// Libération du code utilisateur
 	for (uint32_t i = 0; i < proc->cpages; i++) {
 		free_page(get_ucode_vpage(i));
+	}
+
+	// // Libération de chaque zone partagée utilisée
+	hash_for_each(&proc->shmem, free_process_shmem);
+
+	// // Libération du page directory
+	if (proc->pdir != NULL) {
+		uint32_t entry;
+
+		// Peu efficace ?
+		for (uint32_t i = 0; i < PD_SIZE; i++) {
+			entry = proc->pdir[i];
+
+			if (entry) {
+				free_page((void*)(entry & ~0xFFF));
+			}
+		}
 	}
 
 	free_page(proc->pdir);
@@ -466,6 +495,9 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 		proc->name[PROC_NAME_SIZE-1] = 0;
 
 		if (alloc_pages(proc)) {
+
+			hash_init_string(&proc->shmem);
+			proc->shm_idx = 0;
 
 			//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
 			proc->prio = prio;

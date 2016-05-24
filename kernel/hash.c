@@ -280,3 +280,24 @@ int hash_init_string(hash_t *map)
                         (hash_compare_t) hash_string_cmp);
 }
 
+/*
+ * Fonction manquante ajoutée
+ */
+void hash_for_each(hash_t *map, void (*callback)(void *key, void* value))
+{
+        hash_slot_t *table;
+        hash_slot_t *slot;
+
+        if (map == NULL || map->table == NULL)
+                return;
+
+        table = map->table;
+
+        for (long i = 0; i < map->count; i++) {
+                slot = &table[i];
+
+                if (slot->mode == SL_ACTIVE)
+                        callback(slot->key, slot->value);
+        }
+}
+
