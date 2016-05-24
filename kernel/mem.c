@@ -39,6 +39,7 @@ void *sbrk(ptrdiff_t diff)
 	return s;
 }
 
+
 /*
  * Gère l'accès aux différentes listes de zones libres
  */

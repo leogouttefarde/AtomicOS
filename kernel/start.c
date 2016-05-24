@@ -16,8 +16,7 @@ void kernel_start(void)
 	banner();
 	//	call_debugger();
 
-	init_idle();
-
+	init_process();
 	init_time();
 	//init_clavier();
 
@@ -30,9 +29,9 @@ void kernel_start(void)
 	//start("prod", 50000, 10, (void *)50, producteur);
 	//start ("conso", 50000, 10, (void *)50, consommateur);
 
-	// start("shell", 1024, 10, (void *)50, shell);
-	start("test0", 11*1024, 10, NULL, NULL);
-	// start("autotest", 11*1024, 10, NULL, NULL);
+	// start("shell", 1024, 10, (void *)50);
+	// start("test1", 11*1024, 10, NULL);
+	start("autotest", 11*1024, 10, NULL);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start

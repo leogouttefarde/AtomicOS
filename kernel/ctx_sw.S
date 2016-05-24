@@ -58,13 +58,11 @@ ctx_sw:
 	.globl start_proc
 start_proc:
 	pushl $0x4b
-	# push $0x10
 	# pushf
 	# push $0x7ffffff8
 	pushl %esp
 	pushl $0x202
 	pushl $0x43
-	# push $0x18
 	pushl $0x40000000
 	call set_user_protection
 	iret

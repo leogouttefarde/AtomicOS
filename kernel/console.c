@@ -1,4 +1,4 @@
-#include "interruptions.h"
+#include "interrupts.h"
 #include "screen.h"
 #include <stdint.h>
 #include <stdbool.h>

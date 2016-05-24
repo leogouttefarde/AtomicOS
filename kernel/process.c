@@ -7,12 +7,11 @@
 #include "time.h"
 #include "mem.h"
 #include "apps.h"
-#include "interruptions.h"
+#include "interrupts.h"
 #include "userspace_apps.h"
 #include "console.h"
 #include "syscalls.h"
-
-#define PAGESIZE 0x1000//==(4*1024)
+#include "vmem.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -210,7 +209,7 @@ void ordonnance()
 void bloque_sema () {
 	Process *proc_sema = cur_proc;
 
-	proc_sema->state=BLOCKEDSEMA;
+	proc_sema->state = BLOCKEDSEMA;
 	queue_add(proc_sema, &head_sema, Process, queue, prio);
 	sti();
 	ordonnance();
@@ -225,7 +224,7 @@ void debloque_sema(int pid) {
 			break;
 	}
 
-	Process *proc=p;
+	Process *proc = p;
 	
 	if (proc != NULL) {
 		p = NULL;
@@ -248,30 +247,11 @@ void wait_clock(unsigned long clock)
 	if (!proc_sleep || !proc_sleep->pid)
 		return;
 
-	//printf("ajout de %s aux dormants pour %d clocks\n", mon_nom(), clock);
-
 	proc_sleep->state = ASLEEP;
 	proc_sleep->wake = clock;
 
 	// Insertion triée du proc_sleep
 	queue_add(proc_sleep, &head_sleep, Process, queue, wake);
-	/*	Process *ptr_elem = proc_sleep;
-		link *head = &head_sleep;
-
-		do {                                                                  \
-		link *__cur_link=head;                                        \
-		Process *__elem = (ptr_elem);                                    \
-		link *__elem_link=&((__elem)->queue);                     \
-		assert((__elem_link->prev == 0) && (__elem_link->next == 0)); \
-		do  __cur_link=__cur_link->next;                              \
-		while ( (__cur_link != head) &&                               \
-		(((queue_entry(__cur_link,Process,queue))->wake)\
-		< ((__elem)->wake)) );                    \
-		__elem_link->next=__cur_link;                                 \
-		__elem_link->prev=__cur_link->prev;                           \
-		__cur_link->prev->next=__elem_link;                           \
-		__cur_link->prev=__elem_link;                                 \
-		} while (0);*/
 
 	ordonnance();
 }
@@ -300,8 +280,9 @@ void idle(void)
 static inline bool is_killable(int pid)
 {
 	// Tous sauf idle
-	if (0 < pid || pid < MAX_NB_PROCS)
+	if (0 < pid && pid < MAX_NB_PROCS) {
 		return true;
+	}
 
 	return false;
 }
@@ -340,7 +321,7 @@ static inline void del_child(Process **pchild)
 	}
 }
 
-bool is_zombie(int pid)
+static inline bool is_zombie(int pid)
 {
 	if (is_killable(pid)) {
 		Process *proc = procs[pid];
@@ -352,7 +333,7 @@ bool is_zombie(int pid)
 	return false;
 }
 
-bool finish_process(int pid)
+static bool finish_process(int pid)
 {
 	// Gestion des erreurs
 	if (!is_killable(pid) || is_zombie(pid))
@@ -373,8 +354,9 @@ bool finish_process(int pid)
 		// On détruit les zombies
 		if (it->state == ZOMBIE) {
 			die = it;
-			die->state = DYING;
-			pqueue_add(it, &head_dead);
+			// die->state = DYING;
+			// pqueue_add(it, &head_dead);
+			free_process(it);
 		}
 	}
 
@@ -391,40 +373,14 @@ bool finish_process(int pid)
 	return true;
 }
 
-// Termine le processus courant
-void fin_processus()
-{
-	// Si pas de processus à tuer différent de idle, abandon
-	if (cur_proc == NULL)
-		return;
-
-	finish_process(cur_proc->pid);
-
-	//printf("fin processus %s pid = %i\n", mon_nom(), mon_pid());
-
-	ordonnance();
-}
-
-extern unsigned pgdir[];
-
-void *alloc_page()
-{
-	return phys_alloc(PAGESIZE);
-}
-
-void free_page(void *page)
-{
-	phys_free(page, PAGESIZE);
-}
-
 void traitant_IT_49();
 
-// Cree le processus idle (pas besoin de stack)
-// Il faut l'appeler en premier dans kernel_start
-bool init_idle()
+// A appeler en premier dans kernel_start
+bool init_process()
 {
 	Process *proc = mem_alloc(sizeof(Process));
 
+	// Cree le processus idle (pas besoin de stack)
 	if (proc != NULL) {
 		const int32_t pid = 0;
 
@@ -459,137 +415,6 @@ bool init_idle()
 	return (proc != NULL);
 }
 
-// Gets the physical address of a virtual address
-void *get_physaddr(uint32_t *pd, void *virtualaddr)
-{
-	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
-	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
-
-	// uint32_t *pd = cur_proc->pdir;
-	// printf("phys pd[%X] = %X\n", pdindex, pd[pdindex]);
-
-	// Check if the PD entry is present
-	if (pd[pdindex]) {
-		uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
-
-	// printf("phys pt[%X] = %X\n", ptindex, pt[ptindex]);
-		// Check if the PT entry is present
-		if (pt[ptindex]) {
-			return (void*)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtualaddr & 0xFFF));
-		}
-	}
-	// printf("get_physaddr fail\n");
-
-	return NULL;
-}
-
-// Maps a virtual address to a physical address
-void map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
-{
-	// Make sure that both addresses are page-aligned.
-	if ((uint32_t)physaddr % PAGESIZE || (uint32_t)virtualaddr % PAGESIZE)
-		return;
-
-	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
-	uint32_t ptindex = (uint32_t)virtualaddr >> 12 & 0x03FF;
-
-	// uint32_t *pd = cur_proc->pdir;
-	// printf("m pdindex %X\n", pdindex);
-
-	// If the PD entry is not present, create it
-	if (!pd[pdindex]) {
-	// printf("map %X\n", pdindex);
-
-		// TOCHECK
-		// Copy the User\Supervisor bit
-		uint16_t pdir_flags = (flags & P_USERSUP) | P_RW;
-		void *page = alloc_page();
-		// printf("new pt -> %X\n", (uint32_t)page);
-
-		assert(page);
-		memset(page, 0, PAGESIZE);
-		pd[pdindex] = ((uint32_t)page) | (pdir_flags & 0xFFF) | P_PRESENT;
-	// printf("pd[%X] = %X\n", pdindex, pd[pdindex]);
-	}
-
-	uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
-	// printf("pt[%X] = %X\n", ptindex, pt[ptindex]);
-
-	// If the PT entry is not present, map it
-	if (!pt[ptindex]) {
-		pt[ptindex] = ((uint32_t)physaddr) | (flags & 0xFFF) | P_PRESENT;
-		// printf("map : v %X <- p %X\n", (uint32_t)virtualaddr, (uint32_t)physaddr);
-
-		// Flush the entry in the TLB
-		tlb_flush();
-	}
-}
-
-bool alloc_pages(Process *proc, struct uapps *app)
-{
-	bool success = true;
-	void *page = NULL;
-
-	if (proc == NULL || app == NULL)
-		return false;
-
-	// printf("starting %s\n", app->name);
-
-	proc->pdir = (uint32_t*)alloc_page();
-	// printf("proc->pdir -> %X\n", (uint32_t)proc->pdir);
-
-	// Initialisation du page directory
-	memset(proc->pdir, 0, PAGESIZE);
-
-	// Copie du mapping kernel
-	memcpy(proc->pdir, pgdir, 64 * sizeof(int));
-
-	// alloc_map(proc->ssize, )
-	// User stack allocation + mapping
-	uint8_t stack_pages = proc->ssize / PAGESIZE;
-
-	if (proc->ssize % PAGESIZE)
-		stack_pages++;
-
-	// printf("ustack -> %d\n", stack_pages);
-
-	for (uint8_t i = 0; i < stack_pages; i++) {
-		page = alloc_page();
-		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), P_USERSUP | P_RW);
-	}
-
-	proc->stack = (int*)page;
-	// printf("ustack OK\n");
-
-	// Kernel stack allocation
-	proc->kstack = (uint32_t*)phys_alloc(2 * PAGESIZE);
-	// proc->kstack = (uint32_t*)mem_alloc(2 * PAGESIZE);
-
-	// Code allocation + mapping + copy
-	const uint32_t code_size = (uint32_t)app->end - (uint32_t)app->start;
-	uint8_t code_pages = code_size / PAGESIZE;
-
-	if (code_size % PAGESIZE)
-		code_pages++;
-
-	// printf("code -> %d\n", code_pages);
-
-	for (uint8_t i = 0; i < code_pages; i++) {
-		page = alloc_page();
-		// printf("page = %X\n", (int)page);
-		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), P_USERSUP);
-
-		const uint32_t code_mod = code_size % PAGESIZE;
-		const uint32_t size = (code_mod && i == code_pages-1) ? code_mod : PAGESIZE;
-
-		memcpy(page, (void*)((uint32_t)app->start + i * PAGESIZE), size);
-	}
-
-	// printf("ucode OK\n");
-
-	return success;
-}
-
 /**
  * Crée un nouveau processus dans l'état activable ou actif selon la priorité
  * choisie. Retourne l'identifiant du processus, ou une valeur strictement
@@ -599,10 +424,9 @@ bool alloc_pages(Process *proc, struct uapps *app)
  * prio  : priorité du processus
  * arg   : argument passé au programme
  */
-int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_func)(void*))
+int start(const char *name, unsigned long ssize, int prio, void *arg)
 {
 	int32_t pid = -1;
-	pt_func = pt_func;
 
 	if (nb_procs < MAX_NB_PROCS && name != NULL && is_valid_prio(prio)) {
 		Process *proc = mem_alloc(sizeof(Process));
@@ -645,11 +469,10 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// On met l'adresse de terminaison du processus en sommet de pile
 				// pour permettre son auto-destruction
 				proc->stack[0x400 - 1] = (int)arg;
-				proc->stack[0x400 - 2] = (int)fin_processus; // pb : kernel func, non ok en user
-				proc->stack[0x400 - 3] = (int)start_proc;//(int)pt_func;
+				proc->stack[0x400 - 2] = (int)start_proc;
 
 				// On initialise esp sur le sommet de pile désiré
-				proc->regs[ESP] = 0x80000000 - 4 * 3;
+				proc->regs[ESP] = 0x7FFFFFF8;
 
 				// On initialise le sommet de pile kernel
 				proc->regs[ESP0] = (int)&proc->kstack[2047];
@@ -661,14 +484,14 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
 				// Ajout aux activables
 				proc->state = ACTIVABLE;
 				pqueue_add(proc, &head_act);
-				printf("start OK\n");
+				// printf("start OK\n");
 
 				// Si le processus créé est plus prioritaire,
 				// on lui passe la main
 				if (prio > cur_proc->prio) {
 					ordonnance();
 				}
-				printf("start END\n");
+				// printf("start END\n");
 			}
 			else
 				mem_free_nolength(proc);
@@ -685,8 +508,14 @@ int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_f
  */
 void _exit(int retval)
 {
+	// Si pas de processus à tuer différent de idle, abandon
+	if (cur_proc == NULL)
+		panic("FATAL ERROR\n");
+
 	cur_proc->s.retval = retval;
-	fin_processus();
+
+	finish_process(cur_proc->pid);
+	ordonnance();
 }
 
 /**
@@ -891,11 +720,21 @@ int chprio(int pid, int newprio)
 	int prio = proc->prio;
 	proc->prio = newprio;
 
-	// Si la priorité d'un processus activable a changé,
-	// on le réinsère dans la file des activables
-	if (prio != newprio && proc->state == ACTIVABLE) {
-		queue_del(proc, queue);
-		pqueue_add(proc, &head_act);
+	// Si la priorité d'un processus activable a changé
+	if (prio != newprio) {
+
+		// S'il s'agit du processus courant,
+		// on force un nouvel ordonnancement
+		if (proc == cur_proc) {
+			ordonnance();
+		}
+
+		// Pour les activables, on réinsère simplement
+		// dans la file des activables
+		else if (proc->state == ACTIVABLE) {
+			queue_del(proc, queue);
+			pqueue_add(proc, &head_act);
+		}
 	}
 
 	return prio;
@@ -903,6 +742,8 @@ int chprio(int pid, int newprio)
 
 int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 {
+	// TODO : vérifier les valeurs (notamment pointeurs)
+	// pour plus de sécurité
 	bool error = false;
 	int ret = 0;
 
@@ -912,18 +753,27 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	switch (num) {
 	case START:
+		ret = start((const char*)arg0, arg1, arg2, (void*)arg3);
+		break;
 
 	case GETPID:
+		ret = getpid();
+		break;
 
 	case GETPRIO:
+		ret = getprio(arg0);
+		break;
 
 	case CHPRIO:
+		ret = chprio(arg0, arg1);
+		break;
 
 	case KILL:
+		ret = kill(arg0);
+		break;
 
 	case WAITPID:
-		printf("Unknown syscall : %d\n", num);
-		error = true;
+		ret = waitpid(arg0, (int*)arg1);
 		break;
 
 	case EXIT:
@@ -979,7 +829,9 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 	case SHM_ACQUIRE:
 
 	case SHM_RELEASE:
-
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	default:
 		printf("Unknown syscall : %d\n", num);

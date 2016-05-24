@@ -33,20 +33,24 @@ user/$(PLATFORM_TOOLS):
 run: all
 	$(QEMU) -kernel kernel/kernel.bin
 
+# debug kvm (mieux)
 debug: all
 	$(QEMU) -kernel kernel/kernel.bin -gdb tcp::1234 -S &
 	gdb -x kernel/gdb_debug kernel/kernel.bin
 
-psed: all
+# debug pxe (si kvm non dispo)
+pxe: all
 	cd kernel && $(QEMU) $(QEMUOPTS) -S &
 	cd kernel && gdb -x gdb_debug kernel.bin
 
 clean:
 	$(MAKE) clean -C kernel/
 	$(MAKE) clean -C user/
+
+
+# emulateur bochs
 disk:
 	mkdir -p $@
-
 
 .PHONY: bochs
 	bochs: all disk

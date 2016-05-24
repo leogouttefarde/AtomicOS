@@ -7,7 +7,7 @@
 #include "screen.h"
 #include "time.h"
 #include "process.h"
-#include "interruptions.h"
+#include "interrupts.h"
 
 #define QUARTZ 0x1234DD
 

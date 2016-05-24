@@ -84,9 +84,8 @@ typedef struct Process_ {
 
 void idle();
 
-// Cree le processus idle (pas besoin de stack)
-// Il faut l'appeler en premier dans start
-bool init_idle();
+// A appeler en premier dans kernel_start
+bool init_process();
 
 // Ordonnanceur
 void ordonnance();
@@ -132,7 +131,7 @@ int getprio(int pid);
  * prio  : priorité du processus
  * arg   : argument passé au programme
  */
-int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_func)(void*));
+int start(const char *name, unsigned long ssize, int prio, void *arg);
 
 /**
  * Le processus appelant est terminé normalement et la valeur retval est passée
@@ -175,10 +174,9 @@ int getpid(void);
 __inline__ static void tlb_flush()
 {
 	__asm__ __volatile__(
-		"movl %cr3,%eax\n"
-		"movl %eax,%cr3");
+	"movl %cr3,%eax\n"
+	"movl %eax,%cr3");
 }
-
 
 
 #endif
