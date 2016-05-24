@@ -130,8 +130,7 @@ cons_read:
 	int $49
 	popl %ebx
 	popl %ebp
-	ret
-	
+	ret	
 
 	.text
 	.globl cons_echo
@@ -143,99 +142,188 @@ cons_echo:
 	.text
 	.globl scount
 scount:
-	movl $0x31, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SCOUNT, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl screate
 screate:
-	movl $0x32, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SCREATE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl sdelete
-sdelete:
-	movl $0x33, %eax
-	int $3
+sdelete:	
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SDELETE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
-
+	
 	.text
 	.globl signal
 signal:
-	movl $0x34, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SIGNAL, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl signaln
 signaln:
-	movl $0x35, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $SIGNALN, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
-
+	
 	.text
 	.globl sreset
-sreset:
-	movl $0x36, %eax
-	int $3
-	ret
-
+sreset:	
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $SRESET, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret	
+	
 	.text
 	.globl try_wait
 try_wait:
-	movl $0x37, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $TRY_WAIT, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl wait
 wait:
-	movl $0x38, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $WAIT, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl pcount
 pcount:
-	movl $0x39, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $PCOUNT, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl pcreate
 pcreate:
-	movl $0x40, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $PCREATE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl pdelete
 pdelete:
-	movl $0x41, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $PDELETE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl preceive
 preceive:
-	movl $0x42, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $PRECEIVE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl preset
 preset:
-	movl $0x43, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $PRESET, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
-
+	
 	.text
 	.globl psend
 psend:
-	movl $0x44, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $PSEND, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
@@ -275,28 +363,46 @@ wait_clock:
 	.text
 	.globl sys_info
 sys_info:
-	movl $0x48, %eax
-	int $3
+	movl $SYS_INFO, %eax
+	int $49
 	ret
 
 	.text
 	.globl shm_create
 shm_create:
-	movl $0x49, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SHM_CREATE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl shm_acquire
 shm_acquire:
-	movl $0x50, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SHM_ACQUIRE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl shm_release
 shm_release:
-	movl $0x51, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SHM_RELEASE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 

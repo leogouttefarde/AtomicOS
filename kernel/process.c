@@ -806,32 +806,74 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		cons_echo(arg0);
 		break;
 	case SCOUNT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 		
 	case SCREATE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SDELETE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SIGNAL:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SIGNALN:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SRESET:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 		
 	case TRY_WAIT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 		
 	case WAIT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PCOUNT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PCREATE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PDELETE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PRECEIVE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PRESET:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PSEND:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case CLOCK_SETTINGS:
 		clock_settings((unsigned long*)arg0,(unsigned long*) arg1);
@@ -843,10 +885,19 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		wait_clock(arg0);
 		break;
 	case SYS_INFO:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SHM_CREATE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SHM_ACQUIRE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SHM_RELEASE:
 		printf("TODO : %d\n", num);
