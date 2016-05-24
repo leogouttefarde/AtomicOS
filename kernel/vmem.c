@@ -157,7 +157,7 @@ bool alloc_pages(Process *proc)
 		page = alloc_page();
 		// printf("page = %X\n", (int)page);
 		success &= map_page(proc->pdir, page,
-				get_ucode_vpage(i), P_USERSUP);
+				get_ucode_vpage(i), P_USERSUP | P_RW);
 
 		const uint32_t code_mod = code_size % PAGESIZE;
 		const uint32_t size = (code_mod && i == cpages-1) ?

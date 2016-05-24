@@ -17,6 +17,21 @@ Phase 5
 - Partage de mémoire
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Partage_de_m.C3.A9moire
 
+- Gestion des exceptions
+
+- Vérification des paramètres de syscall (pointeurs > 1GB notamment)
+
+- test machine ?
+
+
+
+Extensions :
+http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
+
+- Shell amélioré ?
+- Pilote FAT32
+- Heure rtc
+
 
 
 autres attentes :
