@@ -481,7 +481,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 		memset(proc, 0, sizeof(Process));
 
 		if (proc == NULL) {
-			printf("proc == NULL\n");
+			printf("start : proc == NULL\n");
 			return pid;
 		}
 
@@ -553,9 +553,9 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 			printf("start %s alloc_pages fail pid %d nb_procs %d\n", name, pid, nb_procs);
 		}
 	}
-	else {
-		printf("nb_procs = %d\n", nb_procs);
-	}
+	// else {
+	// 	printf("nb_procs = %d\n", nb_procs);
+	// }
 
 	assert(nb_procs < MAX_NB_PROCS);
 
