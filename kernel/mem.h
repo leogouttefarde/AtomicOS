@@ -8,6 +8,8 @@
 #ifndef __MEM_H__
 #define __MEM_H__
 
+#define PHYS_MEMORY 0xC000000
+
 void *mem_alloc(unsigned long length);
 void mem_free(void *zone, unsigned long length);
 void mem_free_nolength(void *zone);

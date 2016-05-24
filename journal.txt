@@ -44,11 +44,10 @@ Implémentation de wait_clock (phase 4) réalisée.
 Vendredi 20 mai
 
 Azizi :
-
+Poursuite de la phase 4 : files de messages
 
 Etienne : Fin du travail sur le shell.
 Début du travail sur la localisation des applications (phase 5)
-
 
 Léo :
 Début de la phase 5.
