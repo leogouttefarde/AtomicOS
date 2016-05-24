@@ -8,10 +8,10 @@
 	%ebx, %ecx, %edx, %esi, %edi
 
 	Registres à ne pas sauvegarder (scratch) :
-	%ecx, %edx, %esi, %edi
+	%ecx, %edx, %edi
 
 	Registres à sauvegarder :
-	%ebp, %ebx
+	%ebp, %ebx, %esi
 */
 
 	.text
@@ -20,12 +20,14 @@ start:
 	pushl %ebp
 	movl %esp, %ebp
 	pushl %ebx
+	pushl %esi
 	movl 8(%ebp), %ebx
 	movl 12(%ebp), %ecx
 	movl 16(%ebp), %edx
 	movl 20(%ebp), %esi
 	movl $START, %eax
 	int $49
+	popl %esi
 	popl %ebx
 	popl %ebp
 	ret

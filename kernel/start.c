@@ -30,8 +30,8 @@ void kernel_start(void)
 
 	//start("shell", 1024, 10,NULL);
 	// start("montest", 11*1024, 10, NULL);
-	// start("test1", 11*1024, 10, NULL);
-	start("autotest", 11*1024, 10, NULL);
+	start("test8", 4000, 128, NULL);
+	// start("autotest", 11*1024, 10, NULL);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start
