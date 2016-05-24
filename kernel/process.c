@@ -441,6 +441,7 @@ bool init_process()
 		nb_procs = 1;
 	}
 
+	shm_init();
 	phys_init();
 	init_apps();
 
@@ -828,61 +829,114 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case CONS_WRITE:
-		ret = cons_write((const char*)arg0,arg1);
+		ret = cons_write((const char*)arg0, arg1);
 		break;
 
 	case CONS_READ:
-		ret = (unsigned long) cons_read((char *)arg0,(unsigned long)arg1); 
+		ret = (unsigned long) cons_read((char *)arg0, (unsigned long)arg1); 
 		break;
+
 	case CONS_ECHO:
 		cons_echo(arg0);
 		break;
+
 	case SCOUNT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 		
 	case SCREATE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SDELETE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SIGNAL:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SIGNALN:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case SRESET:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 		
 	case TRY_WAIT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 		
 	case WAIT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PCOUNT:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PCREATE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PDELETE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PRECEIVE:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PRESET:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case PSEND:
+		printf("TODO : %d\n", num);
+		error = true;
+		break;
 
 	case CLOCK_SETTINGS:
-		clock_settings((unsigned long*)arg0,(unsigned long*) arg1);
+		clock_settings((unsigned long*)arg0, (unsigned long*)arg1);
 		break;
+
 	case CURRENT_CLOCK:
 		ret = current_clock();
 		break;
+
 	case WAIT_CLOCK:
 		wait_clock(arg0);
 		break;
+
 	case SYS_INFO:
-
-	case SHM_CREATE:
-
-	case SHM_ACQUIRE:
-
-	case SHM_RELEASE:
 		printf("TODO : %d\n", num);
 		error = true;
+		break;
+
+	case SHM_CREATE:
+		ret = (int)shm_create((const char*)arg0);
+		break;
+
+	case SHM_ACQUIRE:
+		ret = (int)shm_acquire((const char*)arg0);
+		break;
+
+	case SHM_RELEASE:
+		shm_release((const char*)arg0);
 		break;
 
 	default:

@@ -112,7 +112,7 @@ static void interpreter () {
 int main () {
 
 	while(true) {
-		//wait_clock(10);
+		wait_clock(10);
 		cons_write(">",1);
 		debut_mot=0;
 		fin_commande = cons_read(commande,TAILLE_TAB)-1;
