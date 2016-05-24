@@ -1,10 +1,9 @@
 
 #include "vmem.h"
+#include "apps.h"
+#include "mem.h"
 #include <stddef.h>
 #include <string.h>
-#include <mem.h>
-
-#define PAGESIZE 0x1000
 
 extern unsigned pgdir[];
 
@@ -88,18 +87,37 @@ bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 	return false;
 }
 
-bool alloc_pages(Process *proc, struct uapps *app)
+static inline uint32_t compute_pages(uint32_t size)
+{
+	uint32_t pages = size / PAGESIZE;
+
+	if (size % PAGESIZE)
+		pages++;
+
+	return pages;
+}
+
+
+bool alloc_pages(Process *proc)
 {
 	bool success = true;
 	void *page = NULL;
 
-	if (proc == NULL || app == NULL)
+	if (proc == NULL)
+		return false;
+
+	struct uapps *app = get_app(proc->name);
+
+	if (app == NULL)
 		return false;
 
 	// printf("starting %s\n", app->name);
 
 	proc->pdir = (uint32_t*)alloc_page();
 	// printf("proc->pdir -> %X\n", (uint32_t)proc->pdir);
+
+	if (proc->pdir == NULL)
+		return false;
 
 	// Initialisation du page directory
 	memset(proc->pdir, 0, PAGESIZE);
@@ -109,41 +127,41 @@ bool alloc_pages(Process *proc, struct uapps *app)
 
 	// alloc_map(proc->ssize, )
 	// User stack allocation + mapping
-	uint32_t stack_pages = proc->ssize / PAGESIZE;
-
-	if (proc->ssize % PAGESIZE)
-		stack_pages++;
+	const uint32_t spages = compute_pages(proc->ssize);
+	proc->spages = spages;
 
 	// printf("ustack -> %d\n", stack_pages);
 
-	for (uint32_t i = 0; i < stack_pages; i++) {
+	for (uint32_t i = 0; i < spages; i++) {
 		page = alloc_page();
-		map_page(proc->pdir, page, (void*)(0x80000000 - (stack_pages - i) * PAGESIZE), P_USERSUP | P_RW);
+		success &= map_page(proc->pdir, page,
+			get_ustack_vpage(i, spages), P_USERSUP | P_RW);
 	}
 
-	proc->stack = (int*)page;
+	proc->stack = (uint32_t*)page;
 	// printf("ustack OK\n");
 
 	// Kernel stack allocation
-	proc->kstack = (uint32_t*)phys_alloc(2 * PAGESIZE);
-	// proc->kstack = (uint32_t*)mem_alloc(2 * PAGESIZE);
+	proc->kstack = (uint32_t*)phys_alloc(KERNELSSIZE);
+
+	if (proc->kstack == NULL)
+		return false;
 
 	// Code allocation + mapping + copy
 	const uint32_t code_size = (uint32_t)app->end - (uint32_t)app->start;
-	uint32_t code_pages = code_size / PAGESIZE;
-
-	if (code_size % PAGESIZE)
-		code_pages++;
-
+	const uint32_t cpages = compute_pages(code_size);
+	proc->cpages = cpages;
 	// printf("code -> %d\n", code_pages);
 
-	for (uint32_t i = 0; i < code_pages; i++) {
+	for (uint32_t i = 0; i < cpages; i++) {
 		page = alloc_page();
 		// printf("page = %X\n", (int)page);
-		map_page(proc->pdir, page, (void*)(0x40000000 + i * PAGESIZE), P_USERSUP);
+		success &= map_page(proc->pdir, page,
+				get_ucode_vpage(i), P_USERSUP);
 
 		const uint32_t code_mod = code_size % PAGESIZE;
-		const uint32_t size = (code_mod && i == code_pages-1) ? code_mod : PAGESIZE;
+		const uint32_t size = (code_mod && i == cpages-1) ?
+						code_mod : PAGESIZE;
 
 		memcpy(page, (void*)((uint32_t)app->start + i * PAGESIZE), size);
 	}
@@ -152,3 +170,4 @@ bool alloc_pages(Process *proc, struct uapps *app)
 
 	return success;
 }
+

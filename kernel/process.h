@@ -71,8 +71,10 @@ typedef struct Process_ {
 	struct Process_ *sibling;
 	char name[PROC_NAME_SIZE];
 	enum State state;
-	int regs[NB_REGS];
-	int *stack;
+	uint32_t regs[NB_REGS];
+	uint32_t cpages;
+	uint32_t spages;
+	uint32_t *stack;
 	uint32_t *kstack;
 	unsigned long ssize;
 	uint32_t wake;

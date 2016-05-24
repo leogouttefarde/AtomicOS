@@ -8,7 +8,6 @@
 #include "mem.h"
 #include "apps.h"
 #include "interrupts.h"
-#include "userspace_apps.h"
 #include "console.h"
 #include "syscalls.h"
 #include "vmem.h"
@@ -27,7 +26,7 @@ static link head_dead = LIST_HEAD_INIT(head_dead);
 static link head_sema = LIST_HEAD_INIT(head_sema);
 
 
-void ctx_sw(int32_t *old_ctx, int32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
+void ctx_sw(uint32_t *old_ctx, uint32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
 void start_proc();
 
 // Affiche l'état des processus
@@ -105,11 +104,26 @@ static inline bool is_valid_prio(int prio)
 
 static inline void free_process(Process *proc)
 {
-	if (proc == NULL)
+	if (proc == NULL || proc->pdir == NULL)
 		return;
 
-	if (proc->stack != NULL)
-		mem_free_nolength(proc->stack);
+	void *page = NULL;
+
+	// Libération de la pile utilisateur
+	for (uint32_t i = 0; i < proc->spages; i++) {
+		page = get_physaddr(proc->pdir, get_ustack_vpage(i, proc->spages));
+		free_page(page);
+	}
+
+	// Libération de la pile kernel
+	phys_free(proc->kstack, KERNELSSIZE);
+
+	// Libération du code utilisateur
+	for (uint32_t i = 0; i < proc->cpages; i++) {
+		free_page(get_ucode_vpage(i));
+	}
+
+	free_page(proc->pdir);
 
 	procs[proc->pid] = NULL;
 	mem_free_nolength(proc);
@@ -428,73 +442,75 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 {
 	int32_t pid = -1;
 
-	if (nb_procs < MAX_NB_PROCS && name != NULL && is_valid_prio(prio)) {
+	if (nb_procs < MAX_NB_PROCS && name != NULL
+		&& is_valid_prio(prio) && ssize < PHYS_MEMORY) {
+
 		Process *proc = mem_alloc(sizeof(Process));
+		memset(proc, 0, sizeof(Process));
 
-		if (proc != NULL) {
+		if (proc == NULL) {
+			return pid;
+		}
 
-			uint32_t stack_size = ssize/4 + 3;
+		// Ajout d'une case pour le passage d'argument
+		uint32_t stack_size = ssize/4 + 1;
 
-			// Si le nombre n'est pas multiple
-			// de sizeof(int), on ajoute une case
-			if (ssize % sizeof(int))
-				stack_size++;
+		// Si le nombre n'est pas multiple
+		// de sizeof(int), on ajoute une case
+		if (ssize % sizeof(int))
+			stack_size++;
 
-			proc->ssize = stack_size * sizeof(int);
-			// proc->stack = mem_alloc(proc->ssize);
+		proc->ssize = stack_size * sizeof(int);
 
-			// struct uapps *app = (struct uapps*)get_app("test_app");
-			struct uapps *app = (struct uapps*)get_app(name);
+		// Copie du nom de processus
+		strncpy(proc->name, name, PROC_NAME_SIZE);
+		proc->name[PROC_NAME_SIZE-1] = 0;
 
-			if (alloc_pages(proc, app)) {
+		if (alloc_pages(proc)) {
 
-				//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
-				proc->prio = prio;
-				pid = proc->pid = nb_procs++;
-				INIT_LIST_HEAD(&proc->head_child);
+			//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
+			proc->prio = prio;
+			pid = proc->pid = nb_procs++;
+			INIT_LIST_HEAD(&proc->head_child);
 
-				// Copie du nom de processus
-				strncpy(proc->name, name, PROC_NAME_SIZE);
-				proc->name[PROC_NAME_SIZE-1] = 0;
+			// On définit le père et on l'ajoute à la liste de ses fils
+			proc->ppid = getpid();
 
-				// On définit le père et on l'ajoute à la liste de ses fils
-				proc->ppid = getpid();
+			Process *parent = procs[proc->ppid];
 
-				Process *parent = procs[proc->ppid];
+			if (parent != NULL)
+				queue_add(proc, &parent->head_child,
+					Process, children, pid);
 
-				if (parent != NULL)
-					queue_add(proc, &parent->head_child,
-						Process, children, pid);
+			// On met l'adresse de terminaison du processus en sommet de pile
+			// pour permettre son auto-destruction
+			proc->stack[0x400 - 1] = (uint32_t)arg;
+			proc->stack[0x400 - 2] = (uint32_t)start_proc;
 
-				// On met l'adresse de terminaison du processus en sommet de pile
-				// pour permettre son auto-destruction
-				proc->stack[0x400 - 1] = (int)arg;
-				proc->stack[0x400 - 2] = (int)start_proc;
+			// On initialise esp sur le sommet de pile désiré
+			proc->regs[ESP] = USERSTACK - 8;
 
-				// On initialise esp sur le sommet de pile désiré
-				proc->regs[ESP] = 0x7FFFFFF8;
-
-				// On initialise le sommet de pile kernel
-				proc->regs[ESP0] = (int)&proc->kstack[2047];
+			// On initialise le sommet de pile kernel
+			proc->regs[ESP0] = (uint32_t)&proc->kstack[2047];
 
 
-				// Enregistrement dans la table des processus
-				procs[pid] = proc;
+			// Enregistrement dans la table des processus
+			procs[pid] = proc;
 
-				// Ajout aux activables
-				proc->state = ACTIVABLE;
-				pqueue_add(proc, &head_act);
-				// printf("start OK\n");
+			// Ajout aux activables
+			proc->state = ACTIVABLE;
+			pqueue_add(proc, &head_act);
+			// printf("start OK\n");
 
-				// Si le processus créé est plus prioritaire,
-				// on lui passe la main
-				if (prio > cur_proc->prio) {
-					ordonnance();
-				}
-				// printf("start END\n");
+			// Si le processus créé est plus prioritaire,
+			// on lui passe la main
+			if (prio > cur_proc->prio) {
+				ordonnance();
 			}
-			else
-				mem_free_nolength(proc);
+			// printf("start END\n");
+		}
+		else {
+			free_process(proc);
 		}
 	}
 
