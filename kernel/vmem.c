@@ -133,11 +133,13 @@ bool alloc_pages(Process *proc)
 {
 	bool success = true;
 	void *page = NULL;
+	// printf("alloc_pages called\n");
 
 	if (proc == NULL)
 		return false;
 
 	struct uapps *app = get_app(proc->name);
+	// printf("alloc_pages app %s\n", app->name);
 
 	if (app == NULL)
 		return false;
@@ -161,7 +163,7 @@ bool alloc_pages(Process *proc)
 	const uint32_t spages = compute_pages(proc->ssize);
 	proc->spages = spages;
 
-	// printf("ustack -> %d\n", stack_pages);
+	// printf("ustack -> %d\n", spages);
 
 	for (uint32_t i = 0; i < spages; i++) {
 		page = alloc_page();
@@ -182,13 +184,16 @@ bool alloc_pages(Process *proc)
 	const uint32_t code_size = (uint32_t)app->end - (uint32_t)app->start;
 	const uint32_t cpages = compute_pages(code_size);
 	proc->cpages = cpages;
-	// printf("code -> %d\n", code_pages);
+	// printf("code -> %d\n", cpages);
 
 	for (uint32_t i = 0; i < cpages; i++) {
 		page = alloc_page();
 		// printf("page = %X\n", (int)page);
+		// int ret = map_page(proc->pdir, page,
 		success &= map_page(proc->pdir, page,
 				get_ucode_vpage(i), P_USERSUP | P_RW);
+		// printf("map_ucode : %d\n", (int)ret);
+		// success &= ret;
 
 		const uint32_t code_mod = code_size % PAGESIZE;
 		const uint32_t size = (code_mod && i == cpages-1) ?
@@ -198,6 +203,8 @@ bool alloc_pages(Process *proc)
 	}
 
 	// printf("ucode OK\n");
+
+	// printf("alloc_pages : %d\n", success);
 
 	return success;
 }

@@ -359,6 +359,7 @@ static inline void del_child(Process **pchild)
 
 	if (child != NULL) {
 		queue_del(child, children);
+		free_process(child);
 		*pchild = NULL;
 	}
 }
@@ -396,9 +397,10 @@ static bool finish_process(int pid)
 		// On détruit les zombies
 		if (it->state == ZOMBIE) {
 			die = it;
-			// die->state = DYING;
+			die->state = DYING;
+
+			// free manuel dans del_child
 			// pqueue_add(it, &head_dead);
-			free_process(it);
 		}
 	}
 
@@ -471,6 +473,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 {
 	int32_t pid = -1;
 
+
 	if (nb_procs < MAX_NB_PROCS && name != NULL
 		&& is_valid_prio(prio) && ssize < PHYS_MEMORY) {
 
@@ -478,6 +481,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 		memset(proc, 0, sizeof(Process));
 
 		if (proc == NULL) {
+			printf("proc == NULL\n");
 			return pid;
 		}
 
@@ -501,6 +505,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 			proc->shm_idx = 0;
 
 			//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
+			// printf("start 1\n");
 			proc->prio = prio;
 			pid = proc->pid = nb_procs++;
 			INIT_LIST_HEAD(&proc->head_child);
@@ -539,12 +544,22 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 			if (prio > cur_proc->prio) {
 				ordonnance();
 			}
+
 			// printf("start END\n");
 		}
 		else {
+			// printf("start %s alloc_pages fail pid %d\n", proc->name, pid);
 			free_process(proc);
+			printf("start %s alloc_pages fail pid %d nb_procs %d\n", name, pid, nb_procs);
 		}
 	}
+	else {
+		printf("nb_procs = %d\n", nb_procs);
+	}
+
+	assert(nb_procs < MAX_NB_PROCS);
+
+	// printf("start %s end = %d\n", name, pid);
 
 	return pid;
 }
@@ -564,6 +579,8 @@ void _exit(int retval)
 
 	finish_process(cur_proc->pid);
 	ordonnance();
+
+	panic("FATAL ERROR");
 }
 
 /**

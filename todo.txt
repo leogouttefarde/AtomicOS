@@ -1,6 +1,9 @@
 
 
 
+- trouver bug corruption mémoire observé sur test8
+
+
 Pour vendredi :
 - doc de 2p sur le cadrage à rendre
 - planning prévisionnel à détailler (détail de chaque phase + des extensions choisies)

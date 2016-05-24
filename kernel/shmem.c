@@ -70,17 +70,24 @@ void *shm_create(const char *key)
 		SharedPage *shp = mem_alloc(sizeof(SharedPage));
 
 		if (shp != NULL) {
+			void *kcopy = mem_alloc(ksize + 1);
 
-			// Copie de la clé
-			shp->key = mem_alloc(ksize);
+			if (kcopy != NULL) {
+				strcpy(kcopy, key);
 
-			shp->page = page;
-			shp->nrefs = 1;
+				shp->key = kcopy;
+				shp->page = page;
+				shp->nrefs = 1;
 
-			if (!hash_set(&table, shp->key, (void*)shp)) {
-				hash_set(&proc->shmem, shp->key, vpage);
+				if (!hash_set(&table, kcopy, (void*)shp)) {
+					hash_set(&proc->shmem, kcopy, vpage);
+				}
+				else {
+					ret = false;
+				}
 			}
 			else {
+				mem_free_nolength(shp);
 				ret = false;
 			}
 		}
