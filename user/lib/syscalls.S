@@ -121,15 +121,23 @@ cons_write:
 	.text
 	.globl cons_read
 cons_read:
-	movl $0x29, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $CONS_READ, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
+	
 
 	.text
 	.globl cons_echo
 cons_echo:
-	movl $0x30, %eax
-	int $3
+	movl $CONS_ECHO, %eax
+	int $49
 	ret
 
 	.text
@@ -233,22 +241,35 @@ psend:
 	.text
 	.globl clock_settings
 clock_settings:
-	movl $0x45, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $CLOCK_SETTINGS, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
 	.globl current_clock
 current_clock:
-	movl $0x46, %eax
-	int $3
+	movl $CURRENT_CLOCK, %eax
+	int $49
 	ret
-
+	
 	.text
 	.globl wait_clock
 wait_clock:
-	movl $0x47, %eax
-	int $3
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $WAIT_CLOCK, %eax
+	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
