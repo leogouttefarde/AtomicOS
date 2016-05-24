@@ -1,12 +1,12 @@
 #include "queue.h"
+#include <stdint.h>
 
 typedef struct semaphore{
-	int cpt;
+	int16_t cpt;
 	link *file;
 } semaphore;
 
-
-semaphore init_semaphore (int c);
-void p(semaphore *s) ;
-void v(semaphore *s);
-
+int screate (short int count);
+int scount (int sem);
+int wait (int sem);
+int signal (int sem);

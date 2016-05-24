@@ -8,50 +8,59 @@
 int tab [TAILLE_TAB];
 unsigned int i_lec=0;
 unsigned int i_ecr=0;
-semaphore rempli;
+int rempli, vide, m1, m2;
+/*semaphore rempli;
 semaphore vide;
-semaphore m1,m2;
+semaphore m1,m2;*/
 
 void init () {
-	rempli=init_semaphore(0);
-	vide=init_semaphore(TAILLE_TAB);
-	m1=init_semaphore(1);
-	m2=init_semaphore(1);
+	rempli = screate(0);
+	vide = screate(TAILLE_TAB);
+	m1 = screate(1);
+	m2 = screate(1);	
 }
 
 
 int producteur (void *arg) {
+	printf("yes");
+
 	if (arg==0) {}
 	int i=1;
 	while (i<20) {
-		p(&vide);
+		wait(vide);
 
-		p(&m1);
+		wait(m1);
+
 		printf("depot de %i\n", i);
 		tab[i_ecr]=i;
 		i_ecr=(i_ecr+1) % TAILLE_TAB;
 		i++;
-		v(&m1);
 
-		v(&rempli);
+		signal(m1);
+
+		signal(rempli);
     
 	}
 	return 0;
 }
 
 int consommateur (void *arg) {
+		printf("yes");
+	
 	if (arg==0) {}
   
 	while (true) {
-		p(&rempli);
+		wait(rempli);
 
-		p(&m2);
+		wait(m2);
+
 		int msg=tab[i_lec];
 		i_lec = (i_lec+1) % TAILLE_TAB;
 		printf("%i recupere\n", msg);
-		v(&m2);
+		signal(m2);
 
-		v(&vide);
+
+		signal(vide);
       
 	}
 	return 0;
