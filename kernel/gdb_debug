@@ -1,6 +1,8 @@
 
 target remote :1234
-b process.c:199
+b process.c:640
+hbreak ctx_sw
+b ctx_sw
 disp cur_proc
 continue
 disp proc

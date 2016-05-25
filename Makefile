@@ -18,7 +18,7 @@ PXE = boot.pxe
 QEMU = /usr/libexec/qemu-kvm
 
 # QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 64M -gdb tcp::1234
-QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 64M -gdb tcp::1234
+QEMUOPTS = -no-kvm -net nic -net user,tftp="`pwd`",bootfile="$(PXE)" -boot n -cpu pentium -rtc base=localtime -m 256M -gdb tcp::1234
 
 all: | kernel/$(PLATFORM_TOOLS) user/$(PLATFORM_TOOLS)
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
@@ -33,11 +33,31 @@ user/$(PLATFORM_TOOLS):
 run: all
 	$(QEMU) -kernel kernel/kernel.bin
 
+# debug kvm (mieux)
 debug: all
+	$(QEMU) -kernel kernel/kernel.bin -gdb tcp::1234 -S &
+	gdb -x kernel/gdb_debug kernel/kernel.bin
+
+# debug pxe (si kvm non dispo)
+pxe: all
 	cd kernel && $(QEMU) $(QEMUOPTS) -S &
 	cd kernel && gdb -x gdb_debug kernel.bin
 
 clean:
 	$(MAKE) clean -C kernel/
 	$(MAKE) clean -C user/
+
+
+# emulateur bochs
+disk:
+	mkdir -p $@
+
+.PHONY: bochs
+	bochs: all disk
+	@echo "### This target will require root access to mont disk image ! ###"
+	sudo mount -t ext2 -o loop,offset=1048576 disk.img disk/
+	sudo cp kernel/kernel.bin disk/kernel.bin
+	sync
+	sudo umount disk/
+	bochs
 

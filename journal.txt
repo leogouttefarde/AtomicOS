@@ -44,16 +44,62 @@ Implémentation de wait_clock (phase 4) réalisée.
 Vendredi 20 mai
 
 Azizi :
+Poursuite de la phase 4 : files de messages
 
-
-Etienne :
-
+Etienne : Fin du travail sur le shell.
+Début du travail sur la localisation des applications (phase 5)
 
 Léo :
 Début de la phase 5.
 Lecture des documentations de l'ensiwiki pour pouvoir commencer à coder cette phase.
 Début de la création des page directory avec copie du pgdir kernel.
 Prochaine étape : allocateur de pages dans le bon espace mémoire.
+
+Samedi 21 mai
+
+Etienne :
+Fin de l'implantaion de la localisation des applications.
+Installation des outils adéquats pour pouvoir poursuivre le projet sur machine personnelle.
+
+Léo :
+Lecture de l'heure rtc au lancement du kernel.
+
+
+Dimanche 22 mai
+
+Etienne :
+Début de la gestion des sémaphores
+
+Léo :
+Ajout de l'allocateur de pages en mémoire physique
+et autres avancées sur la phase 5.
+
+
+Lundi 23 mai
+
+Azizi :
+Poursuite de la phase 4 : files de messages
+
+Etienne :
+Poursuite de la gestion des sémaphores
+
+Léo :
+Phase 5 quasi terminée.
+Le basculement en mode utilisateur fonctionne correctement
+et quelques appels systèmes ont déjà été implémentés (cons_write et exit).
+Auto-terminaison des processus ainsi que récupération de leur valeur de
+retour également terminé.
+
+
+Mardi 24 mai :
+
+Azizi :
+
+
+Etienne :
+
+
+Léo :
 
 
 

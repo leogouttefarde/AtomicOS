@@ -5,14 +5,25 @@
 
 #define IDT_ADDRESS 0x1000
 
-// Enregistre un traitant d'interruption
-void init_traitant_IT(int32_t num_IT, void (*traitant)(void))
+static inline void init_traitant_IT_generic(int32_t num_IT,
+	void (*traitant)(void), uint16_t flags)
 {
 	const uint64_t *IDT = (uint64_t*)IDT_ADDRESS;
 	uint32_t *entree_IT = (uint32_t*)(IDT + num_IT);
 
 	*entree_IT = KERNEL_CS << 16 | (uint16_t)(uint32_t)traitant;
-	*(entree_IT + 1) = ((uint32_t)traitant & 0xFFFF0000) | 0x8E00;
+	*(entree_IT + 1) = ((uint32_t)traitant & 0xFFFF0000) | flags;
+}
+
+// Enregistre un traitant d'interruption
+void init_traitant_IT(int32_t num_IT, void (*traitant)(void))
+{
+	init_traitant_IT_generic(num_IT, traitant, 0x8E00);
+}
+
+void init_traitant_IT_user(int32_t num_IT, void (*traitant)(void))
+{
+	init_traitant_IT_generic(num_IT, traitant, 0xEE00);
 }
 
 // Fonction de masquage générique d'un IRQ

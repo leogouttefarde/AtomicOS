@@ -1,6 +1,11 @@
 
 
 
+Pour vendredi :
+- doc de 2p sur le cadrage à rendre
+- planning prévisionnel à détailler (détail de chaque phase + des extensions choisies)
+
+
 Phase 4 :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
@@ -9,17 +14,20 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
 Phase 5
 
-- Table de hachage des applications à implémenter
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_m%C3%A9moire_virtuelle#Localiser_une_application
+- Gestion des exceptions
 
-- Partage de mémoire
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Partage_de_m.C3.A9moire
+- Vérification des paramètres de syscall (pointeurs > 1GB notamment)
 
-- Pagination :
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Empreinte_m.C3.A9moire_du_noyau
-Création d'un allocateur mémoire sous la forme d'une liste chaînée de pages vides,
-Chaque page fait 4Ko et l'allocateur mémoire doit travaille sur tout l'espace de mémoire physique libre (entre 64MB et 256MB)
+- test machine ?
 
+
+
+Extensions :
+http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
+
+- Shell amélioré ?
+- Pilote FAT32
+- Heure rtc
 
 
 

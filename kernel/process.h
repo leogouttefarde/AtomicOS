@@ -5,9 +5,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <queue.h>
+#include <hash.h>
 
-#define PROC_NAME_SIZE 16
-#define MAX_NB_PROCS 100
+#define PROC_NAME_SIZE 64
+#define MAX_NB_PROCS 7000
 #define MAX_PRIO 256
 
 
@@ -31,8 +32,9 @@ enum State {
 	ASLEEP,
 	DYING,
 	ZOMBIE,
-	WAITPID//,
-	//WAITMSG,
+	WAITPID,
+	BLOCKEDSEMA,
+	WAITMSG//,
 	//WAITIO
 };
 
@@ -41,7 +43,15 @@ enum SavedRegisters {
 	ESP,
 	EBP,
 	ESI,
-	EDI
+	EDI,
+	ESP0, // 4(TSS)
+	NB_REGS
+};
+
+enum PagingFlags {
+	P_PRESENT = 1,
+	P_RW = 2,
+	P_USERSUP = 4
 };
 
 /* Processus */
@@ -57,29 +67,45 @@ typedef struct Process_ {
 	link head_child;
 	link children;
 	link queue;
+	link queueRead; //Le chainage pour la file de processus bloqué en lecture
+	link queueWrite; //Le chainage pour la file de processus bloqué en écriture
 	int prio;
 
 	struct Process_ *sibling;
 	char name[PROC_NAME_SIZE];
 	enum State state;
-	int regs[6];
-	int *stack;
+	uint32_t regs[NB_REGS];
+	uint32_t cpages;
+	uint32_t spages;
+	uint32_t *stack;
+	uint32_t *kstack;
 	unsigned long ssize;
 	uint32_t wake;
 
-	int32_t *pdir;
-	// int32_t *ptable;
+	uint32_t *pdir;
+	uint32_t *ptable;
+
+	hash_t shmem;
+	uint32_t shm_idx;
 } Process;
 
 
 void idle();
 
-// Cree le processus idle (pas besoin de stack)
-// Il faut l'appeler en premier dans start
-bool init_idle();
+void wait_clock(unsigned long clock);
+
+
+// A appeler en premier dans kernel_start
+bool init_process();
 
 // Ordonnanceur
 void ordonnance();
+
+//Bloque un processus par le biais d'un sémaphore
+void bloque_sema();
+
+//Debloque un processus bloqué par un sémaphore
+void debloque_sema(int pid);
 
 // Endort un processus
 void sleep(uint32_t seconds);
@@ -116,7 +142,7 @@ int getprio(int pid);
  * prio  : priorité du processus
  * arg   : argument passé au programme
  */
-int start(const char *name, unsigned long ssize, int prio, void *arg, int (*pt_func)(void*));
+int start(const char *name, unsigned long ssize, int prio, void *arg);
 
 /**
  * Le processus appelant est terminé normalement et la valeur retval est passée
@@ -159,11 +185,17 @@ int getpid(void);
 __inline__ static void tlb_flush()
 {
 	__asm__ __volatile__(
-		"movl %cr3,%eax\n"
-		"movl %eax,%cr3"
-		:::"memory");
+	"movl %cr3,%eax\n"
+	"movl %eax,%cr3");
 }
 
 
+Process *get_cur_proc();
+
+//Ajout d'un processus dans la liste des processus activable
+void addProcActivable(Process *proc);
+
+//Trouver le processus à partir du pid
+Process *pidToProc(int pid);
 
 #endif

@@ -7,5 +7,6 @@
 
 void masque_IRQ(uint8_t num_IRQ, bool masque);
 void init_traitant_IT(int32_t num_IT, void (*traitant)(void));
+void init_traitant_IT_user(int32_t num_IT, void (*traitant)(void));
 
 #endif

@@ -3,6 +3,7 @@
 	.globl traitant_IT_32
 # debut du traitant 
 traitant_IT_32:
+	call set_kernel_protection
 # sauvegarde des registres importants
 	pushl %eax
 	pushl %edx
@@ -14,13 +15,16 @@ traitant_IT_32:
 	popl %edx
 	popl %eax
 # fin du traitant
+	call set_user_protection
 	iret
+
 #traitant clavier
-        .text
+	.text
 # cette directive sert a rendre l'etiquette publique
 	.globl traitant_IT_33
 #debut du traitant
 traitant_IT_33:
+	call set_kernel_protection
 # sauvegarde des registres importants
 	pushl %eax
 	pushl %edx
@@ -31,6 +35,66 @@ traitant_IT_33:
 	popl %ecx
 	popl %edx
 	popl %eax
+	call set_user_protection
 # fin du traitant
-	iret     
+	iret
 
+
+#traitant d'appels système
+	.text
+# cette directive sert a rendre l'etiquette publique
+	.globl traitant_IT_49
+#debut du traitant
+traitant_IT_49:
+# # sauvegarde des registres importants
+# 	pushl %eax
+# 	pushl %edx
+# 	pushl %ecx
+# # appel a la fonction C realisant le traitant
+# 	call syscall
+# # restauration des registres importants
+# 	popl %ecx
+# 	popl %edx
+# 	popl %eax
+# # fin du traitant
+# 	iret
+	call set_kernel_protection
+
+	pushl %edi
+	pushl %esi
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	pushl %eax
+	call syscall
+	movl %eax, %ecx
+	add $24, %esp
+
+	call set_user_protection
+	movl %ecx, %eax
+	iret
+
+
+	.text
+	.globl set_user_protection
+set_user_protection:
+	pushl %eax
+	movl $0x4b, %eax
+	movl %eax, %ds
+	movl %eax, %es
+	movl %eax, %fs
+	movl %eax, %gs
+	popl %eax
+	ret
+
+	.text
+	.globl set_kernel_protection
+set_kernel_protection:
+	pushl %eax
+	movl $0x18,%eax
+	movl %eax, %ds
+	movl %eax, %es
+	movl %eax, %fs
+	movl %eax, %gs
+	popl %eax
+	ret
