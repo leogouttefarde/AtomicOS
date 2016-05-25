@@ -83,6 +83,8 @@ void *shm_create(const char *key)
 					hash_set(&proc->shmem, kcopy, vpage);
 				}
 				else {
+					mem_free_nolength(kcopy);
+					mem_free_nolength(shp);
 					ret = false;
 				}
 			}
@@ -97,8 +99,9 @@ void *shm_create(const char *key)
 	}
 
 	if (!ret) {
-		vpage = NULL;
+		unmap_vpage(proc->pdir, vpage);
 		free_page(page);
+		vpage = NULL;
 	}
 
 	return vpage;
@@ -146,23 +149,12 @@ void *shm_acquire(const char *key)
 	return vpage;
 }
 
-/**
- * Informe le noyau que le processus appelant veut relacher la référence
- * sur la page nommée par key.
- * Si une référence a été acquise (par appel à shm_acquire par exemple),
- * la page est démappée et l'adresse virtuelle fournie précédement
- * n'est plus valide, sinon l'appel est sans effet.
- * Quand cet appel amène à relacher la dernière référence sur une page
- * partagée, la page physique correspondante est effectivement libérée.
- */
-void shm_release(const char *key)
+void shm_release_proc(const char *key, Process *proc)
 {
 	void *pkey = (void*)key;
 
 	if (key == NULL || !hash_isset(&table, pkey))
 		return;
-
-	Process *proc = get_cur_proc();
 
 	if (proc == NULL)
 		return;
@@ -180,12 +172,26 @@ void shm_release(const char *key)
 			if (shp->nrefs < 1) {
 				hash_del(&table, pkey);
 
-				free_page(shp->page);
 				mem_free_nolength(shp->key);
 				mem_free_nolength(shp);
+				free_page(shp->page);
 			}
 		}
 	}
+}
+
+/**
+ * Informe le noyau que le processus appelant veut relacher la référence
+ * sur la page nommée par key.
+ * Si une référence a été acquise (par appel à shm_acquire par exemple),
+ * la page est démappée et l'adresse virtuelle fournie précédement
+ * n'est plus valide, sinon l'appel est sans effet.
+ * Quand cet appel amène à relacher la dernière référence sur une page
+ * partagée, la page physique correspondante est effectivement libérée.
+ */
+void shm_release(const char *key)
+{
+	shm_release_proc(key, get_cur_proc());
 }
 
 void shm_free()

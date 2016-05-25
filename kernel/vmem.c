@@ -41,12 +41,26 @@ void *get_physaddr(uint32_t *pd, void *virtualaddr)
 	return NULL;
 }
 
+/*
+ * Vérifie la validité d'une adresse
+ */
+static inline bool is_valid_page(void *ptr)
+{
+	const uint32_t addr = (uint32_t)ptr;
+
+	if (!addr || addr > 0xFFFFF000 || addr % PAGESIZE) {
+		return false;
+	}
+
+	return true;
+}
+
 // Maps a virtual address to a physical address
 bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 {
-	// TODO : check address validity
-	// Make sure that both addresses are page-aligned.
-	if ((uint32_t)physaddr % PAGESIZE || (uint32_t)virtualaddr % PAGESIZE)
+	// Check page address validity
+	if (pd == NULL || !is_valid_page(physaddr)
+		|| !is_valid_page(virtualaddr))
 		return false;
 
 	uint32_t pdindex = (uint32_t)virtualaddr >> 22;
@@ -90,9 +104,8 @@ bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 
 bool unmap_vpage(uint32_t *pd, void *virtualaddr)
 {
-	// TODO : check address validity
-	// Make sure that address is page-aligned
-	if ((uint32_t)virtualaddr % PAGESIZE)
+	// Check page address validity
+	if (pd == NULL || !is_valid_page(virtualaddr))
 		return false;
 
 	uint32_t pdindex = (uint32_t)virtualaddr >> 22;

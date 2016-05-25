@@ -10,6 +10,7 @@
 #include "stddef.h"
 #include "string.h"
 #include "mem.h"
+#include "stdio.h"
 
 
 #define HASH_MINSIZE 8
@@ -283,7 +284,8 @@ int hash_init_string(hash_t *map)
 /*
  * Fonction manquante ajoutée
  */
-void hash_for_each(hash_t *map, void (*callback)(void *key, void* value))
+void hash_for_each(hash_t *map, void *arg,
+    void (*callback)(void *key, void* value, void *arg))
 {
         hash_slot_t *table;
         hash_slot_t *slot;
@@ -293,11 +295,12 @@ void hash_for_each(hash_t *map, void (*callback)(void *key, void* value))
 
         table = map->table;
 
-        for (long i = 0; i < map->count; i++) {
+        for (unsigned long i = 0; i <= map->mask; i++) {
                 slot = &table[i];
 
-                if (slot->mode == SL_ACTIVE)
-                        callback(slot->key, slot->value);
+                if (slot->mode == SL_ACTIVE) {
+                        callback(slot->key, slot->value, arg);
+                }
         }
 }
 

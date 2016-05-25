@@ -26,6 +26,14 @@ static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
 static link head_sema = LIST_HEAD_INIT(head_sema);
 
+typedef struct FreePid_ {
+	int pid;
+	link queue;
+} FreePid;
+
+static link head_pid = LIST_HEAD_INIT(head_pid);
+static int pid_index = 1;
+
 
 void ctx_sw(uint32_t *old_ctx, uint32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
 void start_proc();
@@ -109,53 +117,74 @@ static inline bool is_valid_prio(int prio)
 }
 
 // Libération de chaque zone partagée utilisée
-void free_process_shmem(void *key, __attribute__((__unused__)) void *value)
+void free_process_shmem(void *key,
+	__attribute__((__unused__)) void *value, void *arg)
 {
-	shm_release((const char*)key);
+	shm_release_proc((const char*)key, (Process*)arg);
 }
 
 static inline void free_process(Process *proc)
 {
-	if (proc == NULL || proc->pdir == NULL)
+	if (proc == NULL)
 		return;
 
-	void *page = NULL;
+	int pid = proc->pid;
 
-	// Libération de la pile utilisateur
-	for (uint32_t i = 0; i < proc->spages; i++) {
-		page = get_physaddr(proc->pdir, get_ustack_vpage(i, proc->spages));
-		free_page(page);
-	}
+	FreePid *fpid = mem_alloc(sizeof(FreePid));
+	fpid->pid = pid;
 
-	// Libération de la pile kernel
-	phys_free(proc->kstack, KERNELSSIZE);
+	INIT_LINK(&fpid->queue);
+	queue_add(fpid, &head_pid, FreePid, queue, pid);
 
-	// Libération du code utilisateur
-	for (uint32_t i = 0; i < proc->cpages; i++) {
-		free_page(get_ucode_vpage(i));
-	}
+	// Libération de chaque zone partagée utilisée
+	hash_for_each(&proc->shmem, (void*)proc, free_process_shmem);
+	hash_destroy(&proc->shmem);
 
-	// // Libération de chaque zone partagée utilisée
-	hash_for_each(&proc->shmem, free_process_shmem);
-
-	// // Libération du page directory
 	if (proc->pdir != NULL) {
-		uint32_t entry;
+		void *page = NULL, *vpage = NULL;
 
-		// Peu efficace ?
-		for (uint32_t i = 0; i < PD_SIZE; i++) {
-			entry = proc->pdir[i];
+		// Libération de la pile utilisateur
+		for (uint32_t i = 0; i < proc->spages; i++) {
+			vpage = get_ustack_vpage(i, proc->spages);
+			assert(vpage);
+			page = get_physaddr(proc->pdir, vpage);
+			assert(page);
+			free_page(page);
+		}
 
-			if (entry) {
-				free_page((void*)(entry & ~0xFFF));
+		// Libération de la pile kernel
+		phys_free(proc->kstack, KERNELSSIZE);
+
+		// Libération du code utilisateur
+		for (uint32_t i = 0; i < proc->cpages; i++) {
+			vpage = get_ucode_vpage(i);
+			assert(vpage);
+			page = get_physaddr(proc->pdir, vpage);
+			assert(page);
+			free_page(page);
+		}
+
+		// // Libération du page directory
+		if (proc->pdir != NULL) {
+			uint32_t entry;
+
+			// Peu efficace ?
+			for (uint32_t i = 0; i < PD_SIZE; i++) {
+				entry = proc->pdir[i];
+
+				if (entry > PAGESIZE) {
+					free_page((void*)(entry & ~0xFFF));
+				}
 			}
 		}
+
+		free_page(proc->pdir);
 	}
 
-	free_page(proc->pdir);
-
-	procs[proc->pid] = NULL;
+	procs[pid] = NULL;
 	mem_free_nolength(proc);
+
+	nb_procs--;
 }
 
 // Détruit les processus mourants
@@ -460,6 +489,26 @@ bool init_process()
 	return (proc != NULL);
 }
 
+int get_new_pid()
+{
+	int pid;
+
+	if (pid_index >= MAX_NB_PROCS) {
+		FreePid *fpid = queue_bottom(&head_pid, FreePid, queue);
+		pid = fpid->pid;
+
+		queue_del(fpid, queue);
+		mem_free_nolength(fpid);
+	}
+	else {
+		pid = pid_index++;
+	}
+
+	nb_procs++;
+
+	return pid;
+}
+
 /**
  * Crée un nouveau processus dans l'état activable ou actif selon la priorité
  * choisie. Retourne l'identifiant du processus, ou une valeur strictement
@@ -507,7 +556,7 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 			//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
 			// printf("start 1\n");
 			proc->prio = prio;
-			pid = proc->pid = nb_procs++;
+			pid = proc->pid = get_new_pid();
 			INIT_LIST_HEAD(&proc->head_child);
 
 			// On définit le père et on l'ajoute à la liste de ses fils
@@ -548,18 +597,9 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 			// printf("start END\n");
 		}
 		else {
-			// printf("start %s alloc_pages fail pid %d\n", proc->name, pid);
 			free_process(proc);
-			printf("start %s alloc_pages fail pid %d nb_procs %d\n", name, pid, nb_procs);
 		}
 	}
-	// else {
-	// 	printf("nb_procs = %d\n", nb_procs);
-	// }
-
-	assert(nb_procs < MAX_NB_PROCS);
-
-	// printf("start %s end = %d\n", name, pid);
 
 	return pid;
 }

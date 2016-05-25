@@ -100,7 +100,8 @@ int hash_del(hash_t *map, void *key);
 /*
  * Fonction manquante ajoutée
  */
-void hash_for_each(hash_t *map, void (*callback)(void *key, void* value));
+void hash_for_each(hash_t *map, void *arg,
+    void (*callback)(void *key, void* value, void *arg));
 
 #endif
 

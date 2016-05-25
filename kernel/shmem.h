@@ -32,6 +32,8 @@ void *shm_acquire(const char *key);
  */
 void shm_release(const char *key);
 
+void shm_release_proc(const char *key, Process *proc);
+
 void shm_free();
 
 #endif

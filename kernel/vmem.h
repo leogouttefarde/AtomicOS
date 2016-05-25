@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include "userspace_apps.h"
 
-#define PD_SIZE  0x400
+#define PD_SIZE  1024
 #define PAGESIZE  0x1000
 #define KERNELSSIZE 0x2000
 #define USERCODE  0x40000000

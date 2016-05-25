@@ -7,11 +7,8 @@
 #include <queue.h>
 #include <hash.h>
 
-#define PROC_NAME_SIZE 32
-
-// TODO : réutiliser les pid de processus morts (après MAX_NB_PROCS start bug sinon)
+#define PROC_NAME_SIZE 64
 #define MAX_NB_PROCS 7000
-
 #define MAX_PRIO 256
 
 
