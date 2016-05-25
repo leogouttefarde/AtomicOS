@@ -137,7 +137,7 @@ int pcreate(int count)
 
 	pfile->isDeleted = false;
 	pfile->isReseted = false;
-	pfile->messages = NULL;
+        
 	pfile->sizeMessage = count;
 	pfile->sizeMessageUsed = 0;
 
