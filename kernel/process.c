@@ -12,6 +12,7 @@
 #include "syscalls.h"
 #include "shmem.h"
 #include "vmem.h"
+#include "file.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -938,33 +939,27 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case PCOUNT:
-		printf("TODO : %d\n", num);
-		error = true;
+		ret = pcount(arg0, (int*)arg1);
 		break;
 
 	case PCREATE:
-		printf("TODO : %d\n", num);
-		error = true;
+		ret = pcreate(arg0);
 		break;
 
 	case PDELETE:
-		printf("TODO : %d\n", num);
-		error = true;
+		ret = pdelete(arg0);
 		break;
 
 	case PRECEIVE:
-		printf("TODO : %d\n", num);
-		error = true;
+		ret = preceive(arg0, (int*)arg1);
 		break;
 
 	case PRESET:
-		printf("TODO : %d\n", num);
-		error = true;
+		ret = preset(arg0);
 		break;
 
 	case PSEND:
-		printf("TODO : %d\n", num);
-		error = true;
+		ret = psend(arg0, arg1);
 		break;
 
 	case CLOCK_SETTINGS:

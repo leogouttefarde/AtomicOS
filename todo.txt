@@ -1,9 +1,6 @@
 
 
 
-- trouver bug corruption mémoire observé sur test8
-
-
 Pour vendredi :
 - doc de 2p sur le cadrage à rendre
 - planning prévisionnel à détailler (détail de chaque phase + des extensions choisies)
@@ -16,9 +13,6 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
 
 Phase 5
-
-- Partage de mémoire
-http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Partage_de_m.C3.A9moire
 
 - Gestion des exceptions
 

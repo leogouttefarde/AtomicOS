@@ -4,7 +4,7 @@
 
 //crée une file de messages
 int pcreate(int count);
-    
+
 //détruit une file de messages
 int pdelete(int fid);
 
