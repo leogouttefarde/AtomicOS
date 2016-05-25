@@ -304,7 +304,7 @@ int preceive(int fid,int *message)
 	//La lecture du message
 	*message=pfile->messages[0];
 	if(pfile->sizeMessage > 1){
-		memmove(pfile->messages, (pfile->messages)+1, pfile->sizeMessage-1);
+		memmove(pfile->messages, (pfile->messages)+1, (pfile->sizeMessage-1)*(sizeof(int)));
 	}
 	(pfile->sizeMessageUsed)--;
 
