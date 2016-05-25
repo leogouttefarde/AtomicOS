@@ -388,10 +388,12 @@ int pcount(int fid, int *count)
 		return ERR;
 	}
 
-	if (count == NULL){ // A MODIF
-		return (pfile->sizeMessageUsed)+(pfile->numProcWriteBlocked);
-	}else{
-		return -1*(pfile->numProcReadBlocked);
+	if (count != NULL){ // A MODIF
+		if(pfile->sizeMessageUsed == 0){
+			*count = -1*(pfile->numProcReadBlocked);
+		}else{
+			*count = (pfile->sizeMessageUsed)+(pfile->numProcWriteBlocked);
+		}
 	}
 
 	return 0;
