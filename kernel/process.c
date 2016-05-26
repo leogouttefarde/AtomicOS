@@ -441,6 +441,11 @@ static bool finish_process(int pid)
 
 	del_child(&die);
 
+	if (proc->state == WAITMSG) {
+		queue_del(proc, msg_queue);
+		(*proc->msg_count)--;
+	}
+
 	if (proc->ppid >= 0) {
 		state = ZOMBIE;
 	}
@@ -809,6 +814,7 @@ int waitpid(int pid, int *retvalp)
 		// On supprime le fils débloqué des fils
 		queue_del(child, children);
 
+	// printf("waitpid : %s -> %d\n", child->name, ret);
 		// On le détruit
 		// child->state = DYING;
 		// pqueue_add(child, &head_dead);

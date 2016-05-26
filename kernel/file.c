@@ -101,17 +101,27 @@ int pcreate(int count)
 		// ERREUR1("Erreur de creation\n");
 		return ERR;
 	}
+	// printf("pcreate IN\n");
 
 	//Si on n'a pas de files disponibles
 	if (numFileAvailable <= 0){
+		// ERREUR1("Erreur de creation - Erreur inattendue00\n");
 		return ERR;
 	}
+	// printf("IN numFileAvailable = %d\n", numFileAvailable);
 
 	File *pfile = NULL;
 	if (numFileCreated < NBQUEUE){
 		pfile = mem_alloc(sizeof(File));
 		if(pfile == NULL){
 			// ERREUR1("Erreur de creation - Erreur d'allocation de mémoire\n");
+			return ERR;
+		}
+
+		pfile->messages = mem_alloc(count * sizeof(int));
+		if (pfile->messages == NULL){
+			mem_free_nolength(pfile);
+			// ERREUR1("Erreur de creation - Erreur inattendue0\n");
 			return ERR;
 		}
 
@@ -122,21 +132,18 @@ int pcreate(int count)
 	}else{
 		//La réutilisation de la file déjà créée et disponible
 		if (ListAvailable.head == NULL){
-			// ERREUR1("Erreur de creation - Erreur inattendue");
+			// ERREUR1("Erreur de creation - Erreur inattendue\n");
 			return ERR;
 		}
 		pfile = extractHead(&ListAvailable);
+
+		pfile->messages = mem_alloc(count * sizeof(int));
+		if (pfile->messages == NULL){
+			// ERREUR1("Erreur de creation - Erreur inattendue2\n");
+			return ERR;
+		}
 	}
 
-	pfile->messages = mem_alloc(count*sizeof(int));
-	if (pfile->messages == NULL){
-		// ERREUR1("Erreur de creation - Erreur d'allocation de mémoire\n");
-		if (numFileCreated < NBQUEUE){
-			mem_free_nolength(pfile);
-			numFileCreated--;
-		}
-		return ERR;
-	}
 
 	pfile->isDeleted = false;
 	pfile->isReseted = false;
@@ -158,6 +165,9 @@ int pcreate(int count)
 
 	//Le nombre de file disponible décrémente par un
 	numFileAvailable--;
+	// printf("numFileAvailable = %d\n", numFileAvailable);
+
+	// if (numFileAvailable < 4 || numFileAvailable > 98) sleep(1);
 
 	return pfile->fid;
 }
@@ -195,6 +205,8 @@ int pdelete(int fid)
 	pfile->numProcWriteBlocked = 0;
 
 	insertTail(&ListAvailable, pfile);
+
+	numFileAvailable++;
 
 	Process *proc = NULL, *del = NULL;
 	queue_for_each(proc, &pfile->listProcReadBlocked, Process, msg_queue) {// A VOIR
@@ -258,8 +270,22 @@ int psend(int fid, int message)
 
 
 	if(pfile->sizeMessageUsed == pfile->sizeMessage) {
-		Process *proc = pidToProc(getpid()); // A MODIF
+		Process *proc = NULL;
+
+		if(pfile->numProcReadBlocked != 0) {
+			proc = queue_out(&pfile->listProcReadBlocked, 
+					 Process, msg_queue);
+			assert(proc);
+			pfile->numProcReadBlocked--;
+			proc->blocked_queue = NULL;
+			proc->state = ACTIVABLE;
+			addProcActivable(proc);
+			// ordonnance();
+		}
+
+		proc = pidToProc(getpid()); // A MODIF
 		proc->state = WAITMSG; // A VOIR
+		proc->msg_count = &pfile->numProcWriteBlocked;
 		proc->blocked_queue = &pfile->listProcWriteBlocked;
 		queue_add(proc, &pfile->listProcWriteBlocked,
 			  Process, msg_queue, prio);
@@ -328,14 +354,29 @@ int preceive(int fid, int *message)
 
 	//Si pas de message, le processus actuel passe à l'état WAITMSG et
 	//on passe au processus activable suivant
-	if(pfile->sizeMessageUsed == 0){
-		Process *proc = pidToProc(getpid()); // A MODIF
+	if(pfile->sizeMessageUsed == 0) {
+		Process *proc = NULL;
+
+		if(pfile->numProcWriteBlocked != 0) {
+			proc = queue_out(&pfile->listProcWriteBlocked, 
+					 Process, msg_queue);
+			assert(proc);
+			pfile->numProcWriteBlocked--;
+			proc->blocked_queue = NULL;
+			proc->state = ACTIVABLE;// A VOIR ou ACTIF selon la prio
+			addProcActivable(proc);// A VOIR ou ACTIF selon la prio
+			// ordonnance();
+		}
+		// else {
+		proc = pidToProc(getpid()); // A MODIF
 		proc->state = WAITMSG; // A VOIR
+		proc->msg_count = &pfile->numProcReadBlocked;
 		proc->blocked_queue = &pfile->listProcReadBlocked;
 		queue_add(proc, &pfile->listProcReadBlocked,
 			  Process, msg_queue, prio);
 		pfile->numProcReadBlocked++;
 		ordonnance();
+		// }
 
 		//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
 		if(pfile->isDeleted || proc->msg_reset) {

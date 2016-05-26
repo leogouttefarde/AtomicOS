@@ -8,7 +8,7 @@
 #include <hash.h>
 
 #define PROC_NAME_SIZE 64
-#define MAX_NB_PROCS 7000
+#define MAX_NB_PROCS 1000
 #define MAX_PRIO 256
 
 
@@ -71,6 +71,7 @@ typedef struct Process_ {
 	link children;
 	link queue;
 
+	int *msg_count;
 	bool msg_reset;
 	link *blocked_queue;
 	link msg_queue;

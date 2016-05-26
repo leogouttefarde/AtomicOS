@@ -1,9 +1,9 @@
 
 target remote :1234
 #break process.c:132
-break preceive
+#break preceive
 #break pcreate
-break psend
+#break psend
 #break pcount
 #break cons_write
 #break hash_destroy
@@ -12,7 +12,8 @@ break psend
 #break waitpid
 #break ctx_sw
 #b ctx_sw
-disp cur_proc
-continue
+#disp cur_proc
+#continue
 #disp proc
 #disp procs[2]->shmem
+disp nb_procs

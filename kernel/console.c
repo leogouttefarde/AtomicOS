@@ -201,9 +201,11 @@ static void afficher_echo(char car) {
         }
 }
 
-void keyboard_data(char *str) {
+void keyboard_data(char *str)
+{
         unsigned long i = 0;
-        while (str[i]!=0)   {                
+
+        while (str[i]) {
 
                 switch (str[i]) {
                 case 127:
@@ -222,8 +224,10 @@ void keyboard_data(char *str) {
                         if (cases_dispos>0) {
                                 cases_dispos--;
                                 tampon[indice_ecr]=str[i];
-                                if (str[i]==13) 
+                                if (str[i]==13) {
                                         nb_lig++;
+                                        // wake_proc_waitio();
+                                }
 				
                                 else if (str[i]=='\t') {
                                         anc_lig[indice_ecr]=(col_cour()>=73);
