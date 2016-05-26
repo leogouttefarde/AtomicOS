@@ -276,23 +276,29 @@ int psend(int fid, int message)
 			proc = queue_out(&pfile->listProcReadBlocked, 
 					 Process, msg_queue);
 			assert(proc);
+			proc->message = message;
 			pfile->numProcReadBlocked--;
 			proc->blocked_queue = NULL;
 			proc->state = ACTIVABLE;
 			addProcActivable(proc);
 			// ordonnance();
+
+		}
+		else {
+			proc = pidToProc(getpid()); // A MODIF
+			proc->state = WAITMSG; // A VOIR
+			proc->message = message;
+			proc->msg_count = &pfile->numProcWriteBlocked;
+			proc->blocked_queue = &pfile->listProcWriteBlocked;
+			queue_add(proc, &pfile->listProcWriteBlocked,
+				  Process, msg_queue, prio);
+			pfile->numProcWriteBlocked++;
+	// printf("pfile->numProcWriteBlocked %d\n", pfile->numProcWriteBlocked);
+			// ordonnance();
+			// printf("psend continue : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
 		}
 
-		proc = pidToProc(getpid()); // A MODIF
-		proc->state = WAITMSG; // A VOIR
-		proc->msg_count = &pfile->numProcWriteBlocked;
-		proc->blocked_queue = &pfile->listProcWriteBlocked;
-		queue_add(proc, &pfile->listProcWriteBlocked,
-			  Process, msg_queue, prio);
-		pfile->numProcWriteBlocked++;
-// printf("pfile->numProcWriteBlocked %d\n", pfile->numProcWriteBlocked);
 		ordonnance();
-		// printf("psend continue : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
 
 		//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
 		if(pfile->isDeleted || proc->msg_reset){
@@ -300,26 +306,36 @@ int psend(int fid, int message)
 			// printf("psend %d reset or delete\n", message);
 			return ERR;
 		}
+
+		return 0;
 	}
 
 	if(pfile->sizeMessageUsed == 0) {
 		if(pfile->numProcReadBlocked != 0) {
 			//A FACTORISER
-			assert(pfile->windex < pfile->sizeMessage);
-			pfile->messages[pfile->windex] = message;
-			pfile->sizeMessageUsed++;
+			// assert(pfile->windex < pfile->sizeMessage);
+			// pfile->messages[pfile->windex] = message;
+			// pfile->sizeMessageUsed++;
 
-			pfile->windex = (pfile->windex + 1) % pfile->sizeMessage;
+			// pfile->windex = (pfile->windex + 1) % pfile->sizeMessage;
 
 			Process *proc;
 			proc = queue_out(&pfile->listProcReadBlocked, 
 					 Process, msg_queue);
 			assert(proc);
 			pfile->numProcReadBlocked--;
+			proc->message = message;
 			proc->blocked_queue = NULL;
 			proc->state = ACTIVABLE;// A VOIR
 			addProcActivable(proc);// A VOIR
 			ordonnance();
+
+			//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
+			if(pfile->isDeleted || proc->msg_reset){
+				proc->msg_reset = false;
+				// printf("psend %d reset or delete\n", message);
+				return ERR;
+			}
 
 			return 0;
 		}
@@ -365,18 +381,25 @@ int preceive(int fid, int *message)
 			proc->blocked_queue = NULL;
 			proc->state = ACTIVABLE;// A VOIR ou ACTIF selon la prio
 			addProcActivable(proc);// A VOIR ou ACTIF selon la prio
-			// ordonnance();
+
+			if (message)
+				*message = proc->message;
+
+			ordonnance();
 		}
-		// else {
-		proc = pidToProc(getpid()); // A MODIF
-		proc->state = WAITMSG; // A VOIR
-		proc->msg_count = &pfile->numProcReadBlocked;
-		proc->blocked_queue = &pfile->listProcReadBlocked;
-		queue_add(proc, &pfile->listProcReadBlocked,
-			  Process, msg_queue, prio);
-		pfile->numProcReadBlocked++;
-		ordonnance();
-		// }
+		else {
+			proc = pidToProc(getpid()); // A MODIF
+			proc->state = WAITMSG; // A VOIR
+			proc->msg_count = &pfile->numProcReadBlocked;
+			proc->blocked_queue = &pfile->listProcReadBlocked;
+			queue_add(proc, &pfile->listProcReadBlocked,
+				  Process, msg_queue, prio);
+			pfile->numProcReadBlocked++;
+			ordonnance();
+
+			if (message)
+				*message = proc->message;
+		}
 
 		//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
 		if(pfile->isDeleted || proc->msg_reset) {
@@ -384,6 +407,15 @@ int preceive(int fid, int *message)
 // printf("preceive OUT1\n");
 			return ERR;
 		}
+
+		return 0;
+
+// 		//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
+// 		if(pfile->isDeleted || proc->msg_reset) {
+// 			proc->msg_reset = false;
+// // printf("preceive OUT1\n");
+// 			return ERR;
+// 		}
 
 		//Un processus bloqué sur file vide et dont la priorité est changée par chprio, est considéré comme le dernier processus (le plus jeune) de sa nouvelle priorité. //A MODIF
 	}
@@ -412,6 +444,11 @@ int preceive(int fid, int *message)
 			proc = queue_out(&pfile->listProcWriteBlocked, 
 					 Process, msg_queue);
 			assert(proc);
+
+			pfile->messages[pfile->windex]=proc->message;
+			pfile->windex = (pfile->windex + 1) % pfile->sizeMessage;
+			pfile->sizeMessageUsed++;
+
 			pfile->numProcWriteBlocked--;
 			proc->blocked_queue = NULL;
 			proc->state = ACTIVABLE;// A VOIR ou ACTIF selon la prio

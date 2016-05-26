@@ -1,16 +1,16 @@
 
 target remote :1234
-#break process.c:132
-#break preceive
-#break pcreate
-#break psend
-#break pcount
-#break cons_write
-#break hash_destroy
-#break free_process
-#break pdelete
-#break waitpid
-#break ctx_sw
+#hbreak process.c:132
+hbreak preceive
+#hbreak pcreate
+#hbreak psend
+#hbreak pcount
+#hbreak cons_write
+#hbreak hash_destroy
+#hbreak free_process
+#hbreak pdelete
+#hbreak waitpid
+#hbreak ctx_sw
 #b ctx_sw
 #disp cur_proc
 #continue

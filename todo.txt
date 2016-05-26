@@ -6,6 +6,7 @@ Pour vendredi :
 - planning prévisionnel à détailler (détail de chaque phase + des extensions choisies)
 
 
+
 Phase 4 :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_roadmap#Phase_4
 
@@ -26,7 +27,7 @@ Phase 5
 Extensions :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
 
-- Shell amélioré ?
+- Shell amélioré
 - Pilote FAT32
 - Heure rtc
 

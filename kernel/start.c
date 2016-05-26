@@ -29,6 +29,7 @@ void kernel_start(void)
 	//start("test0",4000,10,NULL);
 	start("test13", 4000, 128, NULL);
 	//start("autotest", 4000, 10, NULL);
+
 	idle();
 
 	// On ne doit jamais sortir de kernel_start
