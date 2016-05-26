@@ -13,11 +13,11 @@ typedef struct elt{
 	int prio;
 } elt;
 
-semaphore tab_sema [NB_MAX_SEMA];
-bool tab_occup [NB_MAX_SEMA]; /*tableau représentant les cases occupées dans
+static semaphore tab_sema [NB_MAX_SEMA];
+static bool tab_occup [NB_MAX_SEMA]; /*tableau représentant les cases occupées dans
 				   tab_sema*/
 
-unsigned int nb_sema=0; //Nombre de sémaphores dans tab_sema
+static unsigned int nb_sema=0; //Nombre de sémaphores dans tab_sema
 
 //sti et cli necessaires ?
 
@@ -54,9 +54,9 @@ int scount (int sem) {
 	return tab_sema[sem].cpt;
 }
 
-static void debloquer_sema (semaphore s, uint8_t code) {
+static void debloquer_sema (semaphore *s, uint8_t code) {
 	while (true) {
-		int pid = (queue_out(s.file, elt, lien))->pid;
+		int pid = (queue_out(s->file, elt, lien))->pid;
 		if (pid  != 0) 
 			debloque_sema(pid, code);
 		else
@@ -68,7 +68,7 @@ int sdelete(int sem) {
 	if (!tab_occup[sem]) 
 		return -1;
 
-	semaphore s = tab_sema[sem];
+	semaphore *s = &(tab_sema[sem]);
 	debloquer_sema(s, 3);
 	tab_occup[sem] = false;
 	return 0;
@@ -79,9 +79,9 @@ int sreset(int sem, int count) {
 	if (!tab_occup[sem] || count < 0) 
 		return -1;
 
-	semaphore s = tab_sema[sem];
+	semaphore *s = &(tab_sema[sem]);
 	debloquer_sema(s, 4);
-	s.cpt = count;
+	s->cpt = count;
 	
 	return 0;
 }
@@ -95,9 +95,9 @@ static int test_wait(int sem) {
 		return -1;
 	}
 	
-	semaphore s = tab_sema[sem];
+	semaphore *s = &(tab_sema[sem]);
 	//Si la capacité du compteur est dépassée
-	if (s.cpt-1 > s.cpt) {
+	if (s->cpt-1 > s->cpt) {
 		//sti ();
 		return -2;
 	}
@@ -110,12 +110,13 @@ int try_wait(int sem) {
 	if (test < 0)
 		return test;
 
-	semaphore s = tab_sema[sem];
-	if (s.cpt <= 0)
+	semaphore *s = &(tab_sema[sem]);
+	//printf("semaphore numero %i ; cpt = %i\n",sem, s->cpt);
+	if (s->cpt <= 0)
 		//Cas où on bloquerait le processus si on décrementait le compteur
 		return -3;
 
-	s.cpt--;
+	s->cpt--;
 	return 0;	
 }
 
@@ -127,10 +128,10 @@ int wait (int sem) {
 	if (test < 0)
 		return test;
 
-	semaphore s = tab_sema[sem];
-	s.cpt--;
+	semaphore *s = &(tab_sema[sem]);
+	s->cpt--;
 
-	if (s.cpt<0) {
+	if (s->cpt<0) {
 		/*Si le cpt est < 0, on ajoute le processus 
 		  courant à la file d'attente*/
 		elt element;
@@ -139,7 +140,7 @@ int wait (int sem) {
 		element.lien.next=0;
 		element.prio=1;
 
-		queue_add(&element,(s.file),elt,lien,prio);
+		queue_add(&element,(s->file),elt,lien,prio);
 		bloque_sema();
 		return -get_code_reveil();
 	}
@@ -156,19 +157,23 @@ int signaln (int sem, short int count) {
 		return -1;
 	}
 	
-	semaphore s = tab_sema[sem];
+	semaphore *s = &(tab_sema[sem]);
 	//Si la capacité du compteur est dépassée
-	if (s.cpt+count < s.cpt) {
+	if (s->cpt+count < s->cpt) {
 		//sti ();
 		return -2;
 	}
 
-	if (s.cpt <= 0) {
+	if (s->cpt <= 0) {
 		for (int i=0; i < count; i++) {
-			int pid = (queue_out(s.file, elt, lien))->pid;
-			debloque_sema(pid, 0);
+			elt *element = queue_out(s->file, elt, lien);
+			if (element != 0)
+				debloque_sema(element -> pid, 0);
+
 		}
 	}
+
+
 	//sti();//Demasquage des it
 	return 0;
 }

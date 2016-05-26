@@ -12,6 +12,7 @@
 #include "shmem.h"
 #include "vmem.h"
 #include "file.h"
+#include "semaphores.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -990,35 +991,35 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SCOUNT:
-		printf("TODO : %d\n", num);
+		ret = scount(arg0);
 		break;
 		
 	case SCREATE:
-		printf("TODO : %d\n", num);
+		ret = screate(arg0);
 		break;
 
 	case SDELETE:
-		printf("TODO : %d\n", num);
+		ret = sdelete(arg0);
 		break;
 
 	case SIGNAL:
-		printf("TODO : %d\n", num);
+		ret = signal(arg0);
 		break;
 
 	case SIGNALN:
-		printf("TODO : %d\n", num);
+		ret = signaln(arg0,arg1);
 		break;
 
 	case SRESET:
-		printf("TODO : %d\n", num);
+		ret = sreset(arg0, arg1);
 		break;
 		
 	case TRY_WAIT:
-		printf("TODO : %d\n", num);
+		ret = try_wait(arg0);
 		break;
 		
 	case WAIT:
-		printf("TODO : %d\n", num);
+		ret = wait(arg0);
 		break;
 
 	case PCOUNT:
