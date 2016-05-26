@@ -141,7 +141,6 @@ static inline uint32_t compute_pages(uint32_t size)
 	return pages;
 }
 
-
 bool alloc_pages(Process *proc)
 {
 	bool success = true;

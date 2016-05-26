@@ -94,12 +94,26 @@ retour également terminé.
 Mardi 24 mai :
 
 Azizi :
-
+Poursuite de la phase 4 : files de messages
 
 Etienne :
-
+Gestion des syscalls en mode utilisateur et kernel.
 
 Léo :
+Debug et optimisation du code kernel, libération correcte de toutes les zones allouées, création et test du module de mémoire partagée et ajout d'une fonction d'itération sur les tables de hachage.
+
+
+Mercredi 25 mai :
+
+Azizi :
+Poursuite de la phase 4 : files de messages.
+Debug du test 10.
+
+Etienne :
+Rédaction du document de cadrage.
+
+Léo :
+
 
 
 

@@ -17,12 +17,12 @@ void kernel_start(void)
 
 	init_process();
 	init_time();
-	//init_clavier();
+	init_clavier();
 
 	// test_kill_exit();
 	// test_arg_stack();
 
-	//lancer_console();
+	lancer_console();
 
 	// init();
 	//start("prod", 50000, 10, (void *)50, producteur);
@@ -30,8 +30,8 @@ void kernel_start(void)
 
 	//start("shell", 1024, 10,NULL);
 	// start("montest", 11*1024, 10, NULL);
-	// start("test7", 4000, 128, NULL);
-	start("autotest", 4000, 10, NULL);
+	start("test13", 4000, 128, NULL);
+	// start("autotest", 4000, 10, NULL);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start

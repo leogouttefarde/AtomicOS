@@ -22,6 +22,9 @@
 		queue_add(proc, head, Process, queue, prio);	\
 	} while (0)
 
+#define IS_USER(arg) ((USERCODE <= (uint32_t)arg) || !arg)
+#define IS_USER2(a0, a1) (IS_USER(a0) && IS_USER(a1))
+
 /*
  * Etats de gestion
  * des processus
@@ -67,8 +70,11 @@ typedef struct Process_ {
 	link head_child;
 	link children;
 	link queue;
-	link queueRead; //Le chainage pour la file de processus bloqué en lecture
-	link queueWrite; //Le chainage pour la file de processus bloqué en écriture
+
+	bool msg_reset;
+	link *blocked_queue;
+	link msg_queue;
+
 	int prio;
 
 	struct Process_ *sibling;

@@ -2,7 +2,7 @@
 
 
 Pour vendredi :
-- doc de 2p sur le cadrage à rendre
+- doc de 4 pages sur le cadrage à rendre
 - planning prévisionnel à détailler (détail de chaque phase + des extensions choisies)
 
 
@@ -16,9 +16,10 @@ Phase 5
 
 - Gestion des exceptions
 
-- Vérification des paramètres de syscall (pointeurs > 1GB notamment)
+- Vérification des paramètres de syscall (s'assurer que pointeurs > 1GB notamment)
 
 - test machine ?
+
 
 
 

@@ -35,8 +35,8 @@ run: all
 
 # debug kvm (mieux)
 debug: all
-	$(QEMU) -kernel kernel/kernel.bin -gdb tcp::1234 -S &
-	gdb -x kernel/gdb_debug kernel/kernel.bin
+	cd kernel && $(QEMU) -kernel kernel.bin -gdb tcp::1234 -S &
+	cd kernel && gdb -x gdb_debug kernel.bin
 
 # debug pxe (si kvm non dispo)
 pxe: all

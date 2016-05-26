@@ -27,13 +27,15 @@ typedef struct file {
 	bool isDeleted; //pour savoir si la file est supprimée
 	bool isReseted; //pour savoir si la file est réinitialisée
 	int *messages;
+	int nextMessage;
+	int windex;
 	int sizeMessage;
 	int sizeMessageUsed;
 	int numProcReadBlocked;
-	link *listProcReadBlocked; //File des processus bloqués en lecture 
+	link listProcReadBlocked; //File des processus bloqués en lecture 
 	                           //(à cause de la file vide)
 	int numProcWriteBlocked;
-	link *listProcWriteBlocked; //File des processus bloqués en écriture 
+	link listProcWriteBlocked; //File des processus bloqués en écriture 
 	                            //(à cause de la file pleine)
 	struct file *next;
 } File;
@@ -95,8 +97,8 @@ static void insertTail (ListFile *plist, File *pfile) {
 int pcreate(int count)
 {
 	//count non-valide
-	if (count <= 0){
-		ERREUR1("Erreur de creation\n");
+	if (count <= 0 || count >= 0x40000000){
+		// ERREUR1("Erreur de creation\n");
 		return ERR;
 	}
 
@@ -105,29 +107,30 @@ int pcreate(int count)
 		return ERR;
 	}
 
-	File *pfile;
+	File *pfile = NULL;
 	if (numFileCreated < NBQUEUE){
 		pfile = mem_alloc(sizeof(File));
 		if(pfile == NULL){
-			ERREUR1("Erreur de creation - Erreur d'allocation de mémoire\n");
+			// ERREUR1("Erreur de creation - Erreur d'allocation de mémoire\n");
 			return ERR;
 		}
-		numFileCreated++;
 
 		pfile->fid = numFileCreated;
 		files[numFileCreated] = pfile;
+
+		numFileCreated++;
 	}else{
 		//La réutilisation de la file déjà créée et disponible
 		if (ListAvailable.head == NULL){
-			ERREUR1("Erreur de creation - Erreur inattendue");
+			// ERREUR1("Erreur de creation - Erreur inattendue");
 			return ERR;
 		}
 		pfile = extractHead(&ListAvailable);
-	}	
+	}
 
 	pfile->messages = mem_alloc(count*sizeof(int));
 	if (pfile->messages == NULL){
-		ERREUR1("Erreur de creation - Erreur d'allocation de mémoire\n");
+		// ERREUR1("Erreur de creation - Erreur d'allocation de mémoire\n");
 		if (numFileCreated < NBQUEUE){
 			mem_free_nolength(pfile);
 			numFileCreated--;
@@ -140,16 +143,16 @@ int pcreate(int count)
         
 	pfile->sizeMessage = count;
 	pfile->sizeMessageUsed = 0;
+	pfile->nextMessage = 0;
+	pfile->windex = 0;
 
 	pfile->numProcReadBlocked = 0;
-	
-	pfile->listProcReadBlocked = mem_alloc(sizeof(link));
-        INIT_LIST_HEAD(pfile->listProcReadBlocked);
+
+        INIT_LIST_HEAD(&pfile->listProcReadBlocked);
 
 	pfile->numProcWriteBlocked = 0;
 
-	pfile->listProcWriteBlocked = mem_alloc(sizeof(link));
-	INIT_LIST_HEAD(pfile->listProcWriteBlocked);
+	INIT_LIST_HEAD(&pfile->listProcWriteBlocked);
 
 	pfile->next = NULL;
 
@@ -158,24 +161,31 @@ int pcreate(int count)
 
 	return pfile->fid;
 }
-    
+
+#define queue_del_safe(ppelem, attr)			\
+	do {						\
+		if (*(ppelem) != NULL) {		\
+			queue_del(*(ppelem), attr);	\
+			*(ppelem) = NULL;		\
+		}					\
+	} while (0)
+
 //détruit une file de messages
 int pdelete(int fid)
 {
-	if (fid<0 || fid >= NBQUEUE){
+	// printf("pdelete\n");
+	if (fid < 0 || fid >= NBQUEUE){
 		return ERR;
 	}
 
 	File *pfile = files[fid];
-	if (pfile == NULL){
+
+	if (pfile == NULL || pfile->isDeleted){
 		return ERR;
 	}
-	if(pfile->isDeleted){
-		return ERR;
-	}
-        
+
 	mem_free_nolength(pfile->messages);
-	
+
 	pfile->isDeleted = true;
 	pfile->isReseted = false;
 	pfile->messages = NULL;
@@ -185,28 +195,43 @@ int pdelete(int fid)
 	pfile->numProcWriteBlocked = 0;
 
 	insertTail(&ListAvailable, pfile);
-	
-	Process *proc = NULL;
-	queue_for_each(proc, pfile->listProcReadBlocked, Process, queueRead) {// A VOIR
-		if (proc != NULL) {
-			pfile->numProcReadBlocked--;
-			queue_del(proc, queueRead);
-			proc->state = ACTIVABLE;
-			addProcActivable(proc);// A VOIR
-		}
-	}
-	
-	proc = NULL;
-	queue_for_each(proc, pfile->listProcWriteBlocked, Process, queueWrite) {// A VOIR
-		if (proc != NULL) {
-			pfile->numProcWriteBlocked--;
-			queue_del(proc, queueWrite);
-			proc->state = ACTIVABLE;
-			addProcActivable(proc);// A VOIR
-		}
-	}
 
-	
+	Process *proc = NULL, *del = NULL;
+	queue_for_each(proc, &pfile->listProcReadBlocked, Process, msg_queue) {// A VOIR
+
+		queue_del_safe(&del, msg_queue);
+
+		if (proc != NULL) {
+			// pfile->numProcReadBlocked--;
+			proc->state = ACTIVABLE;
+			proc->msg_reset = false;
+			proc->blocked_queue = NULL;
+			addProcActivable(proc);// A VOIR
+			del = proc;
+		}
+
+	}
+	queue_del_safe(&del, msg_queue);
+
+	proc = NULL;
+	queue_for_each(proc, &pfile->listProcWriteBlocked, Process, msg_queue) {// A VOIR
+
+		queue_del_safe(&del, msg_queue);
+
+		if (proc != NULL) {
+			// pfile->numProcWriteBlocked--;
+			proc->state = ACTIVABLE;
+			proc->msg_reset = false;
+			proc->blocked_queue = NULL;
+			addProcActivable(proc);// A VOIR
+			del = proc;
+		}
+	}
+	queue_del_safe(&del, msg_queue);
+
+	ordonnance();
+
+
 	//si c'était soi-même à libérer?? //normelement non, car ce processus actuel n'est pas bloqué
 
 	//le retour pour tous les processus libérés?? //A MODIF c'est fait car après chaque STI on a faitdes tests
@@ -218,106 +243,143 @@ int pdelete(int fid)
 int psend(int fid, int message)
 {
 	//A MODIF -> A FACTORISER
-	if (fid<0 || fid >= NBQUEUE){
+	if (fid < 0 || fid >= NBQUEUE) {
 		return ERR;
 	}
 
 	File *pfile = files[fid];
-	if (pfile == NULL){
+
+	if (pfile == NULL || pfile->isDeleted) {
 		return ERR;
 	}
-	if(pfile->isDeleted){
-		return ERR;
-	}
+        // printf("psend %d\n", message);
 
-	if(pfile->sizeMessageUsed == 0){
-		if(pfile->numProcReadBlocked != 0){
-			//A FACTORISER
-			pfile->messages[pfile->sizeMessageUsed] = message;
-			pfile->sizeMessageUsed++;
+	// printf("psend : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
 
-			Process *proc;
-			proc = queue_out(pfile->listProcReadBlocked, 
-					 Process, queueRead);
-			assert(proc);
-			pfile->numProcReadBlocked--;
-			proc->state = ACTIVABLE;// A VOIR
-			addProcActivable(proc);// A VOIR
 
-			return 0;
-		}
-	}else if(pfile->sizeMessageUsed == pfile->sizeMessage){
+	if(pfile->sizeMessageUsed == pfile->sizeMessage) {
 		Process *proc = pidToProc(getpid()); // A MODIF
 		proc->state = WAITMSG; // A VOIR
-		queue_add(proc, pfile->listProcWriteBlocked,
-			  Process, queueWrite, prio);
+		proc->blocked_queue = &pfile->listProcWriteBlocked;
+		queue_add(proc, &pfile->listProcWriteBlocked,
+			  Process, msg_queue, prio);
 		pfile->numProcWriteBlocked++;
+// printf("pfile->numProcWriteBlocked %d\n", pfile->numProcWriteBlocked);
 		ordonnance();
+		// printf("psend continue : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
 
 		//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
-		if(pfile->isDeleted || pfile->isReseted){
+		if(pfile->isDeleted || proc->msg_reset){
+			proc->msg_reset = false;
+			// printf("psend %d reset or delete\n", message);
 			return ERR;
 		}
 	}
-	
+
+	if(pfile->sizeMessageUsed == 0) {
+		if(pfile->numProcReadBlocked != 0) {
+			//A FACTORISER
+			assert(pfile->windex < pfile->sizeMessage);
+			pfile->messages[pfile->windex] = message;
+			pfile->sizeMessageUsed++;
+
+			pfile->windex = (pfile->windex + 1) % pfile->sizeMessage;
+
+			Process *proc;
+			proc = queue_out(&pfile->listProcReadBlocked, 
+					 Process, msg_queue);
+			assert(proc);
+			pfile->numProcReadBlocked--;
+			proc->blocked_queue = NULL;
+			proc->state = ACTIVABLE;// A VOIR
+			addProcActivable(proc);// A VOIR
+			ordonnance();
+
+			return 0;
+		}
+	}
+
 	//A cet état, le processus actuel (qui peut être celui qui vient d'être débloqué)
 	//peut maintenant déposer un message
-	pfile->messages[pfile->sizeMessageUsed]=message;
+	assert(pfile->windex < pfile->sizeMessage);
+	pfile->messages[pfile->windex]=message;
+	pfile->windex = (pfile->windex + 1) % pfile->sizeMessage;
 	pfile->sizeMessageUsed++;
+	// printf("psend continue_end : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
 
 	return 0;
 }
 
 //retire un message d'une file
-int preceive(int fid,int *message)
+int preceive(int fid, int *message)
 {
 	if (fid<0 || fid >= NBQUEUE){
 		return ERR;
 	}
+// printf("preceive IN\n");
 
 	File *pfile = files[fid];
-	if (pfile == NULL){
+
+	if (pfile == NULL || pfile->isDeleted){
 		return ERR;
 	}
-	if(pfile->isDeleted){
-		return ERR;
-	}
+	// printf("preceive : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
+// printf("preceive IN2\n");
 
 	//Si pas de message, le processus actuel passe à l'état WAITMSG et
 	//on passe au processus activable suivant
 	if(pfile->sizeMessageUsed == 0){
 		Process *proc = pidToProc(getpid()); // A MODIF
 		proc->state = WAITMSG; // A VOIR
-		queue_add(proc, pfile->listProcReadBlocked,
-			  Process, queueRead, prio);
+		proc->blocked_queue = &pfile->listProcReadBlocked;
+		queue_add(proc, &pfile->listProcReadBlocked,
+			  Process, msg_queue, prio);
 		pfile->numProcReadBlocked++;
 		ordonnance();
 
 		//si preset ou pdelete qui rend ce processus activable retour -1 ?? //A MODIF
-		if(pfile->isDeleted || pfile->isReseted){
+		if(pfile->isDeleted || proc->msg_reset) {
+			proc->msg_reset = false;
+// printf("preceive OUT1\n");
 			return ERR;
 		}
 
 		//Un processus bloqué sur file vide et dont la priorité est changée par chprio, est considéré comme le dernier processus (le plus jeune) de sa nouvelle priorité. //A MODIF
 	}
-	
-	//La lecture du message
-	*message=pfile->messages[0];
-	if(pfile->sizeMessage > 1){
-		memmove(pfile->messages, (pfile->messages)+1, (pfile->sizeMessage-1)*(sizeof(int)));
+	// printf("preceive_end : %c, count = %d\n", pfile->messages[pfile->nextMessage], pfile->sizeMessageUsed);
+
+	pfile->sizeMessageUsed--;
+	assert(pfile->nextMessage < pfile->sizeMessage);
+
+	if (message != NULL) {
+
+		//La lecture du bon message
+		*message = pfile->messages[pfile->nextMessage];
+		pfile->nextMessage = (pfile->nextMessage + 1) % pfile->sizeMessage;
+// printf("preceive %d\n", *message);
+		// Code ci-dessous faux : 1 message = 1 seul entier
+		// if(pfile->sizeMessage > 1){
+		// 	memmove(pfile->messages, (pfile->messages)+1, (pfile->sizeMessage-1)*(sizeof(int)));
+		// }
+	// }else {
+// printf("preceive no message\n");
 	}
-	(pfile->sizeMessageUsed)--;
 
 	//Si la file était pleine avant la lecture précédente
 	if(pfile->sizeMessageUsed+1 == pfile->sizeMessage){
+// printf("réveil écrivain pre\n");
+// printf("pfile->numProcWriteBlocked %d\n", pfile->numProcWriteBlocked);
 		if(pfile->numProcWriteBlocked != 0){
+// printf("réveil écrivain\n");
 			Process *proc;
-			proc = queue_out(pfile->listProcWriteBlocked, 
-					 Process, queueRead);
+			proc = queue_out(&pfile->listProcWriteBlocked, 
+					 Process, msg_queue);
 			assert(proc);
 			pfile->numProcWriteBlocked--;
+			proc->blocked_queue = NULL;
 			proc->state = ACTIVABLE;// A VOIR ou ACTIF selon la prio
 			addProcActivable(proc);// A VOIR ou ACTIF selon la prio
+			ordonnance();
 			return 0;
 		}
 	}
@@ -346,25 +408,35 @@ int preset(int fid)
 	pfile->numProcReadBlocked = 0;
 	pfile->numProcWriteBlocked = 0;
 	
-	Process *proc = NULL;
-	queue_for_each(proc, pfile->listProcReadBlocked, Process, queueRead) {// A VOIR
+	Process *proc = NULL, *del = NULL;
+	queue_for_each(proc, &pfile->listProcReadBlocked, Process, msg_queue) {// A VOIR
+		queue_del_safe(&del, msg_queue);
+
 		if (proc != NULL) {
-			pfile->numProcReadBlocked--;
-			queue_del(proc, queueRead);
 			proc->state = ACTIVABLE;
+			proc->blocked_queue = NULL;
+			proc->msg_reset = true;
 			addProcActivable(proc);// A VOIR
+			del = proc;
 		}
 	}
-	
+	queue_del_safe(&del, msg_queue);
+
 	proc = NULL;
-	queue_for_each(proc, pfile->listProcWriteBlocked, Process, queueWrite) {// A VOIR
+	queue_for_each(proc, &pfile->listProcWriteBlocked, Process, msg_queue) {// A VOIR
+		queue_del_safe(&del, msg_queue);
+
 		if (proc != NULL) {
-			pfile->numProcWriteBlocked--;
-			queue_del(proc, queueWrite);
 			proc->state = ACTIVABLE;
+			proc->blocked_queue = NULL;
+			proc->msg_reset = true;
 			addProcActivable(proc);// A VOIR
+			del = proc;
 		}
 	}
+	queue_del_safe(&del, msg_queue);
+
+	ordonnance();
 
 	//si c'était soi-même à libérer?? //normelement non, car ce processus actuel n'est pas bloqué
 
@@ -376,22 +448,28 @@ int preset(int fid)
 //renvoie l'état courant d'une fil
 int pcount(int fid, int *count)
 {
-	if (fid<0 || fid >= NBQUEUE){
+	if (fid < 0 || fid >= NBQUEUE) {
 		return ERR;
 	}
 
 	File *pfile = files[fid];
-	if (pfile == NULL){
-		return ERR;
-	}
-	if(pfile->isDeleted){
+
+	if (pfile == NULL || pfile->isDeleted) {
 		return ERR;
 	}
 
-	if (count == NULL){ // A MODIF
-		return (pfile->sizeMessageUsed)+(pfile->numProcWriteBlocked);
-	}else{
-		return -1*(pfile->numProcReadBlocked);
+	// if (count == NULL){ // A MODIF
+	// 	return (pfile->sizeMessageUsed)+(pfile->numProcWriteBlocked);
+	// }else{
+		// return -1*(pfile->numProcReadBlocked);
+	// }
+	if (count != NULL) {
+		if (pfile->numProcReadBlocked > 0)
+			*count = -pfile->numProcReadBlocked;
+
+		else
+			*count = pfile->sizeMessageUsed + pfile->numProcWriteBlocked;
+	// printf("pcount => %d\n", *count);
 	}
 
 	return 0;

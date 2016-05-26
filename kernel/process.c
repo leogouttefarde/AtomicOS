@@ -126,7 +126,7 @@ void free_process_shmem(void *key,
 
 static inline void free_process(Process *proc)
 {
-	if (proc == NULL)
+	if (proc == NULL || !proc->pid)
 		return;
 
 	int pid = proc->pid;
@@ -137,7 +137,7 @@ static inline void free_process(Process *proc)
 	INIT_LINK(&fpid->queue);
 	queue_add(fpid, &head_pid, FreePid, queue, pid);
 
-	// Libération de chaque zone partagée utilisée
+	// Libération des zones partagées utilisées
 	hash_for_each(&proc->shmem, (void*)proc, free_process_shmem);
 	hash_destroy(&proc->shmem);
 
@@ -494,18 +494,23 @@ int get_new_pid()
 {
 	int pid;
 
-	if (pid_index >= MAX_NB_PROCS) {
+	if (!queue_empty(&head_pid)) {
 		FreePid *fpid = queue_bottom(&head_pid, FreePid, queue);
 		pid = fpid->pid;
 
 		queue_del(fpid, queue);
 		mem_free_nolength(fpid);
 	}
-	else {
+	else if (pid_index < MAX_NB_PROCS) {
 		pid = pid_index++;
+	}
+	else {
+		panic("FATAL ERROR");
 	}
 
 	nb_procs++;
+
+	// printf("pid %d  nb %d\n", pid, nb_procs);
 
 	return pid;
 }
@@ -549,9 +554,10 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 		strncpy(proc->name, name, PROC_NAME_SIZE);
 		proc->name[PROC_NAME_SIZE-1] = 0;
 
+		hash_init_string(&proc->shmem);
+
 		if (alloc_pages(proc)) {
 
-			hash_init_string(&proc->shmem);
 			proc->shm_idx = 0;
 
 			//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
@@ -617,6 +623,21 @@ void _exit(int retval)
 		panic("FATAL ERROR\n");
 
 	cur_proc->s.retval = retval;
+	printf("_exit\n");
+
+	// if (cur_proc->blocked_queue != NULL) {
+	// 	Process *proc = queue_out(cur_proc->blocked_queue,
+	// 			Process, msg_queue);
+
+	// printf("HELLO\n");
+	// 	assert(proc);
+
+	// 	if (proc != NULL) {
+	// 		proc->blocked_queue = NULL;
+	// 		proc->state = ACTIVABLE;
+	// 		addProcActivable(proc);
+	// 	}
+	// }
 
 	finish_process(cur_proc->pid);
 	ordonnance();
@@ -719,7 +740,7 @@ int waitpid(int pid, int *retvalp)
 	int ret = -1;
 	bool wait_child = false;
 	bool is_zombie = false;
-	Process *child = NULL;
+	Process *child = NULL, *it = NULL;
 
 	// Si le pid est valide, il correspond à un pid réel
 	if (is_killable(pid)) {
@@ -748,11 +769,13 @@ int waitpid(int pid, int *retvalp)
 		wait_child = true;
 
 		// On cherche si un zombie est déjà présent
-		cqueue_for_each(child, &cur_proc->head_child) {
-			child = procs[child->pid];
+		cqueue_for_each(it, &cur_proc->head_child) {
+			it = procs[it->pid];
 
-			if (child && child->state == ZOMBIE) {
+			if (it && it->state == ZOMBIE) {
 				is_zombie = true;
+				child = it;
+				break;
 			}
 		}
 	}
@@ -841,6 +864,12 @@ int chprio(int pid, int newprio)
 			queue_del(proc, queue);
 			pqueue_add(proc, &head_act);
 		}
+
+		// WAITMSG
+		else if (proc->state == WAITMSG) {
+			queue_del(proc, msg_queue);
+			queue_add(proc, proc->blocked_queue, Process, msg_queue, prio);
+		}
 	}
 
 	return prio;
@@ -850,8 +879,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 {
 	// TODO : vérifier les valeurs (notamment pointeurs)
 	// pour plus de sécurité
-	bool error = false;
-	int ret = 0;
+	int ret = -1;
 
 	arg2 = arg2;
 	arg3 = arg3;
@@ -879,6 +907,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case WAITPID:
+		if (IS_USER(arg1))
 		ret = waitpid(arg0, (int*)arg1);
 		break;
 
@@ -891,7 +920,8 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case CONS_READ:
-		ret = (unsigned long) cons_read((char *)arg0, (unsigned long)arg1); 
+		if (IS_USER(arg0))
+		ret = cons_read((char*)arg0, (unsigned long)arg1); 
 		break;
 
 	case CONS_ECHO:
@@ -900,45 +930,38 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	case SCOUNT:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 		
 	case SCREATE:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 
 	case SDELETE:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 
 	case SIGNAL:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 
 	case SIGNALN:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 
 	case SRESET:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 		
 	case TRY_WAIT:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 		
 	case WAIT:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 
 	case PCOUNT:
+		if (IS_USER(arg1))
 		ret = pcount(arg0, (int*)arg1);
 		break;
 
@@ -951,6 +974,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case PRECEIVE:
+		if (IS_USER(arg1))
 		ret = preceive(arg0, (int*)arg1);
 		break;
 
@@ -963,6 +987,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case CLOCK_SETTINGS:
+		if (IS_USER2(arg0, arg1))
 		clock_settings((unsigned long*)arg0, (unsigned long*)arg1);
 		break;
 
@@ -976,7 +1001,6 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	case SYS_INFO:
 		printf("TODO : %d\n", num);
-		error = true;
 		break;
 
 	case SHM_CREATE:
@@ -993,12 +1017,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	default:
 		printf("Unknown syscall : %d\n", num);
-		error = true;
 		break;
-	}
-
-	if (error) {
-		ret = -1;
 	}
 
 	return ret;
@@ -1013,5 +1032,8 @@ void addProcActivable(Process *proc)
 //Trouver le processus à partir du pid
 Process *pidToProc(int pid)
 {
-	return procs[pid];
+	if (pid < MAX_NB_PROCS)
+		return procs[pid];
+
+	return NULL;
 }

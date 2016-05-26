@@ -1,8 +1,18 @@
 
 target remote :1234
-b process.c:640
-hbreak ctx_sw
-b ctx_sw
+#break process.c:132
+break preceive
+#break pcreate
+break psend
+#break pcount
+#break cons_write
+#break hash_destroy
+#break free_process
+#break pdelete
+#break waitpid
+#break ctx_sw
+#b ctx_sw
 disp cur_proc
 continue
-disp proc
+#disp proc
+#disp procs[2]->shmem
