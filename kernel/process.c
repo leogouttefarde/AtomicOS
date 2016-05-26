@@ -1053,7 +1053,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 	case SHM_RELEASE:
 		shm_release((const char*)arg0);
 		break;
-
+		
+	case AFFICHE_ETATS:
+		affiche_etats();
+		break;
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;

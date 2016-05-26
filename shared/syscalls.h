@@ -34,4 +34,6 @@
 #define SHM_ACQUIRE 29
 #define SHM_RELEASE 30
 
+//Nos syscalls
+#define AFFICHE_ETATS 31
 #endif

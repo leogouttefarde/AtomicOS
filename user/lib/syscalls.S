@@ -137,8 +137,14 @@ cons_read:
 	.text
 	.globl cons_echo
 cons_echo:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
 	movl $CONS_ECHO, %eax
 	int $49
+	popl %ebx
+	popl %ebp
 	ret
 
 	.text
@@ -408,3 +414,9 @@ shm_release:
 	popl %ebp
 	ret
 
+	.text
+	.globl affiche_etats
+affiche_etats:
+	movl $AFFICHE_ETATS, %eax
+	int $49
+	ret

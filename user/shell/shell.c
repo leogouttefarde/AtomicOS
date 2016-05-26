@@ -3,13 +3,13 @@
 
 #define TAILLE_TAB 2000
 
-signed long debut_mot;
-signed long fin_mot;
+unsigned long debut_mot;
+unsigned long fin_mot;
 unsigned long fin_commande;
 char commande[TAILLE_TAB];
 extern unsigned long strtoul(const char *p, char **out_p, int base);
 
-/*static void ecrire_msg (const char *message) {
+static void ecrire_msg (const char *message) {
 	//Ecriture d'un message d'erreur sur la console
 	cons_write(message,strlen(message));
 }
@@ -57,11 +57,11 @@ static void echo () {
 	
 	if (mot_suivant[0] == '\0') {
 		if (comparer(mot_courant,"on")) {
-			//cons_echo(1);
+			cons_echo(1);
 			return;
 		}
 		else if (comparer(mot_courant,"off")) {
-			//cons_echo(0);
+			cons_echo(0);
 			return;
 		}
 	}
@@ -78,8 +78,8 @@ static void kill_proc () {
 	}
 
 	char *p;
-	unsigned long int numero=strtoul(mot_courant, &p,10);
-	if (kill(numero)<0) 
+	unsigned long numero=strtoul(mot_courant, &p,10);
+	if (kill(numero) < 0) 
 		ecrire_msg("pid invalide\n");
 	else
 		ecrire_msg("terminaison reussie\n");
@@ -88,23 +88,23 @@ static void kill_proc () {
 
 static void ps() {
 	if (extraire_mot()[0]=='\0')
-		//affiche_etats();
+		affiche_etats();
 	else {
 		char *message="Cette commande ne necessite pas d'arguments\n";
 		cons_write(message,strlen(message));
 	}	
 		
-}*/
+}
 
 static void interpreter () {
-	/*char *mot_courant=extraire_mot();
+	char *mot_courant=extraire_mot();
 	if (comparer(mot_courant,"echo"))
 		echo();		
 	else if (comparer(mot_courant,"ps"))
 		ps();
 	else if (comparer(mot_courant,"kill"))
 		kill_proc();
-	else if (!comparer(mot_courant,""))*/
+	else if (!comparer(mot_courant,""))
 		cons_write("commande introuvable\n",21);
 }
 
