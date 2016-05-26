@@ -71,6 +71,7 @@ typedef struct Process_ {
 	link children;
 	link queue;
 
+	int message;
 	int *msg_count;
 	bool msg_reset;
 	link *blocked_queue;

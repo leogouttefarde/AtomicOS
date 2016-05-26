@@ -25,11 +25,12 @@ void kernel_start(void)
 	//start("prod", 50000, 10, (void *)50, producteur);
 	//start ("conso", 50000, 10, (void *)50, consommateur);
 
-	start("shell", 4000, 10,NULL);
+	//start("shell", 4000, 10,NULL);
+	// start("test12", 4000, 128,NULL);
 	//start("montest", 11*1024, 10, NULL);
 	//start("test0",4000,10,NULL);
 	//start("test16", 4000, 128, NULL);
-	//start("autotest", 4000, 10, NULL);
+	start("autotest", 4000, 10, NULL);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start
