@@ -1,0 +1,238 @@
+\documentclass[a4paper, 11pt, titlepage]{article}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{fancybox}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}
+% \usepackage[T1]{fontenc}
+\usepackage{amsmath,amsfonts,amssymb}
+\usepackage{fancyhdr}
+\usepackage{stackrel}
+\usepackage{babel,indentfirst}
+\usepackage{xspace}
+\usepackage{url}
+\usepackage{titling}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{makecell}
+\usepackage{tikz}
+\usepackage{enumerate}
+
+%\setlength{\parindent}{0pt}
+\setlength{\parskip}{1ex}
+\setlength{\textwidth}{17cm}
+\setlength{\textheight}{24cm}
+\setlength{\oddsidemargin}{-.7cm}
+\setlength{\evensidemargin}{-.7cm}
+\setlength{\topmargin}{-.5in}
+
+
+
+\predate{
+\begin{center}
+}
+\postdate{
+\\
+\vspace{1.5cm}
+\includegraphics[scale=0.7]{imag.png}
+\end{center}}
+
+
+\title {{ {\Huge Cadrage de projet }} \\\vspace{0.1cm}
+Projet Système d'Exploitation }
+
+% \title{Bilan -- Projet Génie Logiciel}
+
+\author{\Large Equipe 2 \\
+\\
+    {\sc Gouttefarde}~Léo,
+    {\sc Omar}~Azizi,
+    {\sc Quay-Thevenon}~Etienne
+}
+
+\date{Vendredi 27 Mai 2016}
+
+\lhead{Cadrage}
+\rhead{Projet Système}
+
+
+\begin{document}
+\pagestyle{fancy}
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+
+
+\section{Introduction}
+
+Dans le cadre de notre projet de spécialité de deuxième année, nous avons choisi de suivre le projet système. Nous sommes une équipe de 3 étudiants en filière ISI (Léo et Etienne) et ISSC (Azizi). L'objectif global de notre projet est la création d'un système d'exploitation minimal. Nous disposons de 4 semaines pour y parvenir.
+
+\section{Objectifs}
+
+Notre projet est à visée pédagogique uniquement. Le code que nous produirons ne sera pas amené à être mis en production. Nous sommes en tout 8 équipes à suivre ce projet, et sommes guidés par un groupe d'enseignants.
+
+
+\subsection{Réalisation du cahier des charges imposé}
+
+Notre projet se divise en 2 parties. La première consiste à implémenter le cahier des charges élaboré par l'équipe enseignante. Ce cahier des charges est structuré et divisé en 7 phases distinctes :
+
+\begin{enumerate}
+\item
+Gérer l'affichage à l'écran.
+
+\item
+Gérer la notion de processus.
+
+\item
+Gérer le création dynamique, la terminaison, la filiation et l'ordonnancement des processus. 
+
+\item
+Gérer la communication entre les processus et leur endormissement.
+
+\item
+Séparer les espaces mémoires du noyau et des processus. Ajouter un mode utilisateur.
+
+\item
+Gérer le clavier.
+
+\item
+Développer un interprète de commande.
+\end{enumerate}
+
+A la fin de cette partie, on doit donc pouvoir exécuter plusieurs programmes en même temps. Ceux-ci doivent pouvoir imprimer des caractères à l'écran, et ils doivent pouvoir être lancés par un utilisateur à l'aide du clavier. Il sera également important de créer un système performant, la performance étant un critère capital pour un système d'exploitation.
+
+Au cours de ces phases, nous devons également implémenter une trentaine de primitives système définies par les enseignants.
+
+L'architecture générale de cette partie est donc imposée par l'équipe enseignante. En effet, la conception d'un système d'exploitation n'est pas chose aisée, et il est probable que sans ce guidage, nous ne serions pas en mesure de produire un livrable suffisamment conséquent dans le délai imparti.
+
+De même, l'équipe enseignante nous fournit une base de test assez complète afin de nous faire gagner du temps, ainsi qu'une base de code sur laquelle s'appuyer. Sur l'Ensiwiki, nous avons également accès à de la documentation rédigée par les enseignants ainsi et à des conseils livrés par les équipes ayant réalisé le projet les années antérieures.
+
+Le projet est donc particulier dans le sens où une partie du travail a déjà été réalisée par l'équipe enseignante. De ce fait, la méthode de développement classique d'analyse, conception, codage, validation ne sera pas appliquée à la lettre au court de ce projet.
+
+
+\subsection{Extensions}
+
+La deuxième partie consiste à implémenter des extensions. Le temps consacré à cette partie dépendra de notre rapidité à terminer la première partie du projet. Au moment où nous rédigeons ce document, nous estimons que nous seront en mesure de dédier les deux dernières semaines du projet au développement d'extensions. 
+
+Les possibilités d'extensions sont très nombreuses. On peut citer par exemple l'exploitation de périphériques complexes tels que la carte son ou la carte réseau, la prise en charge de plusieurs processeurs, la mise en place d'un système de fichiers, etc.
+
+Le choix des extensions sera le fruit d'un dialogue avec les enseignants. En effet, ils disposent du recul nécessaire pour nous orienter sur des extensions qui soient réalisables dans le temps imparti au vu de nos compétences.
+Il s'agira cette fois-ci de réaliser les extensions de manière autonome, sans bénéficier du travail préalable des encadrants.
+
+
+\section{Organisation}
+Le projet se déroule sur 4 semaines, du 17 Mai au 10 Juin 2016.
+
+\subsection{Le rôle des compétences dans notre organisation}
+Nous avons tous suivi au premier semestre  de cette année le cours de Pratique du Système, dont le projet système est en quelque sorte la continuité. De plus, nous avions tous les trois bien intégré les notions vues pendant ce cours. De ce fait, nous sommes tous en mesure d'avancer sur ce projet de manière régulière et autonome.
+
+Nous n'avons pas tous le même niveau de compétences dans le cadre de ce projet. En particulier, Léo a suivi le cours de Conception des Systèmes d'Exploitation au deuxième semestre, cours qu'il est avantageux d'avoir suivi dans le cadre de ce projet. De plus, il est le développeur le plus expérimenté de nous trois. A ce titre, il est le plus à même d'évaluer la difficulté de chaque tâche, le temps qu'elle devrait prendre, etc. C'est donc lui qui coordonne le projet.
+
+\subsection{Planning de la partie imposée}
+Nous avons décidé de découper cette partie en 2 étapes.
+
+\begin{enumerate}[(a)] % (a), (b), (c), ...
+\item
+Développement
+
+La première étape consistera à implémenter les phases fournies par les enseignants. Celles-ci comportent les caractéristique suivantes :
+
+\begin{itemize}
+\item
+Les phases 1 et 2 ont déjà été effectuées dans le cadre du cours de Pratique du Système. Elles sont donc faciles à implémenter dès la première demi-journée du projet.
+\item
+Les phases 3 et 5 sont centrales au projet.
+\item
+La phase 5 est la plus longue et la plus difficile.
+\item
+La phase 4 est relativement indépendante du reste du projet.
+\item
+Les phases 6 et 7 vont ensemble et sont relativement indépendantes du reste du projet.
+\end{itemize}
+\vspace{0.3cm}
+Nous avons décidé, au vu de nos niveaux de compétences respectifs, de nous organiser de la façon suivante :
+
+\begin{itemize}
+\item
+Léo réalisera les phase 3 et 5
+\item
+Azizi réalisera la phase 4. Quand il aura fini, il pourra aider Léo à avancer sur la phase 5.
+\item
+Etienne réalisera les phases 6 et 7
+\end{itemize}
+\vspace{0.3cm}
+
+Dans un premier temps, nous estimions que cette étape durerait du 17 mai au 30 mai. Nous sommes en avance sur le planning puisque nous avons terminé cette étape le 25 mai.
+
+\item
+Mise en commun et validation
+
+Cette deuxième étape consiste à adapter le code de chacun pour qu'il rentre bien dans le moule imposé par l'architecture du projet. Il s'agit également de corriger les bugs mis en évidence par les tests fournis par l'équipe enseignante. Pour que le projet soit un succès, il est impératif que tous ces tests soient validés par le code que nous rendrons le 10 juin.
+
+Enfin, nous ajouterons nos propres tests si nous considérons que la base de tests est incomplète. Nous veillerons en particulier à faire tester chaque primitive système par un des membres n'ayant pas participé à son implémentation.
+
+Cependant, même si la base de tests fournie ne comporte que 22 tests au total, chacun d'entre eux effectue de nombreux sous-tests de fonctions différentes avec des vérifications de cas très complexes. Ainsi la base de tests fournie est déjà un très bon indicateur du bon fonctionnement du système développée.
+
+Nous estimons que cette étape devrait durer 4 à 5 jours.
+\end{enumerate}
+
+\subsection{Planning des extensions}
+
+Il est difficile de faire un planning pour les extensions étant donné que nous ne savons pas encore quelles extensions nous allons être amenés à réaliser, ni combien de temps il nous restera pour les faire. 
+
+Cependant, il faudra bien prendre en compte que les extensions comporteront une phase de conception, une phase de recherche d'information et une phase de validation beaucoup plus conséquentes que pour la partie imposée. La rédaction d'un cahier des charges permettant de formaliser ces extensions est également exigée.
+
+Au début du projet, nous avions estimé qu'il nous resterait environ une semaine pour réaliser les extensions. Comme nous avançons plus rapidement que prévu, nous pourrions bénéficier de près de deux semaines pour les réaliser.
+
+\section{Communication}
+
+\subsection{Communication interne}
+
+Nous travaillons soit ensemble dans une salle informatique à l'Ensimag, soit chacun de notre côté sur nos machines personnelles. Dans le premier cas, il est très facile de communiquer entre nous. Dans le second, nous communiquons via un chat. Cela a l'avantage de nous permettre de conserver une trace écrite de toutes les conversations, ainsi que de pouvoir resté concentré sans être sans-cesse interrompu.
+
+Nous disposons également d'un fichier recensant les tâches à réaliser que nous mettons à jour régulièrement. Nous tenons aussi un journal de bord, comme cela est suggéré par l'équipe enseignante. Enfin, le gestionnaire de version que nous utilisons pour travailler sur le code (git) nous permet de conserver un historique de l'avancée du projet.
+
+Grâce à tous ces outils, et étant donnée la taille réduite du projet (équipe de 3 personnes seulement), nous avons tous en permanence une idée précise de l'état d'avancement du projet. A ce titre, nous n'avons pas véritablement besoin d'effectuer des réunions.
+
+\subsection{Communication avec les enseignants}
+
+L'équipe enseignante est composée de 4 personnes. La communication avec l'équipe enseignante est assez simple : l'un d'entre eux est présent dans une salle de l'Ensimag pour répondre à nos questions tous les matins pendant le projet. Les enseignants peuvent également poster des informations sur la page Ensiwiki du projet.
+
+
+\section{Risques}
+
+\subsection{Principaux risques}
+
+Le principal risque est la prise de retard sur certains module obligatoires et essentiels pour la suite du projet.
+
+Un autre risque serait que l'un des membres essentiels du projet tombe malade ou doive s'absenter, auquel cas il faudrait pouvoir continuer son travail sans que cela ne pose trop de difficultés.
+
+Un dernier risque consisterait à se disperser dans trop d'extensions différentes ou complexes pour la durée du projet. Notamment, la réalisation de pilotes complexes comme la gestion du mode graphique, l'utilisation d'une carte son ou encore la gestion d'une carte réseau en mode TCP prendrait beaucoup trop de temps.
+
+
+\subsection{Solutions}
+
+Pour réduire au maximum les risques sur ce projet, nous avons partagé le travail selon nos compétences respectives afin de ne pas prendre de retard sur le développement des modules.
+
+De plus, nous veillons en permanence à comprendre la plupart du code effectué et expliquons aux autres les parties sensibles. Ainsi cela permet à chacun de pouvoir travailler sur d'autres modules de manière flexible si besoin.
+
+Finalement nous validerons les extensions avec les enseignants, ainsi nous pourrons être certains que nos choix sont satisfaisants.
+
+
+\section{Indicateurs}
+
+Pour connaître notre niveau d'avancement au sein du projet, il nous suffit de vérifier le bon fonctionnement de chaque module développé au cours du temps avec notamment des tests de non-régression.
+
+De même, si l'un d'entre nous prend du retard sur un module important un autre membre l'aidera alors à terminer le travail afin de ne pas avoir de retard sur des étapes essentielles.
+
+Finalement, nous auront atteint nos objectifs à 50 \% une fois les étapes obligatoires 1 à 5 fonctionnelles et testées, à 70 \% une fois l'ensemble des 7 étapes obligatoires terminées et à 100 \% une fois les extensions choisies terminées. Les éventuelles extensions supplémentaires réalisées nous permettront ensuite de dépasser les objectifs du projet à 110 \% voire même 130 \% si nous réalisons vraiment de nombreuses extensions en plus.
+
+
+
+\end{document}
+
