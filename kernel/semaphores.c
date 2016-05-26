@@ -21,6 +21,8 @@ static unsigned int nb_sema=0; //Nombre de sémaphores dans tab_sema
 
 //sti et cli necessaires ?
 
+
+
 static semaphore init_semaphore (int c) {
 
 	//Initialisation de la file d'attente associée au sémpahore
@@ -43,7 +45,6 @@ int screate (short int count) {
 	tab_occup[res] = true;
 	nb_sema++;
 
-	//sti(); 
 	return res;
 }
 
@@ -56,9 +57,9 @@ int scount (int sem) {
 
 static void debloquer_sema (semaphore *s, uint8_t code) {
 	while (true) {
-		int pid = (queue_out(s->file, elt, lien))->pid;
-		if (pid  != 0) 
-			debloque_sema(pid, code);
+		elt *element = queue_out(s->file, elt, lien);
+		if (element  != 0) 
+			debloque_sema(element -> pid, code);
 		else
 			break;
 	}	
@@ -111,7 +112,7 @@ int try_wait(int sem) {
 		return test;
 
 	semaphore *s = &(tab_sema[sem]);
-	//printf("semaphore numero %i ; cpt = %i\n",sem, s->cpt);
+	printf("semaphore numero %i ; cpt = %i\n",sem, s->cpt);
 	if (s->cpt <= 0)
 		//Cas où on bloquerait le processus si on décrementait le compteur
 		return -3;
@@ -129,6 +130,8 @@ int wait (int sem) {
 		return test;
 
 	semaphore *s = &(tab_sema[sem]);
+	printf("semaphore numero %i ; cpt = %i\n",sem, s->cpt);
+
 	s->cpt--;
 
 	if (s->cpt<0) {
@@ -138,10 +141,10 @@ int wait (int sem) {
 		element.pid=getpid();
 		element.lien.prev=0;
 		element.lien.next=0;
-		element.prio=1;
+		element.prio=getprio(element.pid);
 
 		queue_add(&element,(s->file),elt,lien,prio);
-		bloque_sema();
+		bloque_sema(s);
 		return -get_code_reveil();
 	}
 	
@@ -164,15 +167,15 @@ int signaln (int sem, short int count) {
 		return -2;
 	}
 
-	if (s->cpt <= 0) {
-		for (int i=0; i < count; i++) {
+	for (int i=0; i < count; i++) {
+		s -> cpt += 1;
+		if (s->cpt<=0) {
 			elt *element = queue_out(s->file, elt, lien);
 			if (element != 0)
 				debloque_sema(element -> pid, 0);
-
 		}
-	}
 
+	}
 
 	//sti();//Demasquage des it
 	return 0;

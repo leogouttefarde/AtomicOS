@@ -97,9 +97,9 @@ typedef struct Process_ {
 	uint32_t shm_idx;
 	
 	uint8_t code_reveil; /*indique si le processus a été placé dans la 
-			       liste des activable par un sdelete (code 3),
-			       par un reset (code 4), ou par un signal (code 0)*/
-			       
+			       liste des activable par un sdelete (code 3), par
+			       un reset (code 4), ou par un signal (code 0)*/
+		       
 } Process;
 
 

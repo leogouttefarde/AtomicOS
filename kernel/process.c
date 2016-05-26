@@ -333,7 +333,7 @@ unsigned int get_code_reveil () {
 
 void bloque_sema () {
 	Process *proc_sema = cur_proc;
-
+	
 	proc_sema->state = BLOCKEDSEMA;
 	queue_add(proc_sema, &head_sema, Process, queue, prio);
 	ordonnance();
@@ -932,6 +932,12 @@ int chprio(int pid, int newprio)
 			queue_del(proc, msg_queue);
 			queue_add(proc, proc->blocked_queue, Process, msg_queue, prio);
 		}
+
+		//Cas des sémaphores
+		/*else if (proc->state == BLOCKEDSEMA) {
+			queue_del(proc->s, queue);
+			pqueue_add(proc, &head_sema);
+			}*/
 	}
 
 	return prio;
