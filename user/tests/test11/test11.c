@@ -28,7 +28,7 @@ int main(void *arg)
         assert(pid4 > 0);
         assert(chprio(getpid(), 160) == 128);
         printf(" 6");
-        xsignal(&shared->sem);
+        xsignal(&shared->sem);	
         assert(waitpid(-1, 0) == pid2);
         assert(waitpid(-1, 0) == pid3);
         assert(waitpid(-1, 0) == pid1);

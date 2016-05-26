@@ -21,17 +21,15 @@ void kernel_start(void)
 
 	// test_kill_exit();
 	// test_arg_stack();
-
-	lancer_console();
-
 	// init();
 	//start("prod", 50000, 10, (void *)50, producteur);
 	//start ("conso", 50000, 10, (void *)50, consommateur);
 
 	//start("shell", 1024, 10,NULL);
-	//start("montest", 11*1024, 10, NULL);
-	start("test16", 4000, 128, NULL);
-	// start("autotest", 4000, 10, NULL);
+	start("montest", 11*1024, 10, NULL);
+	//start("test0",4000,10,NULL);
+	//start("test16", 4000, 128, NULL);
+	//start("autotest", 4000, 10, NULL);
 	idle();
 
 	// On ne doit jamais sortir de kernel_start

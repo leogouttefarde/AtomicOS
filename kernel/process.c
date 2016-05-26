@@ -26,6 +26,7 @@ static link head_act = LIST_HEAD_INIT(head_act);
 static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
 static link head_sema = LIST_HEAD_INIT(head_sema);
+static link head_io = LIST_HEAD_INIT(head_io);
 
 typedef struct FreePid_ {
 	int pid;
@@ -276,6 +277,33 @@ void ordonnance()
 				ctx_sw(prev->regs, cur_proc->regs, &prev->pdir, cur_proc->pdir);
 			}
 		}
+	}
+}
+
+
+//! Code à factoriser !
+void bloque_io() {
+	Process *proc_io = cur_proc;
+	proc_io -> state = WAITIO;
+	queue_add(proc_io, &head_io, Process, queue, prio);
+	ordonnance();
+}
+
+void debloque_io() {
+	Process *p = NULL;
+
+	/*queue_for_each(p, &head_io, Process, queue) {
+
+		if (p->pid == pid)
+			break;
+			}*/
+	p = queue_out(&head_io, Process, queue);
+	Process *proc = p;
+	
+	if (proc != NULL) {
+		p = NULL;
+		proc->state = ACTIVABLE;
+		pqueue_add(proc, &head_act);
 	}
 }
 

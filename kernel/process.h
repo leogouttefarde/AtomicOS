@@ -37,8 +37,8 @@ enum State {
 	ZOMBIE,
 	WAITPID,
 	BLOCKEDSEMA,
-	WAITMSG//,
-	//WAITIO
+	WAITMSG,
+	WAITIO
 };
 
 enum SavedRegisters {
@@ -118,6 +118,12 @@ void bloque_sema();
 
 //Debloque un processus bloqué par un sémaphore
 void debloque_sema(int pid, uint8_t code);
+
+//Bloque un processus en attendant une entrée/sortie
+void bloque_io();
+
+//Débloque un processus en attente d'entrée/sortie
+void debloque_io();
 
 // Endort un processus
 void sleep(uint32_t seconds);

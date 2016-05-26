@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <cpu.h>
 #include "kbd.h"
+#include "process.h"
 
 #define TAILLE_TAMP 2000
 
@@ -50,6 +51,7 @@ void traitant_clavier(void) {
         outb(0x20, 0x20);
         char caractere=inb(0x60);
         do_scancode(caractere);
+	debloque_io();
 }
 
 
@@ -64,14 +66,12 @@ unsigned long cons_read(char *string, unsigned long length){
 
         /*Si aucune ligne complète n'a été tapée, 
           le processus appelant est endormi*/
-        //pas encore implémenté
-        while (nb_lig==0) {
-                
-        }
+	while (nb_lig==0) { 
+		bloque_io();
+	}
 
         bool fin=false; /*Indique si on le dernier caractère était 13*/
         unsigned long i=0;    
-
 
         while (i<length) {
                 //Parcours du tampon
@@ -80,7 +80,7 @@ unsigned long cons_read(char *string, unsigned long length){
                         string [i]=tampon[indice_lec];
                         i++;
                 }
-                else 
+                else
                         fin=true;                
                 
                 cases_dispos++;
@@ -244,8 +244,4 @@ void keyboard_data(char *str)
                 i++;
         }
 
-}
-void lancer_console () {
-        // sti(); //A mettre ici ?
-	init_clavier();
 }
