@@ -29,7 +29,7 @@ void kernel_start(void)
 	//start ("conso", 50000, 10, (void *)50, consommateur);
 
 	//start("shell", 1024, 10,NULL);
-	// start("montest", 11*1024, 10, NULL);
+	//start("montest", 11*1024, 10, NULL);
 	// start("test7", 4000, 128, NULL);
 	start("autotest", 4000, 10, NULL);
 	idle();

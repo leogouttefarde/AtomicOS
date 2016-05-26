@@ -7,6 +7,7 @@
 #define NB_MAX_SEMA 50
 
 typedef struct elt{
+	//Element a inserer dans la liste de processus associée à un sémaphore
 	int pid;
 	link lien;
 	int prio;
@@ -18,15 +19,6 @@ bool tab_occup [NB_MAX_SEMA]; /*tableau représentant les cases occupées dans
 
 unsigned int nb_sema=0; //Nombre de sémaphores dans tab_sema
 
-static unsigned int recherche_case_vide () {
-	/*Pour plus d'efficacité, on pourrait implémenter une liste de cases 
-	  vides*/
-	unsigned int i = 0;
-	while (tab_occup[i])
-		i++;
-	return i;
-}
-
 static semaphore init_semaphore (int c) {
 
 	//Initialisation de la file d'attente associée au sémpahore
@@ -36,23 +28,43 @@ static semaphore init_semaphore (int c) {
 }
 
 int screate (short int count) {
-	
-	cli();
+
+	//cli();
 	if (nb_sema >= NB_MAX_SEMA || count < 0) {
 		sti ();
 		return -1;
 	}
 
 	//Création d'un sémaphore dont le pointeur sera rangé dans tab_sema 
-	int res = recherche_case_vide();	
+	int res = nb_sema+1;	
 	tab_sema[res] = init_semaphore (count);
-	tab_occup[res]=true;	
-	
+	tab_occup[res] = true;
 	nb_sema++;
 
-	sti(); //A changer ?
+	//sti(); 
 	return res;
 }
+
+static void debloquer_sema (semaphore s) {
+	while (true) {
+		int pid = (queue_out(s.file, elt, lien))->pid;
+		if (pid  != 0) 
+			debloque_sema(pid);
+		else
+			break;
+	}	
+}
+
+int sdelete(int sem) {
+	if (!tab_occup[sem]) 
+		return -1;
+
+	semaphore s = tab_sema[sem];
+	debloquer_sema(s);
+	tab_occup[sem] = false;
+	return 0;
+}
+
 
 int scount (int sem) {
 	if (!tab_occup[sem]) 
@@ -61,12 +73,18 @@ int scount (int sem) {
 	return tab_sema[sem].cpt;
 }
 
+int sreset(int sem, int count) {
+	if (!tab_occup[sem] || count < 0) 
+		return -1;
 
-int wait (int sem) {
-	//PENSER A VERIFIER SUR ENSIwiKI
-	//En particulier code d'erreur -3 et -4
+	semaphore s = tab_sema[sem];
+	debloquer_sema(s);
+	s.cpt = count;
 	
-	//Correspond à l'opération P
+	return 0;
+}
+
+static int test_wait(int sem) {
 	cli();
 	
 	//Si la valeur du semaphore est invalide
@@ -81,7 +99,34 @@ int wait (int sem) {
 		sti ();
 		return -2;
 	}
+	return 0;
+}
 
+
+int try_wait(int sem) {
+	int test = test_wait(sem);
+	if (test < 0)
+		return test;
+
+	semaphore s = tab_sema[sem];
+	if (s.cpt <= 0)
+		//Cas où on bloquerait le processus si on décrementait le compteur
+		return -3;
+
+	s.cpt--;
+	return 0;	
+}
+
+
+int wait (int sem) {
+	//PENSER A VERIFIER SUR ENSIwiKI
+	//En particulier code d'erreur -3 et -4
+	
+	int test = test_wait(sem);
+	if (test < 0)
+		return test;
+
+	semaphore s = tab_sema[sem];
 	s.cpt--;
 
 	if (s.cpt<0) {
@@ -96,11 +141,12 @@ int wait (int sem) {
 		queue_add(&element,(s.file),elt,lien,prio);
 		bloque_sema();
 	}
+	
 	sti();
 	return 0;
 }
 
-int signal (int sem) {
+int signaln (int sem, short int count) {
 	if (!tab_occup[sem]) {
 		sti();
 		return -1;
@@ -108,18 +154,23 @@ int signal (int sem) {
 	
 	semaphore s = tab_sema[sem];
 	//Si la capacité du compteur est dépassée
-	if (s.cpt+1 < s.cpt) {
+	if (s.cpt+count < s.cpt) {
 		sti ();
 		return -2;
 	}
 
 	if (s.cpt <= 0) {
-		int pid = (queue_out(s.file, elt, lien))->pid;
-		debloque_sema(pid);    
+		for (int i=0; i < count; i++) {
+			int pid = (queue_out(s.file, elt, lien))->pid;
+			debloque_sema(pid);
+		}
 	}
 	sti();//Demasquage des it
 	return 0;
+}
 
+int signal (int sem) {
+	return signaln(sem,1);
 }
 
 
