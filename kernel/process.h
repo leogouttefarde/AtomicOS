@@ -87,6 +87,11 @@ typedef struct Process_ {
 
 	hash_t shmem;
 	uint32_t shm_idx;
+	
+	uint8_t code_reveil; /*indique si le processus a été placé dans la 
+			       liste des activable par un sdelete (code 3),
+			       par un reset (code 4), ou par un signal (code 0)*/
+			       
 } Process;
 
 
@@ -105,7 +110,7 @@ void ordonnance();
 void bloque_sema();
 
 //Debloque un processus bloqué par un sémaphore
-void debloque_sema(int pid);
+void debloque_sema(int pid, uint8_t code);
 
 // Endort un processus
 void sleep(uint32_t seconds);
@@ -115,6 +120,8 @@ void affiche_etats(void);
 
 // Termine le processus courant
 void fin_processus();
+
+unsigned int get_code_reveil ();
 
 /**
  * Donne la priorité newprio au processus identifié par la valeur de pid.

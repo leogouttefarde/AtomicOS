@@ -279,6 +279,10 @@ void ordonnance()
 	}
 }
 
+unsigned int get_code_reveil () {
+	return cur_proc->code_reveil;
+}
+
 void bloque_sema () {
 	Process *proc_sema = cur_proc;
 
@@ -287,7 +291,7 @@ void bloque_sema () {
 	ordonnance();
 }
 
-void debloque_sema(int pid) {
+void debloque_sema(int pid, uint8_t code) {
 	Process *p = NULL;
 
 	queue_for_each(p, &head_sema, Process, queue) {
@@ -302,6 +306,7 @@ void debloque_sema(int pid) {
 		p = NULL;
 		queue_del(proc, queue);
 		proc->state = ACTIVABLE;
+		proc->code_reveil =  code;
 		pqueue_add(proc, &head_act);
 	}
 }
