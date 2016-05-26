@@ -110,7 +110,7 @@ static void interpreter () {
 
 
 int main () {
-
+	
 	while(true) {
 		wait_clock(10);
 		cons_write(">",1);

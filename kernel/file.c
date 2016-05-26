@@ -357,10 +357,6 @@ int preceive(int fid, int *message)
 		*message = pfile->messages[pfile->nextMessage];
 		pfile->nextMessage = (pfile->nextMessage + 1) % pfile->sizeMessage;
 // printf("preceive %d\n", *message);
-		// Code ci-dessous faux : 1 message = 1 seul entier
-		// if(pfile->sizeMessage > 1){
-		// 	memmove(pfile->messages, (pfile->messages)+1, (pfile->sizeMessage-1)*(sizeof(int)));
-		// }
 	// }else {
 // printf("preceive no message\n");
 	}
@@ -458,18 +454,12 @@ int pcount(int fid, int *count)
 		return ERR;
 	}
 
-	// if (count == NULL){ // A MODIF
-	// 	return (pfile->sizeMessageUsed)+(pfile->numProcWriteBlocked);
-	// }else{
-		// return -1*(pfile->numProcReadBlocked);
-	// }
 	if (count != NULL) {
 		if (pfile->numProcReadBlocked > 0)
 			*count = -pfile->numProcReadBlocked;
 
 		else
 			*count = pfile->sizeMessageUsed + pfile->numProcWriteBlocked;
-	// printf("pcount => %d\n", *count);
 	}
 
 	return 0;
