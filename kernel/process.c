@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <cpu.h>
 #include <stddef.h>
@@ -68,6 +67,26 @@ void affiche_etats(void)
 
 			case DYING:
 				state = "DYING";
+				break;
+
+			case ZOMBIE:
+				state = "ZOMBIE";
+				break;
+
+			case WAITPID:
+				state = "WAITPID";
+				break;
+				
+			case BLOCKEDSEMA:
+				state = "BLOCKEDSEMA";
+				break;
+				
+			case WAITMSG:
+				state = "WAITMSG";
+				break;
+
+			case WAITIO:
+				state = "WAITIO";
 				break;
 
 			default:
@@ -696,6 +715,9 @@ int kill(int pid)
 		return ret;
 
 	Process *proc = procs[pid];
+	if (proc == 0) //Si le processus n'existe pas
+		return ret;
+
 	proc->s.retval = 0;
 	bool is_other = (proc != cur_proc);
 

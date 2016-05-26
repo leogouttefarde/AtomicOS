@@ -92,6 +92,7 @@ unsigned long cons_read(char *string, unsigned long length){
                         break;
                 }
         }
+	string[i] = '\0'; //Fin de ligne
         return i;
         
 }
