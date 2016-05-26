@@ -96,6 +96,17 @@ static void ps() {
 		
 }
 
+static void sortie() {
+	if (extraire_mot()[0]=='\0')
+		exit(getpid());
+	else {
+		char *message="Cette commande ne necessite pas d'arguments\n";
+		cons_write(message,strlen(message));
+	}	
+		
+}
+
+
 static void interpreter () {
 	char *mot_courant=extraire_mot();
 	if (comparer(mot_courant,"echo"))
@@ -104,6 +115,8 @@ static void interpreter () {
 		ps();
 	else if (comparer(mot_courant,"kill"))
 		kill_proc();
+	else if (comparer(mot_courant,"exit"))
+		sortie();
 	else if (!comparer(mot_courant,""))
 		cons_write("commande introuvable\n",21);
 }
@@ -114,7 +127,6 @@ int main () {
 		cons_write(">",1);
 		debut_mot=0;
 		fin_commande = cons_read(commande,TAILLE_TAB)-1;
-		commande[fin_commande+1]='\0';
 		interpreter(commande);
 	}
 	return 0;
