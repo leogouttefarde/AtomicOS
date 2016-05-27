@@ -1,6 +1,9 @@
 
-#ifndef __FILE_H__
-#define __FILE_H__
+#ifndef __MESSAGES_H__
+#define __MESSAGES_H__
+
+
+void init_messages();
 
 //crée une file de messages
 int pcreate(int count);

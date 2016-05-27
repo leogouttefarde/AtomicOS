@@ -6,8 +6,7 @@
 #include <process.h>
 #include <time.h>
 #include "console.h"
-#include "tests.h"
-#include "test_prod_conso.h"
+#include "messages.h"
 
 void kernel_start(void)
 {
@@ -15,6 +14,7 @@ void kernel_start(void)
 	banner();
 	//	call_debugger();
 
+	init_messages();
 	init_process();
 	init_time();
 	init_clavier();

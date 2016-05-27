@@ -11,7 +11,7 @@
 #include "syscalls.h"
 #include "shmem.h"
 #include "vmem.h"
-#include "file.h"
+#include "messages.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -490,7 +490,7 @@ static bool finish_process(int pid)
 
 	if (proc->state == WAITMSG) {
 		queue_del(proc, msg_queue);
-		(*proc->msg_count)--;
+		(*proc->msg_counter)--;
 	}
 
 	if (proc->ppid >= 0) {
@@ -1088,16 +1088,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 }
 
 //Ajout d'un processus dans la liste des processus activable
-void addProcActivable(Process *proc)
+void add_proc_activable(Process *proc)
 {
-	pqueue_add(proc, &head_act);
-}
-
-//Trouver le processus à partir du pid
-Process *pidToProc(int pid)
-{
-	if (pid < MAX_NB_PROCS)
-		return procs[pid];
-
-	return NULL;
+	if (proc != NULL) {
+		proc->state = ACTIVABLE;
+		pqueue_add(proc, &head_act);
+	}
 }
