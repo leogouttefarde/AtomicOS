@@ -339,8 +339,8 @@ void bloque_sema () {
 	ordonnance();
 }
 
-void debloque_sema(int pid, uint8_t code) {
-	Process *p = NULL;
+void debloque_sema(Process *p, uint8_t code) {
+	/*Process *p = NULL;
 
 	queue_for_each(p, &head_sema, Process, queue) {
 
@@ -356,7 +356,12 @@ void debloque_sema(int pid, uint8_t code) {
 		proc->state = ACTIVABLE;
 		proc->code_reveil =  code;
 		pqueue_add(proc, &head_act);
-	}
+		}*/
+
+	queue_del(p, queue);
+	p -> state = ACTIVABLE;
+	p ->code_reveil =  code;
+	pqueue_add(p, &head_act);
 }
 
 
@@ -748,6 +753,11 @@ int kill(int pid)
 		case DYING:
 			// printf(" DYING");
 			break;
+		case BLOCKEDSEMA:
+			queue_del(proc, queue);
+			queue_del(proc, sema_queue);
+			proc -> sema -> cpt++;
+			break;
 
 		default:
 			// printf(" ??");
@@ -934,10 +944,10 @@ int chprio(int pid, int newprio)
 		}
 
 		//Cas des sémaphores
-		/*else if (proc->state == BLOCKEDSEMA) {
-			queue_del(proc->s, queue);
-			pqueue_add(proc, &head_sema);
-			}*/
+		else if (proc->state == BLOCKEDSEMA) {
+			queue_del(proc, sema_queue);
+			queue_add(proc, proc -> sema -> file, Process, sema_queue, prio);		
+		}
 	}
 
 	return prio;
