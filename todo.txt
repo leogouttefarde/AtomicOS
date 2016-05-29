@@ -1,28 +1,19 @@
 
 
 
-quests :
-
-- insta grub clé usb (depuis système UEFI) ?
-
-
-Pour vendredi :
-- doc de 4 pages sur le cadrage à rendre
-- planning prévisionnel à détailler (détail de chaque phase + des extensions choisies)
-
-
-
-
 Phase 5
 
 - Gestion des exceptions
 - Vérification des paramètres de syscall (implém à check)
-- test machine ?
 
+- fix bug buffer clavier (l'un des derniers tests)
 
-- Facorisation phase 6
+- Facorisation console
 
-- Phase 7 à finir
+- Shell à finir
+
+- journal de bord à update
+
 
 
 
@@ -31,11 +22,11 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Po
 
 - Shell amélioré
 - Gestion événements souris
-- driver usb / disque dur ? (à priori trop complexe / long)
-- Gestion d'un de système de fichier
+- Gestion fichiers FAT32
 - Heure rtc
-
-
+- mode graphique VGA (via passage en mode réel avec fichiers bios fournis qlq part, voir anciens projets)
+- éditeur de fichiers
+- driver usb / disque dur ? (à priori trop complexe / long)
 
 autres attentes :
 
