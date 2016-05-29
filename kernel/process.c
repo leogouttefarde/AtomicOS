@@ -1112,12 +1112,3 @@ void add_proc_activable(Process *proc)
 		pqueue_add(proc, &head_act);
 	}
 }
-
-//Trouver le processus à partir du pid
-Process *pidToProc(int pid)
-{
-	if (pid < MAX_NB_PROCS)
-		return procs[pid];
-
-	return NULL;
-}

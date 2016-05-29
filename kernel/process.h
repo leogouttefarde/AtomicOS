@@ -1,4 +1,3 @@
-
 #ifndef __PROCESS_H__
 #define __PROCESS_H__
 
@@ -219,8 +218,4 @@ Process *get_cur_proc();
 
 //Ajout d'un processus dans la liste des processus activable
 void add_proc_activable(Process *proc);
-
-Process *pidToProc(int pid);
-
-
 #endif
