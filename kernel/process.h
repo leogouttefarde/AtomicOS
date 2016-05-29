@@ -73,8 +73,8 @@ typedef struct Process_ {
 	link queue;
 
 	int message;
-	int *msg_count;
-	bool msg_reset;
+	int *msg_counter;
+	bool has_msg_error;
 	link *blocked_queue;
 	link msg_queue;
 	link sema_queue;
@@ -218,9 +218,9 @@ __inline__ static void tlb_flush()
 Process *get_cur_proc();
 
 //Ajout d'un processus dans la liste des processus activable
-void addProcActivable(Process *proc);
+void add_proc_activable(Process *proc);
 
-//Trouver le processus à partir du pid
 Process *pidToProc(int pid);
+
 
 #endif

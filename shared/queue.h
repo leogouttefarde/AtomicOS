@@ -109,6 +109,20 @@ static __inline__ int queue_empty(link *head)
 	return (head->next == head);
 }
 
+#define queue_clean(head, type, listfield)				\
+	do {								\
+		type *__elem = queue_entry((head)->next,type,listfield);\
+		type *next = __elem;					\
+									\
+		while (&__elem->listfield != (head)) {			\
+			__elem = next;					\
+			next = queue_entry(__elem->listfield.next,	\
+						type, listfield);	\
+			queue_del(__elem, listfield);			\
+		}							\
+		INIT_LIST_HEAD(head);					\
+	} while (0)
+
 
 /**
  * Retrait de l'élément prioritaire de la file
@@ -160,6 +174,14 @@ static __inline__ void *__queue_out(link *head, unsigned long diff)
 	   	__elem_link->next->prev=__elem_link->prev;                   \
                 __elem_link->next = 0;                                       \
                 __elem_link->prev = 0;                                       \
+	} while (0)
+
+#define queue_del_safe(ppelem, attr)			\
+	do {						\
+		if (*(ppelem) != NULL) {		\
+			queue_del(*(ppelem), attr);	\
+			*(ppelem) = NULL;		\
+		}					\
 	} while (0)
 
 
