@@ -3,14 +3,13 @@
 
 Phase 5
 
-- Gestion des exceptions
-- Vérification des paramètres de syscall (implém à check)
-
 - fix bug buffer clavier (l'un des derniers tests)
 
-- Facorisation console
+- Factorisation console
 
 - Shell à finir
+
+- Vérification des paramètres de syscall (implém à check)
 
 - journal de bord à update
 
@@ -27,6 +26,7 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Po
 - mode graphique VGA (via passage en mode réel avec fichiers bios fournis qlq part, voir anciens projets)
 - éditeur de fichiers
 - driver usb / disque dur ? (à priori trop complexe / long)
+
 
 autres attentes :
 

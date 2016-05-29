@@ -74,6 +74,36 @@ traitant_IT_49:
 	movl %ecx, %eax
 	iret
 
+	.text
+	.globl exception_IT
+exception_IT:
+	call set_kernel_protection
+	pushl %eax
+	pushl %edx
+	pushl %ecx
+	call exception_handler
+	popl %ecx
+	popl %edx
+	popl %eax
+	call set_user_protection
+	iret
+
+	.text
+	.globl exception_IT_pop
+exception_IT_pop:
+	popl %ebx
+	call set_kernel_protection
+	pushl %eax
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	call exception_handler_pop
+	add $4, %esp
+	popl %ecx
+	popl %edx
+	popl %eax
+	call set_user_protection
+	iret
 
 	.text
 	.globl set_user_protection

@@ -43,7 +43,7 @@ void cons_echo(int on) {
 
 void init_clavier(void) {
         //Activation des interruptions claviers
-        init_traitant_IT(33, traitant_IT_33);
+        init_traitant_IT(33, (int)traitant_IT_33);
         masque_IRQ(1,false);
 }
 

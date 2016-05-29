@@ -49,7 +49,7 @@ static inline void init_freq(const uint32_t freq)
  */
 void init_time()
 {
-	init_traitant_IT(32, traitant_IT_32);
+	init_traitant_IT(32, (int)traitant_IT_32);
 	init_freq(SCHEDFREQ);
 	masque_IRQ(0, false);
 

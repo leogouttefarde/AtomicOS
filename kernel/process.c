@@ -505,6 +505,23 @@ static bool finish_process(int pid)
 }
 
 void traitant_IT_49();
+void exception_IT();
+void exception_IT_pop();
+
+void exception_handler()
+{
+	printf("\nERROR : An exception occured\n");
+	kill(getpid());
+}
+
+void exception_handler_pop(int code)
+{
+	code = code;
+
+	printf("\nERROR : An exception occured\n");
+	// printf("Error code : 0x%X\n", code);
+	kill(getpid());
+}
 
 // A appeler en premier dans kernel_start
 bool init_process()
@@ -542,7 +559,19 @@ bool init_process()
 	// free_page(test);
 	// printf("phys test OK\n");
 
-	init_traitant_IT_user(49, traitant_IT_49);
+	// Syscall handler
+	init_traitant_IT_user(49, (int)traitant_IT_49);
+
+	// Error handlers
+	init_traitant_IT(0, (int)exception_IT);
+
+	for (uint8_t i = 3; i <= 6; i++)
+		init_traitant_IT(i, (int)exception_IT);
+
+	for (uint8_t i = 12; i <= 14; i++)
+		init_traitant_IT(i, (int)exception_IT_pop);
+
+	init_traitant_IT(17, (int)exception_IT_pop);
 
 	return (proc != NULL);
 }
