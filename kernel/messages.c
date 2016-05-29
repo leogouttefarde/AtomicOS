@@ -181,6 +181,15 @@ int pcreate(int count)
 	return queue->id;
 }
 
+static inline void force_reload_proc(Process *proc)
+{
+	if (proc != NULL) {
+		proc->has_msg_error = true;
+		proc->blocked_queue = NULL;
+		add_proc_activable(proc);
+	}
+}
+
 //détruit une file de messages
 int pdestroy(int fid, bool is_delete)
 {
@@ -205,26 +214,13 @@ int pdestroy(int fid, bool is_delete)
 		remaining_queues++;
 	}
 
-	queue_for_each(proc, &queue->readers, Process, msg_queue) {
+	queue_for_each(proc, &queue->readers, Process, msg_queue)
+		force_reload_proc(proc);
 
-		if (proc != NULL) {
-			proc->has_msg_error = true;
-			proc->blocked_queue = NULL;
-			add_proc_activable(proc);
-		}
-	}
+	queue_for_each(proc, &queue->writers, Process, msg_queue)
+		force_reload_proc(proc);
 
 	queue_clean(&queue->readers, Process, msg_queue);
-
-	queue_for_each(proc, &queue->writers, Process, msg_queue) {
-
-		if (proc != NULL) {
-			proc->has_msg_error = true;
-			proc->blocked_queue = NULL;
-			add_proc_activable(proc);
-		}
-	}
-
 	queue_clean(&queue->writers, Process, msg_queue);
 
 	ordonnance();
@@ -308,10 +304,13 @@ static inline void queue_wait(link *queue, int *count)
 
 static inline void write_message(MsgQueue *queue, int message)
 {
-	assert(queue->windex < queue->size);
-	if (queue->windex < queue->size) {
-		queue->messages[queue->windex] = message;
-		queue->windex = (queue->windex + 1) % queue->size;
+	const int iw = queue->windex;
+	const int size = queue->size;
+
+	assert(iw < size);
+	if (iw < size) {
+		queue->messages[iw] = message;
+		queue->windex = (iw + 1) % size;
 		queue->nb_messages++;
 	}
 }
