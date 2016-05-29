@@ -1198,4 +1198,3 @@ void add_proc_activable(Process *proc)
 		pqueue_add(proc, &head_act);
 	}
 }
-
