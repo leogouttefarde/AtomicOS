@@ -75,6 +75,25 @@ traitant_IT_49:
 	iret
 
 	.text
+	.globl page_fault_IT
+page_fault_IT:
+	popl %ebx
+	call set_kernel_protection
+	pushl %eax
+	pushl %edx
+	pushl %ecx
+	pushl %ebx
+	movl %cr2, %ebx
+	pushl %ebx
+	call page_fault_handler
+	add $8, %esp
+	popl %ecx
+	popl %edx
+	popl %eax
+	call set_user_protection
+	iret
+
+	.text
 	.globl exception_IT
 exception_IT:
 	call set_kernel_protection

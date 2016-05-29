@@ -7,19 +7,19 @@
 #define VIDEO_MEMORY 0xB8000
 #define NB_COLS 80
 #define NB_LIG  25
-#define BG_COL  NOIR
-#define FG_COL  BLANC
+#define BG_COL  BLACK
+#define FG_COL  WHITE
 
 // Renvoie un pointeur sur la case mémoire
 // correspondant aux coordonnées fournies
 #define ptr_mem(lig, col) ((uint16_t*)(VIDEO_MEMORY + 2 * (lig * NB_COLS + col)))
 
-typedef enum Couleur_ Couleur;
+typedef enum Color_ Color;
 
 
 // Ecrit le caractère c aux coordonnées spécifiées, en spécifiant le style.
 void ecrit_car_style(uint32_t lig, uint32_t col, char c,
-			Couleur couleur, Couleur fond, uint8_t clignotement);
+			Color color, Color fond, uint8_t clignotement);
 
 // Ecrit le caractère c aux coordonnées spécifiées avec le style courant
 void ecrit_car(uint32_t lig, uint32_t col, char c);
@@ -35,30 +35,34 @@ void banner();
 uint8_t col_cour();
 uint8_t lig_cour();
 
+void set_bg_color(Color color);
+void set_fg_color(Color color);
+void reset_color();
+
 // Couleurs
-enum Couleur_ {
+enum Color_ {
 
 	// Texte et fond
-	NOIR = 0,
-	BLEU,
-	VERT,
+	BLACK = 0,
+	BLUE,
+	GREEN,
 	CYAN,
-	ROUGE,
+	RED,
 	MAGENTA,
-	MARRON,
-	GRIS,
+	BROWN,
+	GRAY,
 
 	// Texte seulement
-	GRIS_FONCE,
-	BLEU_CLAIR,
-	VERT_CLAIR,
-	CYAN_CLAIR,
-	ROUGE_CLAIR,
-	MAGENTA_CLAIR,
-	JAUNE,
-	BLANC,
+	DARK_GRAY,
+	LIGHT_BLUE,
+	LIGHT_GREEN,
+	LIGHT_CYAN,
+	LIGHT_RED,
+	LIGHT_MAGENTA,
+	YELLOW,
+	WHITE,
 
-	NB_COULS
+	NB_COLORS
 };
 
 

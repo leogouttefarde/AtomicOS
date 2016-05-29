@@ -220,7 +220,6 @@ Process *get_cur_proc();
 //Ajout d'un processus dans la liste des processus activable
 void add_proc_activable(Process *proc);
 
-Process *pidToProc(int pid);
-
+void sleep_clock(uint32_t clocks);
 
 #endif

@@ -60,9 +60,6 @@ typedef __gnuc_va_list va_list;
 #define CONS_READ_LINE 2000 //?
 #define WITH_SEM 200 //?
 
-//Nos appels systeme
-void affiche_etats();
-
 // Prototype des appels systeme de la spec
 int chprio(int pid, int newprio);
 void cons_write(const char *str, unsigned long size);

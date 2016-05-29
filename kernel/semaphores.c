@@ -214,7 +214,7 @@ int wait (int sem) {
 
 	if (s->cpt<0) {
 
-		Process *p = pidToProc(getpid());
+		Process *p = get_cur_proc();
 		p -> sema_queue.prev=0;
 		p -> sema_queue.next=0;
 		p -> sema = s;

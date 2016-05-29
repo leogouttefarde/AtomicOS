@@ -19,9 +19,9 @@ void kernel_start(void)
 	init_clavier();
 	init_messages();
 
-	start("autotest", 4000, 10, NULL);
+	//start("autotest", 4000, 10, NULL);
 	// start("test18", 4000, 10, NULL);
-	start("shell", 4000, 10,NULL);
+	start("shell", 4000, 10, NULL);
 
 	idle();
 

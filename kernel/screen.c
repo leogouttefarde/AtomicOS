@@ -6,8 +6,8 @@
 #include <cpu.h>
 
 // Constantes d'affichage
-static Couleur couleur_texte = FG_COL;
-static Couleur couleur_fond = BG_COL;
+static Color couleur_texte = FG_COL;
+static Color couleur_fond = BG_COL;
 static const uint8_t clignotement = 0;
 
 // Variables du curseur
@@ -23,7 +23,7 @@ uint8_t lig_cour() {
 }
 // Ecrit le caractère c aux coordonnées spécifiées, en spécifiant le style.
 void ecrit_car_style(uint32_t lig, uint32_t col, char c,
-			Couleur couleur, Couleur fond, uint8_t clignotement)
+			Color couleur, Color fond, uint8_t clignotement)
 {
 	if (lig < NB_LIG && col < NB_COLS) {
 		uint16_t *block = ptr_mem(lig, col);
@@ -147,12 +147,12 @@ void reset_color()
 	couleur_fond = BG_COL;
 }
 
-void set_bg_color(Couleur color)
+void set_bg_color(Color color)
 {
 	couleur_fond = color;
 }
 
-void set_fg_color(Couleur color)
+void set_fg_color(Color color)
 {
 	couleur_texte = color;
 }
@@ -187,8 +187,8 @@ void banner()
 */
 ;
 
-	// set_fg_color(CYAN_CLAIR);
-	set_fg_color(BLEU_CLAIR);
+	// set_fg_color(LIGHT_CYAN);
+	set_fg_color(LIGHT_BLUE);
 
 	// quid pb printf gcc ??
 	console_putbytes(name, strlen(name));

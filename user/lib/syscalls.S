@@ -420,3 +420,56 @@ affiche_etats:
 	movl $AFFICHE_ETATS, %eax
 	int $49
 	ret
+
+	.text
+	.globl cons_reset_color
+cons_reset_color:
+	movl $CONS_RESET_COLOR, %eax
+	int $49
+	ret
+
+	.text
+	.globl cons_set_fg_color
+cons_set_fg_color:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $CONS_SET_FG_COLOR, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl cons_set_bg_color
+cons_set_bg_color:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $CONS_SET_BG_COLOR, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl reboot
+reboot:
+	movl $REBOOT, %eax
+	int $49
+	ret
+
+	.text
+	.globl sleep
+sleep:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $SLEEP, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret

@@ -2,6 +2,8 @@
 #ifndef __SYSCALLS_H__
 #define __SYSCALLS_H__
 
+
+// Mandatory syscalls
 #define START 0
 #define GETPID 1
 #define GETPRIO 2
@@ -34,6 +36,13 @@
 #define SHM_ACQUIRE 29
 #define SHM_RELEASE 30
 
-//Nos syscalls
+// Custom syscalls
 #define AFFICHE_ETATS 31
+#define CONS_RESET_COLOR 32
+#define CONS_SET_FG_COLOR 33
+#define CONS_SET_BG_COLOR 34
+#define REBOOT 35
+#define SLEEP 36
+
+
 #endif

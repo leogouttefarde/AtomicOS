@@ -4,6 +4,8 @@
 
 #define SCHEDFREQ 50
 
+#include <stdint.h>
+
 /**
  * Initialise le module.
  */

@@ -9,21 +9,29 @@
 
 - journal de bord à update
 
-- ask shell printf : si pas ds tests pb makefile link
 
 
 
 Extensions :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
 
-- syscalls changement couleur
+- Gestion leds clavier
+http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_PC_:_2014_-_AUBERT_Bastien,_PESEZ_St%C3%A9phane,_VINCHON_Arthur
+
 - Shell amélioré
+- shells multiples
 - Gestion événements souris
 - Gestion fichiers FAT32
 - Heure rtc
 - mode graphique VGA (via passage en mode réel avec fichiers bios fournis qlq part, voir anciens projets)
 - éditeur de fichiers
 - driver usb / disque dur ? (à priori trop complexe / long)
+
+
+
+Questions :
+- affichage processus : parcours tableau entier ?
+- printf shell : si pas dans tests pb makefile au link
 
 
 

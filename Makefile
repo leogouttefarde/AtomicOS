@@ -47,17 +47,7 @@ clean:
 	$(MAKE) clean -C kernel/
 	$(MAKE) clean -C user/
 
-
-# emulateur bochs
-disk:
-	mkdir -p $@
-
-.PHONY: bochs
-	bochs: all disk
-	@echo "### This target will require root access to mont disk image ! ###"
-	sudo mount -t ext2 -o loop,offset=1048576 disk.img disk/
-	sudo cp kernel/kernel.bin disk/kernel.bin
-	sync
-	sudo umount disk/
-	bochs
+iso: all
+	cp -f kernel/kernel.bin iso/files/boot/kernel.bin
+	cd iso && make
 

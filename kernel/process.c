@@ -13,6 +13,8 @@
 #include "vmem.h"
 #include "semaphores.h"
 #include "messages.h"
+#include "screen.h"
+#include "processor_structs.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -395,6 +397,15 @@ void sleep(uint32_t seconds)
 	wait_clock(seconds * SCHEDFREQ + current_clock());
 }
 
+/**
+ * Passe le processus dans l'état endormi
+ * pendant un certain nombre de tics d'horloge (clocks * 0.02 secondes)
+ */
+void sleep_clock(uint32_t clocks)
+{
+	wait_clock(clocks + current_clock());
+}
+
 void idle(void)
 {
 	// sti();
@@ -513,20 +524,34 @@ static bool finish_process(int pid)
 void traitant_IT_49();
 void exception_IT();
 void exception_IT_pop();
+void page_fault_IT();
+
+static inline void autokill()
+{
+	kill(getpid());
+}
+
+void page_fault_handler(int address, int error_code)
+{
+	error_code = error_code;
+
+	printf("[0x%X] : Page fault\n", address);
+	autokill();
+}
 
 void exception_handler()
 {
 	printf("ERROR : An exception occured\n");
-	kill(getpid());
+	autokill();
 }
 
-void exception_handler_pop(int code)
+void exception_handler_pop(int error_code)
 {
-	code = code;
+	error_code = error_code;
 
 	printf("ERROR : An exception occured\n");
 	// printf("Error code : 0x%X\n", code);
-	kill(getpid());
+	autokill();
 }
 
 // A appeler en premier dans kernel_start
@@ -574,9 +599,10 @@ bool init_process()
 	for (uint8_t i = 3; i <= 6; i++)
 		init_traitant_IT(i, (int)exception_IT);
 
-	for (uint8_t i = 12; i <= 14; i++)
+	for (uint8_t i = 12; i < 14; i++)
 		init_traitant_IT(i, (int)exception_IT_pop);
 
+	init_traitant_IT(14, (int)page_fault_IT);
 	init_traitant_IT(17, (int)exception_IT_pop);
 
 	return (proc != NULL);
@@ -1131,10 +1157,31 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		if (IS_USER(arg0))
 		shm_release((const char*)arg0);
 		break;
-		
+
 	case AFFICHE_ETATS:
 		affiche_etats();
 		break;
+
+	case CONS_SET_FG_COLOR:
+		set_fg_color(arg0);
+		break;
+
+	case CONS_SET_BG_COLOR:
+		set_bg_color(arg0);
+		break;
+
+	case CONS_RESET_COLOR:
+		reset_color();
+		break;
+
+	case REBOOT:
+		reboot();
+		break;
+
+	case SLEEP:
+		sleep(arg0);
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;
@@ -1152,11 +1199,3 @@ void add_proc_activable(Process *proc)
 	}
 }
 
-//Trouver le processus à partir du pid
-Process *pidToProc(int pid)
-{
-	if (pid < MAX_NB_PROCS)
-		return procs[pid];
-
-	return NULL;
-}
