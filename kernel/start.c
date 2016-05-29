@@ -14,21 +14,14 @@ void kernel_start(void)
 	banner();
 	//	call_debugger();
 
-	init_messages();
 	init_process();
 	init_time();
 	init_clavier();
+	init_messages();
 
-	// test_kill_exit();
-	// test_arg_stack();
-	// init();
-	//start("prod", 50000, 10, (void *)50, producteur);
-	//start ("conso", 50000, 10, (void *)50, consommateur);
-
-	//start("shell", 4000, 10,NULL);
-	//start("test0",4000,10,NULL);
-	//start("test17", 40000, 128, NULL);
 	start("autotest", 4000, 10, NULL);
+	// start("test18", 4000, 10, NULL);
+	start("shell", 4000, 10,NULL);
 
 	idle();
 

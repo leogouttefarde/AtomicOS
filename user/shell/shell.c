@@ -10,13 +10,19 @@ char commande[TAILLE_TAB];
 extern unsigned long strtoul(const char *p, char **out_p, int base);
 
 static void ecrire_msg (const char *message) {
-	//Ecriture d'un message d'erreur sur la console
-	cons_write(message,strlen(message));
+
+	// Ecriture d'un message d'erreur sur la console
+	if (message != NULL) {
+		cons_write(message, strlen(message));
+	}
 }
 
 static bool comparer(const char *mot_courant, const char *nom_commande) {
-	//comparaison de 2 chaines
-	return (strcmp(nom_commande,mot_courant) == 0);
+
+	if (mot_courant != NULL && nom_commande != NULL)
+		return !strcmp(nom_commande,mot_courant);
+
+	return false;
 }
 
 static char *extraire_mot () {
@@ -48,7 +54,6 @@ static char *extraire_mot () {
 	}
 		
 	return &(commande[indice_debut]);
-
 }
 
 static void echo () {
@@ -65,15 +70,15 @@ static void echo () {
 			return;
 		}
 	}
-	ecrire_msg("Cette commande necessite un unique \
-argument : \"on\" ou \"off\"\n");
+	ecrire_msg("Cette commande necessite un unique "\
+			"argument : \"on\" ou \"off\"\n");
 }
 
 static void kill_proc () {
 	char *mot_courant = extraire_mot();
 	if (mot_courant[0]=='\0' || extraire_mot()[0]!='\0') {
-		ecrire_msg("Cette commande necessite un unique argument \
-: le pid du processus a tuer\n");
+		ecrire_msg("Cette commande necessite un unique argument "\
+				": le pid du processus a tuer\n");
 		return;
 	}
 
@@ -126,8 +131,12 @@ int main () {
 	while(true) {
 		cons_write(">",1);
 		debut_mot=0;
-		fin_commande = cons_read(commande,TAILLE_TAB)-1;
-		interpreter(commande);
+		fin_commande = cons_read(commande,TAILLE_TAB);
+
+		if (fin_commande > 0) {
+			fin_commande--;
+			interpreter(commande);
+		}
 	}
 	return 0;
 }

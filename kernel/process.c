@@ -511,6 +511,23 @@ static bool finish_process(int pid)
 }
 
 void traitant_IT_49();
+void exception_IT();
+void exception_IT_pop();
+
+void exception_handler()
+{
+	printf("ERROR : An exception occured\n");
+	kill(getpid());
+}
+
+void exception_handler_pop(int code)
+{
+	code = code;
+
+	printf("ERROR : An exception occured\n");
+	// printf("Error code : 0x%X\n", code);
+	kill(getpid());
+}
 
 // A appeler en premier dans kernel_start
 bool init_process()
@@ -548,7 +565,19 @@ bool init_process()
 	// free_page(test);
 	// printf("phys test OK\n");
 
-	init_traitant_IT_user(49, traitant_IT_49);
+	// Syscall handler
+	init_traitant_IT_user(49, (int)traitant_IT_49);
+
+	// Error handlers
+	init_traitant_IT(0, (int)exception_IT);
+
+	for (uint8_t i = 3; i <= 6; i++)
+		init_traitant_IT(i, (int)exception_IT);
+
+	for (uint8_t i = 12; i <= 14; i++)
+		init_traitant_IT(i, (int)exception_IT_pop);
+
+	init_traitant_IT(17, (int)exception_IT_pop);
 
 	return (proc != NULL);
 }
@@ -953,6 +982,11 @@ int chprio(int pid, int newprio)
 	return prio;
 }
 
+void sys_info()
+{
+	printf("TODO : SYS_INFO\n");
+}
+
 int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 {
 	// TODO : vérifier les valeurs (notamment pointeurs)
@@ -965,6 +999,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	switch (num) {
 	case START:
+		if (IS_USER(arg0))
 		ret = start((const char*)arg0, arg1, arg2, (void*)arg3);
 		break;
 
@@ -994,6 +1029,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case CONS_WRITE:
+		if (IS_USER(arg0))
 		ret = cons_write((const char*)arg0, arg1);
 		break;
 
@@ -1078,18 +1114,21 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SYS_INFO:
-		printf("TODO : %d\n", num);
+		sys_info();
 		break;
 
 	case SHM_CREATE:
+		if (IS_USER(arg0))
 		ret = (int)shm_create((const char*)arg0);
 		break;
 
 	case SHM_ACQUIRE:
+		if (IS_USER(arg0))
 		ret = (int)shm_acquire((const char*)arg0);
 		break;
 
 	case SHM_RELEASE:
+		if (IS_USER(arg0))
 		shm_release((const char*)arg0);
 		break;
 		

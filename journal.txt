@@ -113,6 +113,41 @@ Etienne :
 Rédaction du document de cadrage.
 
 Léo :
+Debug des files de message à l'aide des tests en mode user fournis.
+
+
+Jeudi 26 mai :
+
+Azizi :
+
+Etienne :
+
+Léo :
+Fin du debug des files de message,
+tous les tests passent désormais (sauf test22).
+
+
+Vendredi 27 mai :
+
+Azizi :
+
+Etienne :
+
+Léo :
+Factorisation du code des files de message.
+
+
+Samedi 28 mai :
+
+Léo :
+Factorisation du code des files de message.
+
+
+Dimanche 29 mai :
+
+Léo :
+Gestion des exceptions, tous les tests passent désormais sans problème.
+
 
 
 

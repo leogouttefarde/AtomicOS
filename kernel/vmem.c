@@ -119,7 +119,7 @@ bool unmap_vpage(uint32_t *pd, void *virtualaddr)
 	uint32_t *pt = (uint32_t*)(pd[pdindex] & ~0xFFF);
 
 	// If the PT entry is present, unmap it
-	if (!pt[ptindex]) {
+	if (pt[ptindex]) {
 		pt[ptindex] = (uint32_t)NULL;
 
 		// Flush the entry in the TLB
