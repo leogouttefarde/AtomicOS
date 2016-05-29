@@ -516,7 +516,7 @@ void exception_IT_pop();
 
 void exception_handler()
 {
-	printf("\nERROR : An exception occured\n");
+	printf("ERROR : An exception occured\n");
 	kill(getpid());
 }
 
@@ -524,7 +524,7 @@ void exception_handler_pop(int code)
 {
 	code = code;
 
-	printf("\nERROR : An exception occured\n");
+	printf("ERROR : An exception occured\n");
 	// printf("Error code : 0x%X\n", code);
 	kill(getpid());
 }
@@ -982,6 +982,11 @@ int chprio(int pid, int newprio)
 	return prio;
 }
 
+void sys_info()
+{
+	printf("TODO : SYS_INFO\n");
+}
+
 int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 {
 	// TODO : vérifier les valeurs (notamment pointeurs)
@@ -994,6 +999,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	switch (num) {
 	case START:
+		if (IS_USER(arg0))
 		ret = start((const char*)arg0, arg1, arg2, (void*)arg3);
 		break;
 
@@ -1023,6 +1029,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case CONS_WRITE:
+		if (IS_USER(arg0))
 		ret = cons_write((const char*)arg0, arg1);
 		break;
 
@@ -1107,18 +1114,21 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SYS_INFO:
-		printf("TODO : %d\n", num);
+		sys_info();
 		break;
 
 	case SHM_CREATE:
+		if (IS_USER(arg0))
 		ret = (int)shm_create((const char*)arg0);
 		break;
 
 	case SHM_ACQUIRE:
+		if (IS_USER(arg0))
 		ret = (int)shm_acquire((const char*)arg0);
 		break;
 
 	case SHM_RELEASE:
+		if (IS_USER(arg0))
 		shm_release((const char*)arg0);
 		break;
 		

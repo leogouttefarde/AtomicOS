@@ -1,10 +1,6 @@
 
 
 
-Phase 5
-
-- fix bug buffer clavier (l'un des derniers tests)
-
 - Factorisation console
 
 - Shell à finir
@@ -13,12 +9,14 @@ Phase 5
 
 - journal de bord à update
 
+- ask shell printf : si pas ds tests pb makefile link
 
 
 
 Extensions :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
 
+- syscalls changement couleur
 - Shell amélioré
 - Gestion événements souris
 - Gestion fichiers FAT32
@@ -26,6 +24,7 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Po
 - mode graphique VGA (via passage en mode réel avec fichiers bios fournis qlq part, voir anciens projets)
 - éditeur de fichiers
 - driver usb / disque dur ? (à priori trop complexe / long)
+
 
 
 autres attentes :
