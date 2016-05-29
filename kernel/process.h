@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <queue.h>
 #include <hash.h>
+#include "semaphores.h"
 
 #define PROC_NAME_SIZE 64
 #define MAX_NB_PROCS 1000
@@ -76,6 +77,7 @@ typedef struct Process_ {
 	bool has_msg_error;
 	link *blocked_queue;
 	link msg_queue;
+	link sema_queue;
 
 	int prio;
 
@@ -97,9 +99,11 @@ typedef struct Process_ {
 	uint32_t shm_idx;
 	
 	uint8_t code_reveil; /*indique si le processus a été placé dans la 
-			       liste des activable par un sdelete (code 3),
-			       par un reset (code 4), ou par un signal (code 0)*/
-			       
+			       liste des activable par un sdelete (code 3), par
+			       un reset (code 4), ou par un signal (code 0)*/
+
+	semaphore *sema;
+		       
 } Process;
 
 
@@ -118,7 +122,7 @@ void ordonnance();
 void bloque_sema();
 
 //Debloque un processus bloqué par un sémaphore
-void debloque_sema(int pid, uint8_t code);
+void debloque_sema(Process *p, uint8_t code);
 
 //Bloque un processus en attendant une entrée/sortie
 void bloque_io();
@@ -215,5 +219,8 @@ Process *get_cur_proc();
 
 //Ajout d'un processus dans la liste des processus activable
 void add_proc_activable(Process *proc);
+
+Process *pidToProc(int pid);
+
 
 #endif

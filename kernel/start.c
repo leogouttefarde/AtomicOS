@@ -19,8 +19,17 @@ void kernel_start(void)
 	init_time();
 	init_clavier();
 
-	start("shell", 4000, 10,NULL);
+	// test_kill_exit();
+	// test_arg_stack();
+	// init();
+	//start("prod", 50000, 10, (void *)50, producteur);
+	//start ("conso", 50000, 10, (void *)50, consommateur);
+
+	//start("shell", 4000, 10,NULL);
+	//start("test0",4000,10,NULL);
+	//start("test17", 40000, 128, NULL);
 	start("autotest", 4000, 10, NULL);
+
 	idle();
 
 	// On ne doit jamais sortir de kernel_start

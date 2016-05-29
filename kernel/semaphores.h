@@ -1,6 +1,9 @@
 #include "queue.h"
 #include <stdint.h>
 
+#ifndef __SEMAPHORES_H__
+#define __SEMAPHORES_H__
+
 typedef struct semaphore{
 	int16_t cpt;
 	link *file;
@@ -15,3 +18,4 @@ int try_wait(int sem);
 int sdelete(int sem);
 int sreset(int sem, int count);
 
+#endif

@@ -11,6 +11,7 @@
 #include "syscalls.h"
 #include "shmem.h"
 #include "vmem.h"
+#include "semaphores.h"
 #include "messages.h"
 
 // Nombre de processus créés depuis le début
@@ -332,14 +333,14 @@ unsigned int get_code_reveil () {
 
 void bloque_sema () {
 	Process *proc_sema = cur_proc;
-
+	
 	proc_sema->state = BLOCKEDSEMA;
 	queue_add(proc_sema, &head_sema, Process, queue, prio);
 	ordonnance();
 }
 
-void debloque_sema(int pid, uint8_t code) {
-	Process *p = NULL;
+void debloque_sema(Process *p, uint8_t code) {
+	/*Process *p = NULL;
 
 	queue_for_each(p, &head_sema, Process, queue) {
 
@@ -355,7 +356,12 @@ void debloque_sema(int pid, uint8_t code) {
 		proc->state = ACTIVABLE;
 		proc->code_reveil =  code;
 		pqueue_add(proc, &head_act);
-	}
+		}*/
+
+	queue_del(p, queue);
+	p -> state = ACTIVABLE;
+	p ->code_reveil =  code;
+	pqueue_add(p, &head_act);
 }
 
 
@@ -776,6 +782,11 @@ int kill(int pid)
 		case DYING:
 			// printf(" DYING");
 			break;
+		case BLOCKEDSEMA:
+			queue_del(proc, queue);
+			queue_del(proc, sema_queue);
+			proc -> sema -> cpt++;
+			break;
 
 		default:
 			// printf(" ??");
@@ -960,6 +971,12 @@ int chprio(int pid, int newprio)
 			queue_del(proc, msg_queue);
 			queue_add(proc, proc->blocked_queue, Process, msg_queue, prio);
 		}
+
+		//Cas des sémaphores
+		else if (proc->state == BLOCKEDSEMA) {
+			queue_del(proc, sema_queue);
+			queue_add(proc, proc -> sema -> file, Process, sema_queue, prio);		
+		}
 	}
 
 	return prio;
@@ -1019,35 +1036,35 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SCOUNT:
-		printf("TODO : %d\n", num);
+		ret = scount(arg0);
 		break;
 		
 	case SCREATE:
-		printf("TODO : %d\n", num);
+		ret = screate(arg0);
 		break;
 
 	case SDELETE:
-		printf("TODO : %d\n", num);
+		ret = sdelete(arg0);
 		break;
 
 	case SIGNAL:
-		printf("TODO : %d\n", num);
+		ret = signal(arg0);
 		break;
 
 	case SIGNALN:
-		printf("TODO : %d\n", num);
+		ret = signaln(arg0,arg1);
 		break;
 
 	case SRESET:
-		printf("TODO : %d\n", num);
+		ret = sreset(arg0, arg1);
 		break;
 		
 	case TRY_WAIT:
-		printf("TODO : %d\n", num);
+		ret = try_wait(arg0);
 		break;
 		
 	case WAIT:
-		printf("TODO : %d\n", num);
+		ret = wait(arg0);
 		break;
 
 	case PCOUNT:
@@ -1123,4 +1140,13 @@ void add_proc_activable(Process *proc)
 		proc->state = ACTIVABLE;
 		pqueue_add(proc, &head_act);
 	}
+}
+
+//Trouver le processus à partir du pid
+Process *pidToProc(int pid)
+{
+	if (pid < MAX_NB_PROCS)
+		return procs[pid];
+
+	return NULL;
 }
