@@ -3,6 +3,7 @@
 #include "cpu.h"
 #include "semaphores.h"
 #include <stdbool.h>
+#include <string.h>
 
 #define NB_MAX_SEMA 10000
 
@@ -11,6 +12,16 @@ static unsigned int nb_sema=0;
 static int prochain_id=1;
 static int tab_id [2*NB_MAX_SEMA];
 static link tab_link [2*NB_MAX_SEMA];
+
+void init_sema()
+{
+	nb_sema = 0;
+	prochain_id = 1;
+
+	memset(&tab_id, 0, sizeof(tab_id));
+	memset(&tab_link, 0, sizeof(tab_link));
+	memset(&tab_sema, 0, sizeof(tab_sema));
+}
 
 static int nvelle_place (unsigned int id) {
 
@@ -167,8 +178,7 @@ int wait (int sem) {
 		//printf("proc %i attend sema %i ; cpt = %i\n",getpid() ,sem, s->cpt);
 
 		Process *p = get_cur_proc();
-		p -> sema_queue.prev=0;
-		p -> sema_queue.next=0;
+		INIT_LINK(&p->sema_queue);
 		p -> sema = s;
 
 		queue_add(p,(s->file),Process,sema_queue,prio);

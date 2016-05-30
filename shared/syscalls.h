@@ -43,6 +43,8 @@
 #define CONS_SET_BG_COLOR 34
 #define REBOOT 35
 #define SLEEP 36
+#define GETPPID 37
+#define PRINT_BANNER 38
 
 
 #endif

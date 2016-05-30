@@ -473,3 +473,17 @@ sleep:
 	popl %ebx
 	popl %ebp
 	ret
+
+	.text
+	.globl getppid
+getppid:
+	movl $GETPPID, %eax
+	int $49
+	ret
+
+	.text
+	.globl print_banner
+print_banner:
+	movl $PRINT_BANNER, %eax
+	int $49
+	ret

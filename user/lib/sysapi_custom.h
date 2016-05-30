@@ -37,6 +37,8 @@ void cons_reset_color();
 void affiche_etats();
 void reboot();
 void sleep(unsigned long seconds);
+int getppid();
+void print_banner();
 
 
 #endif

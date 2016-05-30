@@ -10,7 +10,6 @@
 
 void kernel_start(void)
 {
-	printf("\f");
 	banner();
 	//	call_debugger();
 
@@ -18,9 +17,11 @@ void kernel_start(void)
 	init_time();
 	init_clavier();
 	init_messages();
+	init_sema();
 
-	//start("autotest", 4000, 10, NULL);
-	// start("test18", 4000, 10, NULL);
+	// start("autotest", 4000, 10, NULL);
+	// start("test16", 4000, 128, NULL);
+	// start("test17", 4000, 128, NULL);
 	start("shell", 4000, 10, NULL);
 
 	idle();

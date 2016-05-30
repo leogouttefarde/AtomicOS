@@ -107,12 +107,16 @@ static void kill_proc ()
 	if (next == NULL)
 		return;
 
-	if (kill(parse_int(next)) < 0)
-		ecrire_msg("Invalid process id\n");
+	const int pid = parse_int(next);
 
-	else
-		ecrire_msg("Process killed\n");
-	
+	if (pid != getpid() || getppid() > 0) {
+			
+		if (kill(pid) < 0)
+			ecrire_msg("Invalid process id\n");
+
+		else
+			ecrire_msg("Process killed\n");
+	}
 }
 
 static bool no_arguments()
@@ -149,6 +153,7 @@ void usage()
 	cons_reset_color();
 
 	cmd_usage("     autotest", "Execute all tests");
+	cmd_usage("       banner", "Print the banner");
 	cmd_usage("       testNN", "To execute a test from 1 to 22, type test1, test2, ..., test22");
 	cmd_usage("        clear", "Clear the screen");
 	cmd_usage("           ps", "Display process informations");
@@ -180,7 +185,7 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "exit")) {
-		if (no_arguments())
+		if (no_arguments() && getppid() > 0)
 			return false;
 	}
 
@@ -217,6 +222,12 @@ static bool interpreter ()
 	else if (!strncmp(mot_courant, "test", 4)) {
 		if (no_arguments()) {
 			child = start(mot_courant, 4000, 128, NULL);
+		}
+	}
+
+	else if (!strncmp(mot_courant, "banner", 4)) {
+		if (no_arguments()) {
+			print_banner();
 		}
 	}
 

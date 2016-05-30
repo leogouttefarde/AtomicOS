@@ -27,7 +27,7 @@ static Process *cur_proc = NULL;
 static link head_act = LIST_HEAD_INIT(head_act);
 static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
-static link head_sema = LIST_HEAD_INIT(head_sema);
+// static link head_sema = LIST_HEAD_INIT(head_sema);
 static link head_io = LIST_HEAD_INIT(head_io);
 
 typedef struct FreePid_ {
@@ -123,6 +123,14 @@ int getpid(void)
 		return -1;
 
 	return cur_proc->pid;
+}
+
+int getppid()
+{
+	if (cur_proc == NULL)
+		return -1;
+
+	return cur_proc->ppid;
 }
 
 static inline int32_t nbr_secondes()
@@ -337,7 +345,7 @@ void bloque_sema () {
 	Process *proc_sema = cur_proc;
 	
 	proc_sema->state = BLOCKEDSEMA;
-	queue_add(proc_sema, &head_sema, Process, queue, prio);
+	// queue_add(proc_sema, &head_sema, Process, queue, prio);
 	ordonnance();
 }
 
@@ -360,10 +368,9 @@ void debloque_sema(Process *p, uint8_t code) {
 		pqueue_add(proc, &head_act);
 		}*/
 
-	queue_del(p, queue);
-	p -> state = ACTIVABLE;
-	p ->code_reveil =  code;
-	pqueue_add(p, &head_act);
+	// queue_del(p, queue);
+	p->code_reveil = code;
+	add_proc_activable(p);
 }
 
 
@@ -510,6 +517,12 @@ static bool finish_process(int pid)
 		(*proc->msg_counter)--;
 	}
 
+	if (proc->state == BLOCKEDSEMA) {
+		// queue_del(proc, queue);
+		queue_del(proc, sema_queue);
+		proc -> sema -> cpt++;
+	}
+
 	if (proc->ppid >= 0) {
 		state = ZOMBIE;
 	}
@@ -569,6 +582,7 @@ bool init_process()
 		strcpy(proc->name, "idle");
 		INIT_LIST_HEAD(&proc->head_child);
 
+		memset(&procs, 0, sizeof(procs));
 		procs[pid] = proc;
 
 		// idle est le processus initial
@@ -784,9 +798,9 @@ int kill(int pid)
 			// printf(" DYING");
 			break;
 		case BLOCKEDSEMA:
-			queue_del(proc, queue);
-			queue_del(proc, sema_queue);
-			proc -> sema -> cpt++;
+			// queue_del(proc, queue);
+			// queue_del(proc, sema_queue);
+			// proc -> sema -> cpt++;
 			break;
 
 		default:
@@ -974,6 +988,8 @@ int chprio(int pid, int newprio)
 
 		//Cas des sémaphores
 		else if (proc->state == BLOCKEDSEMA) {
+			// queue_del(proc, queue);
+			// queue_add(proc, &head_sema, Process, queue, prio);
 			queue_del(proc, sema_queue);
 			queue_add(proc, proc -> sema -> file, Process, sema_queue, prio);		
 		}
@@ -1154,6 +1170,15 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	case SLEEP:
 		sleep(arg0);
+		break;
+
+	case GETPPID:
+		ret = getppid();
+		break;
+
+	case PRINT_BANNER:
+		init_sema();
+		banner();
 		break;
 
 	default:

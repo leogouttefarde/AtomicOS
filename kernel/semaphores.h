@@ -17,5 +17,6 @@ int signaln (int sem, short int count);
 int try_wait(int sem);
 int sdelete(int sem);
 int sreset(int sem, int count);
+void init_sema();
 
 #endif
