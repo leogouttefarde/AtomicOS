@@ -31,7 +31,6 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_PC_:_2014_-_AUBERT_Bast
 
 Questions :
 - affichage processus : parcours tableau entier ?
-- printf shell : si pas dans tests pb makefile au link
 
 
 

@@ -5,10 +5,9 @@
  * Stub for console_putbytes system call.
  */
 
-void console_putbytes(const char *s, int len) {
-        
-        (void)s;
-        (void)len;
-        /** To be implemented */
-}
+#include <atomic.h>
 
+void console_putbytes(const char *s, int len)
+{
+	cons_write(s, len);
+}

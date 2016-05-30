@@ -1,5 +1,10 @@
-#include <sysapi_custom.h>
+#include <atomic.h>
+#include <stdio.h>
 #include <stdbool.h>
+#include <types.h>
+#include <stddef.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define TAILLE_TAB 2000
 
@@ -8,17 +13,6 @@ unsigned long fin_mot;
 unsigned long fin_commande;
 char commande[TAILLE_TAB];
 
-extern long strtol(const char *p, char **out_p, int base);
-extern int strncmp(const char *str1, const char *str2, size_t num);
-
-
-static void ecrire_msg(const char *message)
-{
-	// Ecriture d'un message d'erreur sur la console
-	if (message != NULL) {
-		cons_write(message, strlen(message));
-	}
-}
 
 static bool compare(const char *mot_courant, const char *nom_commande)
 {
@@ -78,7 +72,7 @@ static void echo ()
 		}
 	}
 
-	ecrire_msg("Cette commande necessite un unique "\
+	printf("Cette commande necessite un unique "\
 			"argument : \"on\" ou \"off\"\n");
 }
 
@@ -87,7 +81,7 @@ static inline char *get_argument()
 	char *mot_courant = extraire_mot();
 
 	if (!mot_courant[0] || extraire_mot()[0]) {
-		ecrire_msg("Cette commande necessite un argument supplémentaire");
+		printf("Cette commande necessite un argument supplémentaire");
 
 		return NULL;
 	}
@@ -112,10 +106,10 @@ static void kill_proc ()
 	if (pid != getpid() || getppid() > 0) {
 			
 		if (kill(pid) < 0)
-			ecrire_msg("Invalid process id\n");
+			printf("Invalid process id\n");
 
 		else
-			ecrire_msg("Process killed\n");
+			printf("Process killed\n");
 	}
 }
 
@@ -128,7 +122,7 @@ static bool no_arguments()
 	}
 
 	else {
-		ecrire_msg("This command has no arguments\n");
+		printf("This command has no arguments\n");
 	}
 
 	return true;
@@ -138,18 +132,18 @@ static bool no_arguments()
 void cmd_usage(char *cmd, char *usage)
 {
 	cons_set_fg_color(LIGHT_CYAN);
-	ecrire_msg(cmd);
-	ecrire_msg(" : ");
+	printf(cmd);
+	printf(" : ");
 	cons_reset_color();
 
-	ecrire_msg(usage);
-	ecrire_msg("\n");
+	printf(usage);
+	printf("\n");
 }
 
 void usage()
 {
 	cons_set_fg_color(LIGHT_CYAN);
-	ecrire_msg("AtomicOS Shell Commands :\n");
+	printf("AtomicOS Shell Commands :\n");
 	cons_reset_color();
 
 	cmd_usage("     autotest", "Execute all tests");
@@ -209,7 +203,7 @@ static bool interpreter ()
 
 	else if (compare(mot_courant, "clear")) {
 		if (no_arguments()) {
-			ecrire_msg("\f");
+			printf("\f");
 		}
 	}
 
@@ -258,7 +252,7 @@ int main()
 
 	while (execute) {
 		cons_set_fg_color(LIGHT_CYAN);
-		ecrire_msg("AtomicOS>");
+		printf("AtomicOS>");
 		cons_reset_color();
 
 		debut_mot = 0;
