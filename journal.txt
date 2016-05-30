@@ -121,6 +121,8 @@ Jeudi 26 mai :
 Azizi :
 
 Etienne :
+Portage du shell en appli user.
+Début du débogage des sémaphores.
 
 Léo :
 Fin du debug des files de message,
@@ -132,6 +134,7 @@ Vendredi 27 mai :
 Azizi :
 
 Etienne :
+Débogage des sémaphores.
 
 Léo :
 Factorisation du code des files de message.

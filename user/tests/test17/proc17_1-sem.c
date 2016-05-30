@@ -14,7 +14,7 @@ int main(void *arg)
 {
         struct test17_buf_st *st = NULL;
         unsigned long long tsc, tsc2;
-        int count;
+        int count=0;
 
         (void)arg;
 
