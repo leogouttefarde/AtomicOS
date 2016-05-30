@@ -47,7 +47,13 @@ clean:
 	$(MAKE) clean -C kernel/
 	$(MAKE) clean -C user/
 
-iso: all
+# Règle générale
+image: all
 	cp -f kernel/kernel.bin iso/files/boot/kernel.bin
 	cd iso && make
+
+# Règle Léo
+iso: all
+	cp -f kernel/kernel.bin mkiso/files/boot/kernel.bin
+	cd mkiso && make
 
