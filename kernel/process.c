@@ -588,14 +588,20 @@ bool init_process()
 	// Error handlers
 	init_traitant_IT(0, (int)exception_IT);
 
-	for (uint8_t i = 3; i <= 6; i++)
+	for (uint8_t i = 3; i <= 7; i++)
 		init_traitant_IT(i, (int)exception_IT);
 
-	for (uint8_t i = 12; i < 14; i++)
+	for (uint8_t i = 10; i < 14; i++)
 		init_traitant_IT(i, (int)exception_IT_pop);
 
-	init_traitant_IT(14, (int)page_fault_IT);
+	init_traitant_IT(16, (int)exception_IT);
 	init_traitant_IT(17, (int)exception_IT_pop);
+	init_traitant_IT(19, (int)exception_IT);
+	init_traitant_IT(20, (int)exception_IT);
+	init_traitant_IT(30, (int)exception_IT_pop);
+
+	// Page fault handler
+	init_traitant_IT(14, (int)page_fault_IT);
 
 	return (proc != NULL);
 }

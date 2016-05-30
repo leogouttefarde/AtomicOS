@@ -135,23 +135,30 @@ void cmd_usage(char *cmd, char *usage)
 {
 	cons_set_fg_color(LIGHT_CYAN);
 	ecrire_msg(cmd);
+	ecrire_msg(" : ");
 	cons_reset_color();
 
-	ecrire_msg(" : ");
 	ecrire_msg(usage);
 	ecrire_msg("\n");
 }
 
 void usage()
 {
+	cons_set_fg_color(LIGHT_CYAN);
 	ecrire_msg("AtomicOS Shell Commands :\n");
+	cons_reset_color();
 
-	cmd_usage("         ps", "Display process informations");
-	cmd_usage("    echo on", "Enable keyboard input display");
-	cmd_usage("   echo off", "Disable keyboard input display");
-	cmd_usage("       exit", "Exit the current shell");
-	cmd_usage(" kill <pid>", "Kill the corresponding process");
-	cmd_usage("     reboot", "Reboot the computer");
+	cmd_usage("     autotest", "Execute all tests");
+	cmd_usage("       testNN", "To execute a test from 1 to 22, type test1, test2, ..., test22");
+	cmd_usage("        clear", "Clear the screen");
+	cmd_usage("           ps", "Display process informations");
+	cmd_usage("      echo on", "Enable keyboard input display");
+	cmd_usage("     echo off", "Disable keyboard input display");
+	cmd_usage("         exit", "Exit the current shell");
+	cmd_usage("         help", "Display this help");
+	cmd_usage("   kill <pid>", "Kill the corresponding process");
+	cmd_usage("       reboot", "Reboot the computer");
+	cmd_usage(" sleep <secs>", "Sleep for secs seconds");
 }
 
 static bool interpreter ()
