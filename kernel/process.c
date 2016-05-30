@@ -582,14 +582,6 @@ bool init_process()
 	phys_init();
 	init_apps();
 
-	// uint32_t *test = (uint32_t*)alloc_page();
-
-	// test[0] = 0xDEADBEEF;
-	// assert(test[0] == 0xDEADBEEF);
-
-	// free_page(test);
-	// printf("phys test OK\n");
-
 	// Syscall handler
 	init_traitant_IT_user(49, (int)traitant_IT_49);
 
@@ -628,8 +620,6 @@ int get_new_pid()
 
 	nb_procs++;
 
-	// printf("pid %d  nb %d\n", pid, nb_procs);
-
 	return pid;
 }
 
@@ -654,7 +644,6 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 		memset(proc, 0, sizeof(Process));
 
 		if (proc == NULL) {
-			printf("start : proc == NULL\n");
 			return pid;
 		}
 
@@ -678,8 +667,6 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 
 			proc->shm_idx = 0;
 
-			//printf("[temps = %u] creation processus %s pid = %i\n", nbr_secondes(), name, pid);
-			// printf("start 1\n");
 			proc->prio = prio;
 			pid = proc->pid = get_new_pid();
 			INIT_LIST_HEAD(&proc->head_child);
@@ -711,15 +698,12 @@ int start(const char *name, unsigned long ssize, int prio, void *arg)
 			// Ajout aux activables
 			proc->state = ACTIVABLE;
 			pqueue_add(proc, &head_act);
-			// printf("start OK\n");
 
 			// Si le processus créé est plus prioritaire,
 			// on lui passe la main
 			if (prio > cur_proc->prio) {
 				ordonnance();
 			}
-
-			// printf("start END\n");
 		}
 		else {
 			free_process(proc);
@@ -741,21 +725,6 @@ void _exit(int retval)
 		panic("FATAL ERROR\n");
 
 	cur_proc->s.retval = retval;
-	//printf("_exit\n");
-
-	// if (cur_proc->blocked_queue != NULL) {
-	// 	Process *proc = queue_out(cur_proc->blocked_queue,
-	// 			Process, msg_queue);
-
-	// printf("HELLO\n");
-	// 	assert(proc);
-
-	// 	if (proc != NULL) {
-	// 		proc->blocked_queue = NULL;
-	// 		proc->state = ACTIVABLE;
-	// 		addProcActivable(proc);
-	// 	}
-	// }
 
 	finish_process(cur_proc->pid);
 	ordonnance();
@@ -930,7 +899,6 @@ int waitpid(int pid, int *retvalp)
 		// On supprime le fils débloqué des fils
 		queue_del(child, children);
 
-	// printf("waitpid : %s -> %d\n", child->name, ret);
 		// On le détruit
 		// child->state = DYING;
 		// pqueue_add(child, &head_dead);
