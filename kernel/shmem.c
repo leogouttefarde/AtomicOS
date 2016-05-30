@@ -118,8 +118,9 @@ void *shm_acquire(const char *key)
 	void *pkey = (void*)key;
 	void *vpage = NULL;
 
-	if (key == NULL || !hash_isset(&table, pkey))
+	if (key == NULL || !hash_isset(&table, pkey)) {
 		return NULL;
+	}
 
 	Process *proc = get_cur_proc();
 
@@ -132,7 +133,7 @@ void *shm_acquire(const char *key)
 
 		if (shp && map_page(proc->pdir, shp->page, vpage, P_USERSUP | P_RW)) {
 
-			if (!hash_set(&proc->shmem, pkey, vpage)) {
+			if (!hash_set(&proc->shmem, shp->key, vpage)) {
 				shp->nrefs++;
 			}
 
