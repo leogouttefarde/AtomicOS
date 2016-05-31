@@ -194,7 +194,7 @@ void banner()
 	// set_fg_color(LIGHT_CYAN);
 	set_fg_color(LIGHT_BLUE);
 
-	printf(name);
+	printf("%s",name);
 	reset_color();
 
 	printf("        Welcome to the ultimate last resort system.\n\n");
