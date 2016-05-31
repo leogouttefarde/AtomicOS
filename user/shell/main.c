@@ -203,6 +203,10 @@ static bool interpreter ()
 		printf("\f");
 	}
 
+	else if (compare(mot_courant, "vesa")) {
+		set_video_mode();
+	}
+
 	else if (compare(mot_courant, "autotest")) {
 		child = start("autotest", 4000, 42, NULL);
 	}

@@ -7,7 +7,7 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Po
 - Gestion fichiers FAT32
 - Gestion événements souris
 - Heure rtc
-- mode graphique VGA (via passage en mode réel avec fichiers bios fournis qlq part, voir anciens projets)
+- mode graphique VESA
 - éditeur de fichiers
 - driver usb / disque dur ? (à priori trop complexe / long)
 - shells multiples

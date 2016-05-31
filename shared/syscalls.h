@@ -45,6 +45,7 @@
 #define SLEEP 36
 #define GETPPID 37
 #define PRINT_BANNER 38
+#define SET_VIDEO_MODE 39
 
 
 #endif

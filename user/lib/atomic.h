@@ -103,6 +103,7 @@ void reboot();
 void sleep(unsigned long seconds);
 int getppid();
 void print_banner();
+int set_video_mode();
 
 
 #endif

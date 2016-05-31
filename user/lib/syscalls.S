@@ -487,3 +487,10 @@ print_banner:
 	movl $PRINT_BANNER, %eax
 	int $49
 	ret
+
+	.text
+	.globl set_video_mode
+set_video_mode:
+	movl $SET_VIDEO_MODE, %eax
+	int $49
+	ret

@@ -119,16 +119,6 @@ bool unmap_vpage(uint32_t *pd, void *virtualaddr)
 	return false;
 }
 
-static inline uint32_t compute_pages(uint32_t size)
-{
-	uint32_t pages = size / PAGESIZE;
-
-	if (size % PAGESIZE)
-		pages++;
-
-	return pages;
-}
-
 bool alloc_pages(Process *proc)
 {
 	bool success = true;
