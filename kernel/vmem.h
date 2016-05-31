@@ -29,4 +29,15 @@ bool unmap_vpage(uint32_t *pd, void *virtualaddr);
 
 bool alloc_pages(Process *proc);
 
+
+static inline uint32_t compute_pages(uint32_t size)
+{
+	uint32_t pages = size / PAGESIZE;
+
+	if (size % PAGESIZE)
+		pages++;
+
+	return pages;
+}
+
 #endif

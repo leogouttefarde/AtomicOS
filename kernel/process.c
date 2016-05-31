@@ -15,8 +15,7 @@
 #include "messages.h"
 #include "screen.h"
 #include "processor_structs.h"
-#include "bioscall.h"
-#include "string.h"
+#include "vesa.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -1180,6 +1179,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		banner();
 		break;
 
+	case SET_VIDEO_MODE:
+		ret = initGraphics(1366, 768, 32);
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;
@@ -1257,29 +1260,5 @@ void abort_shell_wait()
 	}
 }
 
-void set_vesa()
-{
-	struct bios_regs regs;
-	memset(&regs, 0, sizeof(struct bios_regs));
 
-	regs.eax = 0x4F00;
-	// regs.ebx = 0x0000;
-	// regs.ecx = 0x0000;
-	// regs.edx = 0x0000;
-	// regs.esi = 0x0000;
-	// regs.edi = 0x0000;
-	// regs.ebp = 0x100;
-	// regs.esp = 0x100;
-	// regs.eflags = 0x202;
-	regs.ds = 0x18;
-	regs.es = 0x18;
-	regs.fs = 0x18;
-	regs.gs = 0x18;
-	regs.ss = 0x18;
 
-	// printf("eax = %X\n", regs.eax);
-	do_bios_call(&regs, 0x10);
-
-	assert(REGX(regs.eax) == 0x004F);
-	// printf("eax = %X\n", regs.eax);
-}

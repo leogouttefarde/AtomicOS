@@ -8,6 +8,7 @@
 #include "console.h"
 #include "messages.h"
 #include "mouse.h"
+#include "vesa.h"
 
 void kernel_start(void)
 {
@@ -20,6 +21,11 @@ void kernel_start(void)
 	init_souris();
 	init_messages();
 	init_sema();
+
+	// initGraphics(1366, 768, 32);
+
+	// while(1)
+	// 	hlt();
 
 	// start("autotest", 4000, 10, NULL);
 	// start("test16", 4000, 128, NULL);
