@@ -82,8 +82,8 @@ include build/kbd-linux.mk
 
 
 ### Build code for real-mode ###
-#REAL_MODE_DIR := real-mode
-#include build/real-mode.mk
+REAL_MODE_DIR := real-mode
+include build/real-mode.mk
 
 ### Generate object files for userspace binaries ###
 include build/apps-integration.mk

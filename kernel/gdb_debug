@@ -1,10 +1,11 @@
 
 target remote :1234
 #hbreak process.c:132
-hbreak psend
+#hbreak psend
 #b ctx_sw
 #disp cur_proc
 #continue
 #disp proc
 #disp procs[2]->shmem
-disp nb_procs
+#disp nb_procs
+#hbreak do_bios_call

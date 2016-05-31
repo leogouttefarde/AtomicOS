@@ -72,8 +72,7 @@ static void echo ()
 		}
 	}
 
-	printf("Cette commande necessite un unique "\
-			"argument : \"on\" ou \"off\"\n");
+	printf("This command requires an argument : argument : 'on' or 'off'\n");
 }
 
 static inline char *get_argument()
@@ -81,7 +80,7 @@ static inline char *get_argument()
 	char *mot_courant = extraire_mot();
 
 	if (!mot_courant[0] || extraire_mot()[0]) {
-		printf("Cette commande necessite un argument supplémentaire");
+		printf("This command requires an additional argument\n");
 
 		return NULL;
 	}
@@ -162,6 +161,7 @@ void usage()
 
 static bool interpreter ()
 {
+	bool error = false;
 	int child = -1;
 	char *mot_courant = extraire_mot();
 
@@ -170,8 +170,7 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "ps")) {
-		if (no_arguments())
-			affiche_etats();
+		affiche_etats();
 	}
 
 	else if (compare(mot_courant, "kill")) {
@@ -179,7 +178,7 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "exit")) {
-		if (no_arguments() && getppid() > 0)
+		if (getppid() > 0)
 			return false;
 	}
 
@@ -197,25 +196,22 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "reboot")) {
-		if (no_arguments())
-			reboot();
+		reboot();
 	}
 
 	else if (compare(mot_courant, "clear")) {
-		if (no_arguments()) {
-			printf("\f");
-		}
+		printf("\f");
 	}
 
 	else if (compare(mot_courant, "autotest")) {
-		if (no_arguments()) {
-			child = start("autotest", 4000, 42, NULL);
-		}
+		child = start("autotest", 4000, 42, NULL);
 	}
 
 	else if (!strncmp(mot_courant, "test", 4)) {
-		if (no_arguments()) {
-			child = start(mot_courant, 4000, 128, NULL);
+		child = start(mot_courant, 4000, 128, NULL);
+
+		if (child < 0) {
+			error = true;
 		}
 	}
 
@@ -225,8 +221,12 @@ static bool interpreter ()
 		}
 	}
 
-	else if (!compare(mot_courant, "")) {
-		cons_write("commande introuvable\n",21);
+	else if (strlen(mot_courant)) {
+		error = true;
+	}
+
+	if (error) {
+		printf("%s : command not found\n", mot_courant);
 	}
 
 	if (child > 0) {
@@ -236,14 +236,9 @@ static bool interpreter ()
 	return true;
 }
 
+
 /*
-help
 time (commande affichant le nombre de tics depuis le début)
-CTRL+C to stop current prog
-
-complétion commandes
-
-historique commandes : reprendre code tp shell
 */
 
 int main()

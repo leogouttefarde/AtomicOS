@@ -15,6 +15,8 @@
 #include "messages.h"
 #include "screen.h"
 #include "processor_structs.h"
+#include "bioscall.h"
+#include "string.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -243,9 +245,7 @@ static inline void wake_process(Process **psleep)
 	if (proc != NULL) {
 		*psleep = NULL;
 		queue_del(proc, queue);
-
-		proc->state = ACTIVABLE;
-		pqueue_add(proc, &head_act);
+		add_proc_activable(proc);
 	}
 }
 
@@ -765,7 +765,7 @@ int kill(int pid)
 		return ret;
 
 	Process *proc = procs[pid];
-	if (proc == 0) //Si le processus n'existe pas
+	if (proc == NULL) //Si le processus n'existe pas
 		return ret;
 
 	proc->s.retval = 0;
@@ -1177,7 +1177,6 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case PRINT_BANNER:
-		init_sema();
 		banner();
 		break;
 
@@ -1196,4 +1195,91 @@ void add_proc_activable(Process *proc)
 		proc->state = ACTIVABLE;
 		pqueue_add(proc, &head_act);
 	}
+}
+
+int pid_shell = 0;
+
+void launch_new_shell()
+{
+	pid_shell = start("shell", 4000, 10, NULL);
+}
+
+void kill_recursive(int pid)
+{
+	Process *proc = procs[pid], *it = NULL;
+
+	queue_for_each (it, &proc->head_child, Process, children) {
+		//printf("kill %s\n", it->name);
+		kill_recursive(it->pid);
+	}
+
+	//printf("kill = %d\n", kill(pid));
+}
+
+void abort_shell_wait()
+{
+	bool stop = false;
+	Process *proc = cur_proc, *child = NULL;
+
+	if (!proc->pid && !queue_empty(&head_sleep)) {
+		Process *wake;
+
+		do {
+			wake = queue_out(&head_sleep, Process, queue);
+			add_proc_activable(wake);
+		} while (!queue_empty(&head_sleep));
+	}
+	else {
+		while (proc && proc->ppid) {
+		//printf("child %s\n", proc->name);
+			child = proc;
+			proc = procs[proc->ppid];
+		//printf("proc %s\n", proc->name);
+
+			if (proc && proc->pid == pid_shell) {
+				stop = true;
+				break;
+			}
+		}
+
+		if (stop) {
+		//printf("stop %s\n", child->name);
+
+			kill_recursive(child->pid);
+		}
+		else {
+			// if (child)
+		//printf("child %s\n", child->name);
+		//printf("NULL ? %X\n", (int)proc);
+		//printf("ppid %X\n", (int)proc->ppid);
+		//printf("name %s\n", proc->name);
+		}
+	}
+}
+
+void set_vesa()
+{
+	struct bios_regs regs;
+	memset(&regs, 0, sizeof(struct bios_regs));
+
+	regs.eax = 0x4F00;
+	// regs.ebx = 0x0000;
+	// regs.ecx = 0x0000;
+	// regs.edx = 0x0000;
+	// regs.esi = 0x0000;
+	// regs.edi = 0x0000;
+	// regs.ebp = 0x100;
+	// regs.esp = 0x100;
+	// regs.eflags = 0x202;
+	regs.ds = 0x18;
+	regs.es = 0x18;
+	regs.fs = 0x18;
+	regs.gs = 0x18;
+	regs.ss = 0x18;
+
+	// printf("eax = %X\n", regs.eax);
+	do_bios_call(&regs, 0x10);
+
+	assert(REGX(regs.eax) == 0x004F);
+	// printf("eax = %X\n", regs.eax);
 }

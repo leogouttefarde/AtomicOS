@@ -22,7 +22,7 @@ void kernel_start(void)
 	// start("autotest", 4000, 10, NULL);
 	// start("test16", 4000, 128, NULL);
 	// start("test17", 4000, 128, NULL);
-	start("shell", 4000, 10, NULL);
+	launch_new_shell();
 
 	idle();
 

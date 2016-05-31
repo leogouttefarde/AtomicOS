@@ -221,4 +221,7 @@ void add_proc_activable(Process *proc);
 
 void sleep_clock(uint32_t clocks);
 
+void launch_new_shell();
+void abort_shell_wait();
+
 #endif
