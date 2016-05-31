@@ -7,6 +7,7 @@
 #include <time.h>
 #include "console.h"
 #include "messages.h"
+#include "mouse.h"
 
 void kernel_start(void)
 {
@@ -16,6 +17,7 @@ void kernel_start(void)
 	init_process();
 	init_time();
 	init_clavier();
+	init_souris();
 	init_messages();
 	init_sema();
 

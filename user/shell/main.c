@@ -131,11 +131,11 @@ static bool no_arguments()
 void cmd_usage(char *cmd, char *usage)
 {
 	cons_set_fg_color(LIGHT_CYAN);
-	printf(cmd);
+	printf("%s",cmd);
 	printf(" : ");
 	cons_reset_color();
 
-	printf(usage);
+	printf("%s",usage);
 	printf("\n");
 }
 
