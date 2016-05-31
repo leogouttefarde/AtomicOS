@@ -119,6 +119,7 @@ Debug des files de message à l'aide des tests en mode user fournis.
 Jeudi 26 mai :
 
 Azizi :
+Fin du debug des files de message pour le test 10.
 
 Etienne :
 Portage du shell en appli user.
@@ -132,6 +133,7 @@ tous les tests passent désormais (sauf test22).
 Vendredi 27 mai :
 
 Azizi :
+Début du jeu Snake
 
 Etienne :
 Débogage des sémaphores.
@@ -152,6 +154,21 @@ Léo :
 Gestion des exceptions, tous les tests passent désormais sans problème.
 
 
+Lundi 30 mai :
+
+Azizi :
+Poursuite du jeu snake
+
+Etienne :
+
+Léo :
 
 
+Mardi 31 mai :
 
+Azizi :
+Debug du jeu snake
+
+Etienne :
+
+Léo :
