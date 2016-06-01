@@ -54,5 +54,6 @@
 #define RESET_INPUTGAME 45
 #define TEST_INPUTGAME 46
 #define GET_INPUTGAME 47
+#define WAIT_KEYBOARD 48
 
 #endif

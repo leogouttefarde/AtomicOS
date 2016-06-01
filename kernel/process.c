@@ -1215,6 +1215,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ret = get_InputGame();
 		break;
 
+	case WAIT_KEYBOARD:
+		wait_for_keyboard();
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;

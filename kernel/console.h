@@ -16,4 +16,7 @@ int test_InputGame(void);
 //Renvoyer l'entrée clavier pour le jeu la plus récente
 int get_InputGame(void);
 
+//Tant qu'on n'a pas appuyé le clavier, le processus appelant est endormi
+void wait_for_keyboard(void);
+
 #endif
