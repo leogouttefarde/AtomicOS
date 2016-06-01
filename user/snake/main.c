@@ -12,8 +12,8 @@
 #define RIGHT 77
 
 #define INITIAL_SIZE 5
-#define INITIAL_STARTX 20
-#define INITIAL_STARTY 20
+#define INITIAL_STARTX 10
+#define INITIAL_STARTY 10
 #define INITIAL_LIFE 3
 #define MAX_SIZE 30
 
@@ -80,7 +80,7 @@ int main()
 	start_column = 5;
 	start_line = 2;
 	width=70;
-	height=40;
+	height=22;
 
 	printBannerSnake();
 	
@@ -119,10 +119,10 @@ void printBannerSnake()
 
 	printf("%s", banner);
 
-	printf("Welcome to the Snake game\n\n");
+	printf("\n\n Welcome to the Snake game\n\n\n");
 
-	printf("Game instructions :\n");
-	printf("-> Use arrow keys to move the snake\n\n");
+	//printf("Game instructions :\n");
+	//printf("-> Use arrow keys to move the snake\n\n");
 	
 	//printf("Press any key to start the game !\n");
 
