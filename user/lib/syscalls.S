@@ -537,3 +537,38 @@ set_caracter:
 	popl %ebx
 	popl %ebp
 	ret
+
+	.text
+	.globl getWidth
+getWidth:
+	movl $GETWIDTH, %eax
+	int $49
+	ret
+
+	.text
+	.globl getHeight
+getHeight:
+	movl $GETHEIGHT, %eax
+	int $49
+	ret
+
+	.text
+	.globl resetInputGame
+resetInputGame:
+	movl $RESET_INPUTGAME, %eax
+	int $49
+	ret	
+
+	.text
+	.globl testInputGame
+testInputGame:
+	movl $TEST_INPUTGAME, %eax
+	int $49
+	ret
+
+	.text
+	.globl getInputGame
+getInputGame:
+	movl $GET_INPUTGAME, %eax
+	int $49
+	ret

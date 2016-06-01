@@ -39,6 +39,12 @@ void set_bg_color(Color color);
 void set_fg_color(Color color);
 void reset_color();
 
+//Renvoyer la largeur de l'écran
+int get_Width();
+
+//Renvoyer la hauteur de l'écran
+int get_Height();
+
 // Couleurs
 enum Color_ {
 

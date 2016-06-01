@@ -6,11 +6,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define UP 72
-#define DOWN 80
-#define LEFT 75
-#define RIGHT 77
-
 #define INITIAL_SIZE 5
 #define INITIAL_STARTX 10
 #define INITIAL_STARTY 10
@@ -35,7 +30,7 @@ int time=0;
 //==============================================================================
 
 //L'affiche de la bannière de SNAKE
-void printBannerSnake();
+static void printBannerSnake();
 //Aller vers le haut de l'écran
 static void goUp();
 //Aller vers le bas de l'écran
@@ -55,14 +50,12 @@ static bool testEqual(Coordinates p1, Coordinates p2);
 //La création du fruit pour le serpent
 //Le prolongement de la taille du serpent quand le serpent mange un fruit
 static void getFruit();
-//La construction de l'encadrement du jeu
+//La construction de l'encadrement du jeu après l'effacement de l'écran
 static void getBorder();
 //L'initialisation des informations sur la tete du serpent
 static void setSnakeHead(int x, int y, int direction);
 //Renvoie true si on detecte une entrée clavier
 static bool hasConsoleInput();
-//Renvoie le dernier caractère dans le buffer du clavier
-static int getConsoleInput();
 //L'initialisation des données sur le corps du serpent
 static void reset_snakeBody();
 //Ralentir le temps
@@ -71,47 +64,54 @@ static void delayTime();
 static void endGame();
 //Pour faire bouger le serpent
 static void getMoving();
+//L'initialisation des paramètres du jeu
+static void initGame();
 
 //==============================================================================
 
 //La partie principale du jeu
 int main()
 {
-	start_column = 5;
-	start_line = 2;
-	width=70;
-	height=22;
-
 	printBannerSnake();
 	
-	snakeSize = INITIAL_SIZE;
-
-	setSnakeHead(INITIAL_STARTX, INITIAL_STARTY, RIGHT);
+	initGame();
 	
 	getBorder();
 
 	getFruit();
-
-	life=INITIAL_LIFE; //le nombre de vies supplémentaires
-
-	curve[0]=snakeHead;
 	
 	getMoving();
 
 	return 0;
 }
 
+//L'initialisation des paramètres du jeu
+static void initGame()
+{
+	/*L'initialisation de l'écran*/
+	start_column = 0;
+	start_line = 3;
+	width=getWidth();
+	height=getHeight();
+
+	/*L'initialisation des paramètres liés au serpent*/
+	snakeSize = INITIAL_SIZE;
+	setSnakeHead(INITIAL_STARTX, INITIAL_STARTY, RIGHT);
+	life=INITIAL_LIFE; //le nombre de vies supplémentaires
+	curve[0]=snakeHead;
+}
+
 //L'affiche de la bannière de SNAKE
-void printBannerSnake()
+static void printBannerSnake()
 {
 	const char *banner =
-" _________    __________    __________    ___   ____    ________  \n"\
-"|    _____|  |    __    |  |    __    |  |   | /   /   |    ____| \n"\
-"|   |_____   |   |  |   |  |   |  |   |  |   |/   /    |   |____  \n"\
-"|_____    |  |   |  |   |  |   |__|   |  |    _   \\    |    ____| \n"\
-" _____|   |  |   |  |   |  |    __    |  |   | \\   \\   |   |____  \n"\
-"|_________|  |___|  |___|  |___|  |___|  |___|  \\___\\  |________| \n\n"
-;
+		" _________    __________    __________    ___   ____    ________  \n"\
+		"|    _____|  |    __    |  |    __    |  |   | /   /   |    ____| \n"\
+		"|   |_____   |   |  |   |  |   |  |   |  |   |/   /    |   |____  \n"\
+		"|_____    |  |   |  |   |  |   |__|   |  |    _   \\    |    ____| \n"\
+		" _____|   |  |   |  |   |  |    __    |  |   | \\   \\   |   |____  \n"\
+		"|_________|  |___|  |___|  |___|  |___|  |___|  \\___\\  |________| \n\n"
+		;
 
 	printf("\f");	
 	
@@ -287,7 +287,7 @@ static void getCurve()
 //Generateur aléatoire
 static int rand_generator()
 {
-	return 15; //A MODIF
+	return 3; //A MODIF
 }
 
 //Generer un fruit
@@ -321,15 +321,16 @@ static void getFruit()
 	}else if(fruit.x==0){
 		generateFruit();
 	}
+	set_caracter(fruit.x, fruit.y, 'o');
 }
 
-//La construction de l'encadrement du jeu
+//La construction de l'encadrement du jeu après l'effacement de l'écran
 static void getBorder()
 {
 	printf("\f");
 	for(int i=start_line+1; i<height-1; i++){
 		set_caracter(i, start_column, '|');
-		set_caracter(i, width, '|');
+		set_caracter(i, width-1, '|');
 	}
 
 	for(int j=start_column+1; j<width-1; j++){
@@ -349,25 +350,11 @@ static void setSnakeHead(int x, int y, int direction)
 //Renvoie true si on detecte une entrée clavier
 static bool hasConsoleInput()
 {
-	if (time == 10){
+	if (testInputGame()==1){
 		return true;
 	}
-	if (time == 14){
-		return true;
-	}
-	return false; //A MODIF
-}
-
-//Renvoie le dernier caractère dans le buffer du clavier
-static int getConsoleInput()
-{
-	if (time == 10){
-		return DOWN;
-	}
-	if (time == 14){
-		return RIGHT;
-	}
-	return UP;// A MODIF
+	
+	return false;
 }
 
 //L'initialisation des données sur le corps du serpent
@@ -386,6 +373,8 @@ static void reset_snakeBody()
 //Ralentir le temps
 static void delayTime() // A MODIF
 {
+	set_cursor(0, 10);
+	printf("LIFE reste %d",life);
 	for(long long i=0; i<=(50000000); i++);
 	time++;
 }
@@ -406,6 +395,7 @@ static void endGame()
 		life--;
 		if(life>=0){
 			setSnakeHead(INITIAL_STARTX, INITIAL_STARTY, RIGHT);
+			currentCurve=0;
 			getMoving();
 		}else{
 			printf("\f");
@@ -420,8 +410,8 @@ static void getMoving()
 {
 	do{
 		getFruit();
-		
-		//flush_input_console()
+
+		resetInputGame();
 
 		currentSize=0;
 
@@ -429,7 +419,7 @@ static void getMoving()
 
 		delayTime();
 
-		getBorder(); // A MODIF necessaire?
+	        getBorder();
 
 		switch(snakeHead.direction){
 		case LEFT:
@@ -452,9 +442,9 @@ static void getMoving()
 		
 	}while(!hasConsoleInput());
 
-	int input = getConsoleInput();
+	int input = getInputGame();
 
-	if(input==27)
+	if(input==QUIT)
 	{
 		exit(0);
 	}
@@ -462,8 +452,8 @@ static void getMoving()
 	//La modification de la direction du serpent si une entrée clavier valide
 	//est detecté
 	if((input==RIGHT&&snakeHead.direction!=LEFT&&snakeHead.direction!=RIGHT)||
-	    (input==LEFT&&snakeHead.direction!=RIGHT&&snakeHead.direction!=LEFT)||
-	    (input==UP&&snakeHead.direction!=DOWN&&snakeHead.direction!=UP)||
+	   (input==LEFT&&snakeHead.direction!=RIGHT&&snakeHead.direction!=LEFT)||
+	   (input==UP&&snakeHead.direction!=DOWN&&snakeHead.direction!=UP)||
 	   (input==DOWN&&snakeHead.direction!=UP&&snakeHead.direction!=DOWN)){
 		currentCurve++;
 		curve[currentCurve]=snakeHead;

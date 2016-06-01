@@ -1195,6 +1195,26 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ecrit_car(arg0, arg1, arg2);
 		break;
 
+	case GETWIDTH:
+		ret = get_Width();
+		break;
+
+	case GETHEIGHT:
+		ret = get_Height();
+		break;
+
+	case RESET_INPUTGAME:
+		reset_InputGame();
+		break;
+
+	case TEST_INPUTGAME:
+		ret = test_InputGame();
+		break;
+
+	case GET_INPUTGAME:
+		ret = get_InputGame();
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;
