@@ -157,6 +157,8 @@ void usage()
 	cmd_usage("   kill <pid>", "Kill the corresponding process");
 	cmd_usage("       reboot", "Reboot the computer");
 	cmd_usage(" sleep <secs>", "Sleep for secs seconds");
+	cmd_usage("         vesa", "Test graphical mode");
+	cmd_usage("        snake", "Play mini game SNAKE");
 }
 
 static bool interpreter ()
@@ -226,6 +228,10 @@ static bool interpreter ()
 		if (child < 0) {
 			error = true;
 		}
+	}
+
+	else if (compare(mot_courant, "snake")) {
+		child = start("snake", 4000, 42, NULL);
 	}
 
 	else if (!strncmp(mot_courant, "banner", 4)) {

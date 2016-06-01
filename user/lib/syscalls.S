@@ -508,3 +508,32 @@ get_video_modes:
 	popl %ebx
 	popl %ebp
 	ret
+
+	.text
+	.globl set_cursor
+set_cursor:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $SET_CURSOR, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl set_caracter
+set_caracter:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl 16(%ebp), %edx
+	movl $SET_CARACTER, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret

@@ -106,4 +106,6 @@ void print_banner();
 int set_video_mode();
 void get_video_modes(int min_width, int max_width);
 
+void set_cursor(int lig, int col);
+void set_caracter(int lig, int col, char c);
 #endif

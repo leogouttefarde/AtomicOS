@@ -1187,6 +1187,14 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		list_modes(arg0, arg1);
 		break;
 
+	case SET_CURSOR:
+		place_curseur(arg0, arg1);
+		break;
+
+	case SET_CARACTER:
+		ecrit_car(arg0, arg1, arg2);
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;

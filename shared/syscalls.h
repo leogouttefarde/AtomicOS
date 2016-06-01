@@ -47,5 +47,6 @@
 #define PRINT_BANNER 38
 #define SET_VIDEO_MODE 39
 #define GET_VIDEO_MODES 40
-
+#define SET_CURSOR 41
+#define SET_CARACTER 42
 #endif
