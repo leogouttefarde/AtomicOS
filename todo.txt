@@ -19,7 +19,7 @@ Mineur :
 
 - Vérification des paramètres de syscall (implém à check)
 - journal de bord à update
-- Améliorer le shell
+- Améliorer le shell (cmds asynchrones avec & etc)
 
 
 
