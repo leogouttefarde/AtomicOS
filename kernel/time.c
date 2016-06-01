@@ -54,7 +54,8 @@ void init_time()
 	masque_IRQ(0, false);
 
 	// Crashes gdb somehow, enable later
-	if (0)	read_rtc();
+	//if (0)
+		read_rtc();
 }
 
 /**
@@ -216,6 +217,6 @@ static void read_rtc()
 		if(year < CURRENT_YEAR) year += 100;
 	}
 
-	g_secs = second + ((hour+2) * 60 + minute) * 60;
+	g_secs = second + ((hour/*+2*/) * 60 + minute) * 60;
 }
 
