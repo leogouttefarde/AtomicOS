@@ -190,10 +190,20 @@ Préparation et répétition de la soutenance SCHEME
 Jeudi 2 juin :
 
 Azizi :
+Fin de debogage du jeu snake & 
+Debut de gestion fichiers FAT32 (recherche documentaire)
 
 Etienne :
 
 Léo :
 
+
+Vendredi 3 juin :
+
+Azizi :
+
+Etienne :
+
+Léo :
 
 

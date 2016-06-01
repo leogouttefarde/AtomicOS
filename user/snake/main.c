@@ -131,8 +131,8 @@ static void printBannerSnake()
 	printf("\n\n Welcome to the Snake Mini-Game\n\n\n");
 
 	printf("Game instructions :\n");
-	printf("-> Please use arrow keys to move the snake\n\n");
-	printf("-> Please escape key to quit the game\n\n");
+	printf("(1) Please use arrow keys to move the snake\n");
+	printf("(2) Please escape key to quit the game\n\n");
 	
 	printf("Press any key to start the game !\n");
 	wait_keyboard();
