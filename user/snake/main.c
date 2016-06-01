@@ -80,7 +80,7 @@ int main()
 	start_column = 5;
 	start_line = 2;
 	width=70;
-	height=50;
+	height=40;
 
 	printBannerSnake();
 	
@@ -124,7 +124,10 @@ void printBannerSnake()
 	printf("Game instructions :\n");
 	printf("-> Use arrow keys to move the snake\n\n");
 	
-	printf("Press any key to start the game !\n");
+	//printf("Press any key to start the game !\n");
+
+	printf("Press wait for the demo version to start !\n");
+	for(long long i=0; i<=(2000000000); i++); //A MODIF
 
 	cons_reset_color();
 }
@@ -381,7 +384,7 @@ static void reset_snakeBody()
 }
 
 //Ralentir le temps
-static void delayTime()
+static void delayTime() // A MODIF
 {
 	for(long long i=0; i<=(50000000); i++);
 	time++;
@@ -406,7 +409,7 @@ static void endGame()
 			getMoving();
 		}else{
 			printf("\f");
-			printf("\n\n END OF GAME ..... \n\n");
+			printf("\n\n ..... GAME OVER ..... \n\n");
 			exit(0); //Fin du jeu
 		}
 	}
