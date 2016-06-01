@@ -104,6 +104,6 @@ void sleep(unsigned long seconds);
 int getppid();
 void print_banner();
 int set_video_mode();
-
+void get_video_modes(int min_width, int max_width);
 
 #endif

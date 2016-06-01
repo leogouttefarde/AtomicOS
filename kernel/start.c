@@ -7,6 +7,7 @@
 #include <time.h>
 #include "console.h"
 #include "messages.h"
+#include "mouse.h"
 #include "vesa.h"
 
 void kernel_start(void)
@@ -19,6 +20,7 @@ void kernel_start(void)
 	init_clavier();
 	init_messages();
 	init_sema();
+	init_mouse();
 
 	// initGraphics(1366, 768, 32);
 

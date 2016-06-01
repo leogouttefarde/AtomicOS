@@ -233,7 +233,10 @@ uint16_t findMode(int x, int y, int d)
 		if ( REGX(regs.eax) != 0x004F ) continue;
 		// printf("  OK 12");
 
-		if (inf->Xres > 1200 && inf->Xres < 1400)
+		// Skip invalid modes
+		if ( x < inf->Xres || y < inf->Yres ) continue;
+
+		if (inf->Xres > 700)
 		printf("m 0x%X x %d y %d d %d\n", modes[i], inf->Xres, inf->Yres, inf->bpp);
 
 		// intV86(0x10, "ax,cx,es:di", 0x4F01, modes[i], 0, inf); // Get Mode Info
@@ -470,6 +473,59 @@ int getModeInfo(int mode)
 	return 1;
 }
 
+void list_modes(int min, int max)
+{
+	struct VbeInfoBlock *ctrl = vbeInfo;
+	struct ModeInfoBlock *inf = modeInfo;
+
+	memset(ctrl, 0, sizeof(VbeInfoBlock));
+	memset(inf, 0, sizeof(ModeInfoBlock));
+	uint16_t *modes;
+	int i;
+ 
+	strncpy(ctrl->VbeSignature, "VBE2", 4);
+
+
+	struct bios_regs regs;
+	memset(&regs, 0, sizeof(regs));
+
+	regs.eax = 0x4F00;
+	regs.edi = ((int)ctrl);
+	regs.es = (int)ctrl>>16;
+	regs.ebp = 0x100;
+	regs.esp = 0x100;
+	regs.eflags = 0x202;
+	regs.ds = 0x18;
+	regs.fs = 0x18;
+	regs.gs = 0x18;
+	regs.ss = 0x18;
+
+	do_bios_call(&regs, 0x10);
+	if ( REGX(regs.eax) != 0x004F ) return;
+
+	modes = (uint16_t*)REALPTR(ctrl->VideoModePtr);
+	for ( i = 0 ; modes[i] != 0xFFFF ; ++i ) {
+		memset(&regs, 0, sizeof(regs));
+		regs.eax = 0x4F01;
+		regs.ecx = (int)modes[i];
+		regs.edi = ((int)inf);
+		regs.es = (int)inf >> 16;
+		regs.ebp = 0x100;
+		regs.esp = 0x100;
+		regs.eflags = 0x202;
+		regs.ds = 0x18;
+		regs.fs = 0x18;
+		regs.gs = 0x18;
+		regs.ss = 0x18;
+
+		do_bios_call(&regs, 0x10);
+		if ( REGX(regs.eax) != 0x004F ) continue;
+
+		if (inf->Xres > min && inf->Xres < max)
+		printf("0x%X : %dx%dx%d\n", modes[i], inf->Xres, inf->Yres, inf->bpp);
+	}
+}
+
 
 extern char pgdir[];
 /* Initialize the specified video mode. Notice how we determine a shift
@@ -534,18 +590,18 @@ int initGraphics(unsigned int x, unsigned int y, unsigned int d)
 				map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
 			}
 
-			// // Draw gradient bg
-			// for (int32_t i = 0; i < xres; i++)
-			// 	for (int32_t j = 0; j < yres; j++) {
-			// 		// Format couleur : 0xAARRGGBB
-			// 		// putPixel(i, j, 0xFF000000
-			// 		// 	| (i%256) * 0x00010000
-			// 		// 	| ((i+j)%256) * 0x00000100
-			// 		// 	| (j%256) * 0x000000FF
-			// 		// 	);
-			// 		putPixelRGB(i, j, i, (i+j), j);
-			// 		// putPixelRGB(i, j, 0xFF, 0, 0);
-			// 	}
+			// Draw gradient bg
+			for (int32_t i = 0; i < xres; i++)
+				for (int32_t j = 0; j < yres; j++) {
+					// Format couleur : 0xAARRGGBB
+					// putPixel(i, j, 0xFF000000
+					// 	| (i%256) * 0x00010000
+					// 	| ((i+j)%256) * 0x00000100
+					// 	| (j%256) * 0x000000FF
+					// 	);
+					putPixelRGB(i, j, i, (i+j), j);
+					// putPixelRGB(i, j, 0xFF, 0, 0);
+				}
 			int32_t k = 0;
 			for (int32_t j = 200; j < 200+161; j++)
 				for (int32_t i = 400; i < 288+400; i++) {

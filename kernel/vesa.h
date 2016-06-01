@@ -9,5 +9,6 @@ uint16_t findMode(int x, int y, int d);
 void setVBEMode(int mode);
 int initGraphics(unsigned int x, unsigned int y, unsigned int d);
 // void putPixel(int x, int y, uint32_t color);
+void list_modes(int min, int max);
 
 #endif

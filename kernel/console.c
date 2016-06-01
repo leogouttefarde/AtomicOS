@@ -323,9 +323,6 @@ void keyboard_data(char *str)
 {
 	const int len = strlen(str);
 
-
-	// printf("taille : %lu\n", i);
-
 	if (len < 0)
 		return;
 
@@ -353,9 +350,16 @@ void keyboard_data(char *str)
 	// }
 	else if (len == 1) {
 
+
+	// printf("kb read : %d\n", str[0]);
+
 		const char first = str[0];
 
 		switch (first) {
+		case 27:
+			// Ignore ESC
+			break;
+
 		case 3:
 			abort_shell_wait();
 			break;

@@ -207,6 +207,15 @@ static bool interpreter ()
 		set_video_mode();
 	}
 
+	else if (compare(mot_courant, "vesamodes")) {
+		char *arg0 = get_argument();
+		// char *arg1 = get_argument();
+
+		if (arg0 != NULL) {
+			get_video_modes(parse_int(arg0), 4000);
+		}
+	}
+
 	else if (compare(mot_courant, "autotest")) {
 		child = start("autotest", 4000, 42, NULL);
 	}

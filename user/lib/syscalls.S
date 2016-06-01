@@ -494,3 +494,17 @@ set_video_mode:
 	movl $SET_VIDEO_MODE, %eax
 	int $49
 	ret
+
+	.text
+	.globl get_video_modes
+get_video_modes:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $GET_VIDEO_MODES, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret

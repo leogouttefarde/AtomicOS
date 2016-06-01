@@ -46,6 +46,6 @@
 #define GETPPID 37
 #define PRINT_BANNER 38
 #define SET_VIDEO_MODE 39
-
+#define GET_VIDEO_MODES 40
 
 #endif

@@ -1183,6 +1183,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ret = initGraphics(1366, 768, 32);
 		break;
 
+	case GET_VIDEO_MODES:
+		list_modes(arg0, arg1);
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;

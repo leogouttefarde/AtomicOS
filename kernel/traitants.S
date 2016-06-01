@@ -39,6 +39,32 @@ traitant_IT_33:
 # fin du traitant
 	iret
 
+#traitant clavier
+	.text
+# cette directive sert a rendre l'etiquette publique
+	.globl traitant_IT_44
+#debut du traitant
+traitant_IT_44:
+	pusha
+	call set_kernel_protection
+# sauvegarde des registres importants
+	pushl %eax
+	pushl %ebx
+	pushl %esi
+	pushl %edx
+	pushl %ecx
+# appel a la fonction C realisant le traitant
+	call mouse_handler
+# restauration des registres importants
+	popl %ecx
+	popl %edx
+	popl %esi
+	popl %ebx
+	popl %eax
+	call set_user_protection
+	popa
+# fin du traitant
+	iret
 
 #traitant d'appels système
 	.text
