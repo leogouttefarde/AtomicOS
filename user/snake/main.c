@@ -30,6 +30,8 @@ int snakeSize, currentSize, life;
 int currentCurve = 0;
 Coordinates fruit, snakeHead, snakeBody[MAX_SIZE], curve[500];
 
+int time=0;
+
 //==============================================================================
 
 //L'affiche de la bannière de SNAKE
@@ -344,13 +346,25 @@ static void setSnakeHead(int x, int y, int direction)
 //Renvoie true si on detecte une entrée clavier
 static bool hasConsoleInput()
 {
+	if (time == 10){
+		return true;
+	}
+	if (time == 14){
+		return true;
+	}
 	return false; //A MODIF
 }
 
 //Renvoie le dernier caractère dans le buffer du clavier
 static int getConsoleInput()
 {
-	return DOWN;// A MODIF
+	if (time == 10){
+		return DOWN;
+	}
+	if (time == 14){
+		return RIGHT;
+	}
+	return UP;// A MODIF
 }
 
 //L'initialisation des données sur le corps du serpent
@@ -369,7 +383,8 @@ static void reset_snakeBody()
 //Ralentir le temps
 static void delayTime()
 {
-	for(long long i=0; i<=(10000000); i++);
+	for(long long i=0; i<=(50000000); i++);
+	time++;
 }
 
 //Tester si le jeu est fini // A MODIF
