@@ -4,6 +4,7 @@
 #include <cpu.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <vesa.h>
 #define outportb(a, b) outb(b, a)
 typedef uint8_t byte;
 typedef int8_t sbyte;
@@ -158,11 +159,15 @@ void mouse_handler(void *a_r)//struct regs *a_r) //struct regs *a_r (not used bu
 			x += mouse_x;
 			y -= mouse_y;
 
-			if (x > 79)x=79;
+			if (x > 1000)x=1000;
+			if (y > 700)y=700;
+			// if (x > 79)x=79;
+			// if (y > 24)y=24;
 			if (x < 0) x = 0;
-			if (y > 24)y=24;
 			if (y < 0) y = 0;
 
+			fill_rectangle(x, y, 5, 5, 0);
+			fill_rectangle(x+1, y+1, 3, 3, 0xFFFFFFFF);
 			ecrit_car(y, x, car);
 			reset_color();
 

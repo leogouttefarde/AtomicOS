@@ -376,6 +376,11 @@ void keyboard_data(char *str)
 			abort_shell_wait();
 			break;
 
+		// CTRL+L
+		// case 12:
+		// 	printf("\f");
+		// 	break;
+
 		case 127:
 			/*Cas du backspace : Si le tampon n'est pas vide 
 			  l'indice recule d'une case*/
