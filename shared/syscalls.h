@@ -46,6 +46,14 @@
 #define GETPPID 37
 #define PRINT_BANNER 38
 #define SET_VIDEO_MODE 39
-
+#define GET_VIDEO_MODES 40
+#define SET_CURSOR 41
+#define SET_CARACTER 42
+#define GETWIDTH 43
+#define GETHEIGHT 44
+#define RESET_INPUTGAME 45
+#define TEST_INPUTGAME 46
+#define GET_INPUTGAME 47
+#define WAIT_KEYBOARD 48
 
 #endif

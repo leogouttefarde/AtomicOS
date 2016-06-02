@@ -494,3 +494,89 @@ set_video_mode:
 	movl $SET_VIDEO_MODE, %eax
 	int $49
 	ret
+
+	.text
+	.globl get_video_modes
+get_video_modes:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $GET_VIDEO_MODES, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl set_cursor
+set_cursor:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $SET_CURSOR, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl set_caracter
+set_caracter:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl 16(%ebp), %edx
+	movl $SET_CARACTER, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl getWidth
+getWidth:
+	movl $GETWIDTH, %eax
+	int $49
+	ret
+
+	.text
+	.globl getHeight
+getHeight:
+	movl $GETHEIGHT, %eax
+	int $49
+	ret
+
+	.text
+	.globl resetInputGame
+resetInputGame:
+	movl $RESET_INPUTGAME, %eax
+	int $49
+	ret	
+
+	.text
+	.globl testInputGame
+testInputGame:
+	movl $TEST_INPUTGAME, %eax
+	int $49
+	ret
+
+	.text
+	.globl getInputGame
+getInputGame:
+	movl $GET_INPUTGAME, %eax
+	int $49
+	ret
+
+	.text
+	.globl wait_keyboard
+wait_keyboard:
+	movl $WAIT_KEYBOARD, %eax
+	int $49
+	ret
+

@@ -1183,6 +1183,42 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ret = initGraphics(1366, 768, 32);
 		break;
 
+	case GET_VIDEO_MODES:
+		list_modes(arg0, arg1);
+		break;
+
+	case SET_CURSOR:
+		place_curseur(arg0, arg1);
+		break;
+
+	case SET_CARACTER:
+		ecrit_car(arg0, arg1, arg2);
+		break;
+
+	case GETWIDTH:
+		ret = get_Width();
+		break;
+
+	case GETHEIGHT:
+		ret = get_Height();
+		break;
+
+	case RESET_INPUTGAME:
+		reset_InputGame();
+		break;
+
+	case TEST_INPUTGAME:
+		ret = test_InputGame();
+		break;
+
+	case GET_INPUTGAME:
+		ret = get_InputGame();
+		break;
+
+	case WAIT_KEYBOARD:
+		wait_for_keyboard();
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;

@@ -21,6 +21,7 @@ void kernel_start(void)
 	init_souris();
 	init_messages();
 	init_sema();
+	init_mouse();
 
 	// initGraphics(1366, 768, 32);
 

@@ -5,6 +5,9 @@
 #include <string.h>
 #include <stdio.h>
 #include "ice.h"
+#include "cursor.h"
+#include "vmem.h"
+#include "mem.h"
 
 typedef struct VbeInfoBlock {
 	 char VbeSignature[4];             // == "VESA"
@@ -108,7 +111,7 @@ int oldMode;
 int bpp;
 
 /* Pointer to start of video memory */
-uint32_t *screenPtr;
+uint32_t *screenPtr = NULL;
 
 /* Direct bank switching function */
 // void (*bankSwitch)(void);
@@ -162,13 +165,15 @@ struct ModeInfoBlock *modeInfo = (ModeInfoBlock*)0x4000;//&infs;
 
 uint16_t findMode(int x, int y, int d)
 {
+	// vbeInfo = mem_alloc(4096);
+	// modeInfo = mem_alloc(4096);
 	// struct VbeInfoBlock ctrls;
 	// struct ModeInfoBlock infs;
 	struct VbeInfoBlock *ctrl = vbeInfo;//&ctrls;
 	struct ModeInfoBlock *inf = modeInfo;//&infs;
 
-	memset(ctrl, 0, sizeof(VbeInfoBlock));
-	memset(inf, 0, sizeof(ModeInfoBlock));
+	// memset(ctrl, 0, sizeof(VbeInfoBlock));
+	// memset(inf, 0, sizeof(ModeInfoBlock));
 	// mem_free_nolength(ctrl);
 	// mem_free_nolength(inf);
 	uint16_t *modes;
@@ -205,6 +210,9 @@ uint16_t findMode(int x, int y, int d)
 
 	// intV86(0x10, "ax,es:di", 0x4F00, 0, ctrl); // Get Controller Info
 	// if ( (uint16_t)v86.tss.eax != 0x004F ) return best;
+
+	if (!ctrl->VideoModePtr)
+		return best;
  
 	modes = (uint16_t*)REALPTR(ctrl->VideoModePtr);
 	for ( i = 0 ; modes[i] != 0xFFFF ; ++i ) {
@@ -233,7 +241,10 @@ uint16_t findMode(int x, int y, int d)
 		if ( REGX(regs.eax) != 0x004F ) continue;
 		// printf("  OK 12");
 
-		if (inf->Xres > 1200 && inf->Xres < 1400)
+		// Skip invalid modes
+		if ( x < inf->Xres || y < inf->Yres ) continue;
+
+		if (inf->Xres > 700)
 		printf("m 0x%X x %d y %d d %d\n", modes[i], inf->Xres, inf->Yres, inf->bpp);
 
 		// intV86(0x10, "ax,cx,es:di", 0x4F01, modes[i], 0, inf); // Get Mode Info
@@ -324,6 +335,10 @@ static inline void putPixel(int x, int y, uint32_t color)
 static inline void putPixelRGB(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 {
 	uint32_t pixel;
+
+	// Treat magenta as transparency
+	if (r == 255 && b == 255 && g == 0)
+		return;
 
 	if (bpp == 16) {
 		r = (((uint32_t)r) * 32)/256;
@@ -470,8 +485,85 @@ int getModeInfo(int mode)
 	return 1;
 }
 
+void list_modes(int min, int max)
+{
+	struct VbeInfoBlock *ctrl = vbeInfo;
+	struct ModeInfoBlock *inf = modeInfo;
+
+	memset(ctrl, 0, sizeof(VbeInfoBlock));
+	memset(inf, 0, sizeof(ModeInfoBlock));
+	uint16_t *modes;
+	int i;
+ 
+	strncpy(ctrl->VbeSignature, "VBE2", 4);
+
+
+	struct bios_regs regs;
+	memset(&regs, 0, sizeof(regs));
+
+	regs.eax = 0x4F00;
+	regs.edi = ((int)ctrl);
+	regs.es = (int)ctrl>>16;
+	regs.ebp = 0x100;
+	regs.esp = 0x100;
+	regs.eflags = 0x202;
+	regs.ds = 0x18;
+	regs.fs = 0x18;
+	regs.gs = 0x18;
+	regs.ss = 0x18;
+
+	do_bios_call(&regs, 0x10);
+	if ( REGX(regs.eax) != 0x004F ) return;
+
+	modes = (uint16_t*)REALPTR(ctrl->VideoModePtr);
+	for ( i = 0 ; modes[i] != 0xFFFF ; ++i ) {
+		memset(&regs, 0, sizeof(regs));
+		regs.eax = 0x4F01;
+		regs.ecx = (int)modes[i];
+		regs.edi = ((int)inf);
+		regs.es = (int)inf >> 16;
+		regs.ebp = 0x100;
+		regs.esp = 0x100;
+		regs.eflags = 0x202;
+		regs.ds = 0x18;
+		regs.fs = 0x18;
+		regs.gs = 0x18;
+		regs.ss = 0x18;
+
+		do_bios_call(&regs, 0x10);
+		if ( REGX(regs.eax) != 0x004F ) continue;
+
+		if (inf->Xres > min && inf->Xres < max)
+		printf("0x%X : %dx%dx%d\n", modes[i], inf->Xres, inf->Yres, inf->bpp);
+	}
+}
+
 
 extern char pgdir[];
+
+
+static inline void map_video_memory()
+{
+	const Process *cur_proc = get_cur_proc();
+	void *pdir = pgdir;
+
+	if (cur_proc && cur_proc->pdir)
+		pdir = cur_proc->pdir;
+
+	if (!screenPtr || get_physaddr(pdir, screenPtr))
+		return;
+
+	const uint32_t size = xres*yres * bytesperline;
+	const uint32_t pages = compute_pages(size);
+
+	for (uint32_t i = 0; i < pages; i++) {
+		void *addr = (void*)((int)screenPtr + i * PAGESIZE);
+		map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
+	}
+}
+
+
+
 /* Initialize the specified video mode. Notice how we determine a shift
 * factor for adjusting the Window granularity for bank switching. This
 * is much faster than doing it with a multiply (especially with direct
@@ -521,31 +613,20 @@ int initGraphics(unsigned int x, unsigned int y, unsigned int d)
 
 			setVBEMode(mode);
 
-			uint32_t size = xres*yres * bytesperline;
-			uint32_t pages = compute_pages(size);
-			Process *cur_proc = get_cur_proc();
-			void *pdir = pgdir;
+			map_video_memory();
 
-			if (cur_proc && cur_proc->pdir)
-				pdir = cur_proc->pdir;
-
-			for (uint32_t i = 0; i < pages; i++) {
-				void *addr = (void*)((int)screenPtr + i * PAGESIZE);
-				map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
-			}
-
-			// // Draw gradient bg
-			// for (int32_t i = 0; i < xres; i++)
-			// 	for (int32_t j = 0; j < yres; j++) {
-			// 		// Format couleur : 0xAARRGGBB
-			// 		// putPixel(i, j, 0xFF000000
-			// 		// 	| (i%256) * 0x00010000
-			// 		// 	| ((i+j)%256) * 0x00000100
-			// 		// 	| (j%256) * 0x000000FF
-			// 		// 	);
-			// 		putPixelRGB(i, j, i, (i+j), j);
-			// 		// putPixelRGB(i, j, 0xFF, 0, 0);
-			// 	}
+			// Draw gradient bg
+			for (int32_t i = 0; i < xres; i++)
+				for (int32_t j = 0; j < yres; j++) {
+					// Format couleur : 0xAARRGGBB
+					// putPixel(i, j, 0xFF000000
+					// 	| (i%256) * 0x00010000
+					// 	| ((i+j)%256) * 0x00000100
+					// 	| (j%256) * 0x000000FF
+					// 	);
+					putPixelRGB(i, j, i, (i+j), j);
+					// putPixelRGB(i, j, 0xFF, 0, 0);
+				}
 			int32_t k = 0;
 			for (int32_t j = 200; j < 200+161; j++)
 				for (int32_t i = 400; i < 288+400; i++) {
@@ -583,6 +664,36 @@ int initGraphics(unsigned int x, unsigned int y, unsigned int d)
 	printf("Video mode not found\n");
 
 	return 0;
+}
+
+void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color)
+{
+	// Mouse events may not occur from
+	// another process with a different memory mapping
+	map_video_memory();
+	(void)w;
+	(void)h;
+	(void)color;
+
+	// for (uint32_t j = y; j < (y + h); j++) {
+	// 	for (uint32_t i = x; i < (x + w); i++) {
+	// 		putPixel(i, j, color);
+	// 	}
+	// }
+	int32_t k = 0;
+	for (uint32_t j = y; j < y+24; j++)
+		for (uint32_t i = x; i < 16+x; i++) {
+
+			if (k > cursor_bin_size)break;
+
+			const char b = cursor_bin[k++];
+			const char g = cursor_bin[k++];
+			const char r = cursor_bin[k++];
+			const char a = cursor_bin[k++];
+			(void)a;
+
+			putPixelRGB(i, j, r, g, b);
+		}
 }
 
 

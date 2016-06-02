@@ -62,7 +62,7 @@ Fin de l'implantaion de la localisation des applications.
 Installation des outils adéquats pour pouvoir poursuivre le projet sur machine personnelle.
 
 Léo :
-Lecture de l'heure rtc au lancement du kernel.
+Lecture de l'heure RTC au lancement du kernel.
 
 
 Dimanche 22 mai
@@ -162,6 +162,10 @@ Poursuite du jeu snake
 Etienne :
 
 Léo :
+Complétion du shell et réalisation d'appels bios avec succès.
+Il fallait en effet décommenter le mode réel qui n'était par défaut
+pas compilé avec le binaire, loin d'être évident en l'absence
+de documentation claire à ce sujet.
 
 
 Mardi 31 mai :
@@ -170,5 +174,36 @@ Azizi :
 Debug du jeu snake
 
 Etienne :
+Début du pilote de souris PS/2
 
 Léo :
+Implémentation du pilote VESA au sein du kernel
+avec auto-détection des résolutions et support HD.
+Travail sur le pilote de souris PS/2
+
+
+Mercredi 1 juin :
+
+Préparation et répétition de la soutenance SCHEME
+
+
+Jeudi 2 juin :
+
+Azizi :
+Fin de debogage du jeu snake & 
+Debut de gestion fichiers FAT32 (recherche documentaire)
+
+Etienne :
+
+Léo :
+
+
+Vendredi 3 juin :
+
+Azizi :
+
+Etienne :
+
+Léo :
+
+

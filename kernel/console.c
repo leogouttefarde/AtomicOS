@@ -10,10 +10,19 @@
 #define MAX_HISTORY 20
 #define TAILLE_TAMP 100
 
+#define NONE 0
+#define QUIT 1
+#define UP 2
+#define DOWN 3
+#define LEFT 4
+#define RIGHT 5
+
 void traitant_IT_33();
 
 bool echo=true;
 char tampon [TAILLE_TAMP];
+
+int inputGame=0; 
 
 /*Tableaux servant à memoriser les positions des cararacteres
   à l'écran avant les tabulations*/
@@ -323,42 +332,54 @@ void keyboard_data(char *str)
 {
 	const int len = strlen(str);
 
-
-	// printf("taille : %lu\n", i);
-
 	if (len < 0)
 		return;
 
-	// else if (len == 3) {
-		// if (!strcmp(str, UP_ARROW)) {
+	else if (len == 3) {
+		if (!strcmp(str, UP_ARROW)) {
+			inputGame = UP;
 		// 	history_next();
-		// }
-		// else if (!strcmp(str, DN_ARROW)) {
+		}
+		else if (!strcmp(str, DN_ARROW)) {
+			inputGame = DOWN;
 		// 	history_prev();
-		// }
-		// else if (!strcmp(str, LT_ARROW)) {
-
+		}
+		else if (!strcmp(str, LT_ARROW)) {
+			inputGame = LEFT;
 		// 	if (col_cour() > 0) {
 		// 		place_curseur(lig_cour(), col_cour()-1);
 		// 		reculer();
 		// 	}
-		// }
-		// else if (!strcmp(str, RT_ARROW)) {
-
+		}
+		else if (!strcmp(str, RT_ARROW)) {
+			inputGame = RIGHT;
 		// 	if (col_cour() < NB_COLS) {
 		// 		place_curseur(lig_cour(), col_cour()+1);
 		// 		avancer();
 		// 	}
-		// }
-	// }
+		}
+	}
 	else if (len == 1) {
+
+
+	// printf("kb read : %d\n", str[0]);
 
 		const char first = str[0];
 
 		switch (first) {
+		case 27:
+			// Ignore ESC
+			inputGame = QUIT;
+			break;
+
 		case 3:
 			abort_shell_wait();
 			break;
+
+		// CTRL+L
+		// case 12:
+		// 	printf("\f");
+		// 	break;
 
 		case 127:
 			/*Cas du backspace : Si le tampon n'est pas vide 
@@ -402,5 +423,35 @@ void keyboard_data(char *str)
 //	// CAPS LOCK : 4
 //	// NUM LOCK : 2
 // }
+
+void reset_InputGame(void)
+{
+	inputGame = NONE;
+}
+
+int test_InputGame(void)
+{
+	if (inputGame!=NONE){
+		return 1;
+	}
+	
+	return 0;
+}
+
+int get_InputGame(void)
+{
+	return inputGame;
+}
+
+
+void wait_for_keyboard(void)
+{
+	//Tant qu'on n'a pas appuyé le clavier
+	//le processus appelant est endormi
+	while (cases_dispos==TAILLE_TAMP) { 
+		bloque_io();
+	}
+}
+
 
 ;

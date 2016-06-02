@@ -159,6 +159,18 @@ void set_fg_color(Color color)
 	couleur_texte = color;
 }
 
+//Renvoyer la largeur de l'écran
+int get_Width()
+{
+	return NB_COLS;
+}
+
+//Renvoyer la hauteur de l'écran
+int get_Height()
+{
+	return NB_LIG;
+}
+
 void banner()
 {
 	const char *name =

@@ -29,7 +29,9 @@ void init_traitant_IT_user(int32_t num_IT, int traitant)
 // Fonction de masquage générique d'un IRQ
 void masque_IRQ(uint8_t num_IRQ, bool masque)
 {
-	if (num_IRQ < 8 && masque <= 1) {
+	masque &= 1;
+
+	if (num_IRQ < 8) {
 
 		// Récupération des masques IRQ
 		uint8_t sortie = inb(0x21);
@@ -41,5 +43,21 @@ void masque_IRQ(uint8_t num_IRQ, bool masque)
 		sortie |= masque << num_IRQ;
 
 		outb(sortie, 0x21);
+	}
+
+	else if (num_IRQ < 16) {
+
+		num_IRQ -= 8;
+
+		// Récupération des masques IRQ
+		uint8_t sortie = inb(0xA0);
+
+		// On efface l'ancien masque de l'IRQ
+		sortie &= ~(1 << num_IRQ);
+
+		// On écrit le nouveau
+		sortie |= masque << num_IRQ;
+
+		outb(sortie, 0xA1);
 	}
 }

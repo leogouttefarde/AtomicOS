@@ -6,6 +6,13 @@
 #define CONS_READ_LINE 2000 //?
 #define WITH_SEM 200 //?
 
+#define NONE 0
+#define QUIT 1
+#define UP 2
+#define DOWN 3
+#define LEFT 4
+#define RIGHT 5
+
 // Prototype des appels systeme de la spec
 int chprio(int pid, int newprio);
 void cons_write(const char *str, unsigned long size);
@@ -104,6 +111,30 @@ void sleep(unsigned long seconds);
 int getppid();
 void print_banner();
 int set_video_mode();
+void get_video_modes(int min_width, int max_width);
 
+//Déplacer le curseur à une position (x,y) de l'écran 
+void set_cursor(int lig, int col);
+
+//Afficher un caractère à une position (x,y) de l'écran 
+void set_caracter(int lig, int col, char c);
+
+//Renvoyer la largeur de l'écran
+int getWidth();
+
+//Renvoyer la hauteur de l'écran
+int getHeight();
+
+//Effacer le buffer de l'entrée clavier pour le jeu
+void resetInputGame(void);
+
+//Tester l'existence d'une entrée clavier pour le jeu
+int testInputGame(void);
+
+//Renvoyer l'entrée clavier pour le jeu la plus récente
+int getInputGame(void);
+
+//Attendre pour une entrée clavier
+void wait_keyboard(void);
 
 #endif
