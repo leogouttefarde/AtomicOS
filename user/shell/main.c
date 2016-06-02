@@ -88,6 +88,11 @@ static inline char *get_argument()
 	return mot_courant;
 }
 
+static inline int parse_hex(char *str)
+{
+	return strtol(str, NULL, 16);
+}
+
 static inline int parse_int(char *str)
 {
 	return strtol(str, NULL, 10);
@@ -209,13 +214,26 @@ static bool interpreter ()
 		set_video_mode();
 	}
 
+	else if (compare(mot_courant, "vbe")) {
+		char *next = get_argument();
+
+		if (next != NULL) {
+			set_vbe_mode(parse_hex(next));
+		}
+	}
+
 	else if (compare(mot_courant, "vesamodes")) {
 		char *arg0 = get_argument();
 		// char *arg1 = get_argument();
 
+		int min = 1000;
+		int max = 4000;
+
 		if (arg0 != NULL) {
-			get_video_modes(parse_int(arg0), 4000);
+			min = parse_int(arg0);
 		}
+
+		get_video_modes(min, max);
 	}
 
 	else if (compare(mot_courant, "autotest")) {

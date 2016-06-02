@@ -1,16 +1,20 @@
 
 
 
+todo :
+- fix bug pilote souris PS/2 (utiliser bis spéciaux)
+
+
 Extensions :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
 
 - Gestion fichiers FAT32
-- Pilote souris PS/2
 - Heure rtc
 - mode graphique VESA
 - éditeur de fichiers
-- driver usb / disque dur ? (à priori trop complexe / long, sauf si vieux driver)
+- Améliorer le shell (cmds asynchrones avec & etc)
 - (shells multiples)
+- driver usb / disque dur ? (à priori trop complexe / long, sauf si vieux driver)
 
 - todo : trouver cmt choisir 1er mode hd fonctionnel automatiquement
 
@@ -19,15 +23,15 @@ Mineur :
 
 - Vérification des paramètres de syscall (implém à check)
 - journal de bord à update
-- Améliorer le shell (cmds asynchrones avec & etc)
 
 
 
 
 Questions :
 - affichage processus : parcours tableau entier ?
-
-
+- shell amélioré
+- vesa
+- 1680x1050
 
 autres attentes :
 
