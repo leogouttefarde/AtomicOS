@@ -134,4 +134,7 @@ int testInputGame(void);
 //Renvoyer l'entrée clavier pour le jeu la plus récente
 int getInputGame(void);
 
+//Attendre pour une entrée clavier
+void wait_keyboard(void);
+
 #endif

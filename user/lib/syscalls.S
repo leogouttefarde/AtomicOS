@@ -572,3 +572,11 @@ getInputGame:
 	movl $GET_INPUTGAME, %eax
 	int $49
 	ret
+
+	.text
+	.globl wait_keyboard
+wait_keyboard:
+	movl $WAIT_KEYBOARD, %eax
+	int $49
+	ret
+

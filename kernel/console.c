@@ -444,5 +444,14 @@ int get_InputGame(void)
 }
 
 
+void wait_for_keyboard(void)
+{
+	//Tant qu'on n'a pas appuyé le clavier
+	//le processus appelant est endormi
+	while (cases_dispos==TAILLE_TAMP) { 
+		bloque_io();
+	}
+}
+
 
 ;
