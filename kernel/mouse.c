@@ -5,191 +5,134 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <vesa.h>
-#define outportb(a, b) outb(b, a)
-typedef uint8_t byte;
-typedef int8_t sbyte;
-typedef int32_t dword;
 
-//Mouse.inc by SANiK
-//License: Use as you wish, except to cause damage
-byte mouse_cycle=0;     //unsigned char
-int32_t mouse_byte[4] = {0,0,0,0};    //signed char
-int32_t mouse_x=40;         //signed char
-int32_t mouse_y=12;         //signed char
+uint8_t cycle = 0;
+int8_t packets[3];
+
+int32_t mouse_x = 40;
+int32_t mouse_y = 12;
 
 int32_t x = 0;
 int32_t y = 0;
 
 void traitant_IT_44();
 
-
-
-// void mouse_handler(void *r)//struct regs *r)
-// {
-// 	outb(0x20, 0xA0);
-// 	outb(0x20, 0x20);
-
-// 	(void)r;
-// 	static unsigned char cycle = 0;
-// 	static char mouse_bytes[3];
-//     unsigned char status = inb(0x64);
-
-//     printf("Mouse handler, status = 0x%X\n", status);
-
-
-// 	mouse_bytes[cycle++] = inb(0x60);int x=0, y=0;
-// 			printf("%d pressed\n", mouse_bytes[cycle-1]);
-
-//      status = inb(0x64);
-//     printf("Mouse handler, status = 0x%X\n", status);
-
-
-
-// 	if (cycle == 3) { // if we have all the 3 bytes...
-// 		cycle = 0; // reset the counter
-// 		// do what you wish with the bytes, this is just a sample
-// 		if ((mouse_bytes[0] & 0x80) || (mouse_bytes[0] & 0x40))
-// 			return; // the mouse only sends information about overflowing, do not care about it and return
-// 		if (!(mouse_bytes[0] & 0x20))
-// 			y |= 0xFFFFFF00; //delta-y is a negative value
-// 		if (!(mouse_bytes[0] & 0x10))
-// 			x |= 0xFFFFFF00; //delta-x is a negative value
-// 		if (mouse_bytes[0] & 0x4)
-// 			printf("Middle button is pressed!n");
-// 		if (mouse_bytes[0] & 0x2)
-// 			printf("Right button is pressed!n");
-// 		if (mouse_bytes[0] & 0x1)
-// 			printf("Left button is pressed!n");
-// 		// do what you want here, just replace the puts's to execute an action for each button
-// 		// to use the coordinate data, use mouse_bytes[1] for delta-x, and mouse_bytes[2] for delta-y
-// 	}
-// }
-
-bool initm = true;
-
-
 //Mouse functions
-void mouse_handler(void *a_r)//struct regs *a_r) //struct regs *a_r (not used but just there)
+void mouse_handler()
 {
 	outb(0x20, 0x20);
 	outb(0x20, 0xA0);
 
-	(void)a_r;
-
 	char packet = inb(0x60);
 
-	// Qemu startup bug
-	if (initm && packet == 0x41) {
-		initm = false;
+	// Discard invalid packets
+	if (!cycle && ((packet & 0xC0) || !(packet & 0x8))) {
+		// printf("mouse error : 0x%X\n", packet);
 		return;
 	}
+
 	// printf("mouse says : 0x%X\n", packet);
-	// printf("mouse says : 0x%X\n", (int)inb(0x60));
-	// printf("mouse says : 0x%X\n", (int)inb(0x60));
-	// printf("mouse says : 0x%X\n", (int)inb(0x60));
 
-	switch(mouse_cycle)
-	{
-		case 0:
-			mouse_byte[0]=packet;
-			mouse_cycle++;
-			break;
-		case 1:
-			mouse_byte[1]=packet;
-			mouse_cycle++;
-			break;
-		case 2:
-			mouse_byte[2]=packet;
-			mouse_x = mouse_byte[1];
-			mouse_y = mouse_byte[2];
+	switch (cycle) {
+	case 0:
+	case 1:
+		packets[cycle]=packet;
+		cycle++;
+		break;
 
-			char car = '@';
+	case 2:
+		packets[2]=packet;
+		cycle = 0;
 
-			// if (mouse_byte[0] & 0x20) {
-			// 	mouse_y = -mouse_y;
-				// printf(" yneg ");
-			// }
-				// mouse_y |= 0xFFFFFF00; //delta-y is a negative value
-
-			// if (mouse_byte[0] & 0x10) {
-			// 	mouse_x = -mouse_x;
-				// printf(" xneg ");
-			// }
-				// mouse_x |= 0xFFFFFF00; //delta-x is a negative value
-
-			if (mouse_byte[0] & 0x4) {
-				// printf("Middle button is pressed!n");
-				set_bg_color(WHITE);
-				car = ' ';
-			}
-			if (mouse_byte[0] & 0x2) {
-				// printf("Right button is pressed!n");
-				set_bg_color(RED);
-				car = ' ';
-			}
-			if (mouse_byte[0] & 0x1) {
-				// printf("Left button is pressed!n");
-				set_bg_color(BLUE);
-				car = ' ';
-			}
-
-			// const int min = 0;
+		mouse_x = packets[1];
+		mouse_y = packets[2];
 
 
-			// if (mouse_x > min && x < 79) {
-			// 	// printf("RIGHT\n");
-			// 	x++;
-			// }
+		char car = '@';
 
-			// else if (mouse_x < -min && x >0) {
-			// 	// printf("LEFT\n");
-			// 	x--;
-			// }
+		// if (packets[0] & 0x20) {
+		// 	mouse_y = -mouse_y;
+			// printf(" yneg ");
+		// }
+			// mouse_y |= 0xFFFFFF00; //delta-y is a negative value
 
-			// if (mouse_y < -min && y < 24) {
-			// 	// printf("DOWN\n");
-			// 	y++;
-			// }
+		// if (packets[0] & 0x10) {
+		// 	mouse_x = -mouse_x;
+			// printf(" xneg ");
+		// }
+			// mouse_x |= 0xFFFFFF00; //delta-x is a negative value
 
-			// else if (mouse_y > min && y > 0) {
-			// 	// printf("UP\n");
-			// 	y--;
-			// }
+		if (packets[0] & 0x4) {
+			// printf("Middle button is pressed!n");
+			set_bg_color(WHITE);
+			car = ' ';
+		}
+		if (packets[0] & 0x2) {
+			// printf("Right button is pressed!n");
+			set_bg_color(RED);
+			car = ' ';
+		}
+		if (packets[0] & 0x1) {
+			// printf("Left button is pressed!n");
+			set_bg_color(BLUE);
+			car = ' ';
+		}
 
-			x += mouse_x;
-			y -= mouse_y;
+		// const int min = 0;
 
-			if (x > 1000)x=1000;
-			if (y > 700)y=700;
-			// if (x > 79)x=79;
-			// if (y > 24)y=24;
-			if (x < 0) x = 0;
-			if (y < 0) y = 0;
 
-			fill_rectangle(x, y, 5, 5, 0);
-			fill_rectangle(x+1, y+1, 3, 3, 0xFFFFFFFF);
-			ecrit_car(y, x, car);
-			reset_color();
+		// if (mouse_x > min && x < 79) {
+		// 	// printf("RIGHT\n");
+		// 	x++;
+		// }
 
-			// printf("mouse x %d  y %d\n", x, y);
-			// printf("mouse x %d  y %d\n", mouse_x, mouse_y);
-			// mouse_cycle++;
-			mouse_cycle=0;
-			break;
-		// case 3:
-		// 	mouse_byte[3]=inb(0x60);
-		// 	mouse_cycle=0;
-		// 	break;
+		// else if (mouse_x < -min && x >0) {
+		// 	// printf("LEFT\n");
+		// 	x--;
+		// }
+
+		// if (mouse_y < -min && y < 24) {
+		// 	// printf("DOWN\n");
+		// 	y++;
+		// }
+
+		// else if (mouse_y > min && y > 0) {
+		// 	// printf("UP\n");
+		// 	y--;
+		// }
+
+		x += mouse_x;
+		y -= mouse_y;
+
+		if (x > 1000)x=1000;
+		if (y > 700)y=700;
+		// if (x > 79)x=79;
+		// if (y > 24)y=24;
+		if (x < 0) x = 0;
+		if (y < 0) y = 0;
+
+		fill_rectangle(x, y, 5, 5, 0);
+		//fill_rectangle(x+1, y+1, 3, 3, 0xFFFFFFFF);
+		ecrit_car(y, x, car);
+		reset_color();
+
+		// printf("mouse x %d  y %d\n", x, y);
+		// printf("mouse x %d  y %d\n", mouse_x, mouse_y);
+		// cycle++;
+		break;
+	// case 3:
+	// 	packets[3]=inb(0x60);
+	// 	cycle=0;
+	// 	break;
 	}
-
 }
 
-void mouse_wait(byte a_type) //unsigned char
+void mouse_wait(uint8_t a_type)
 {
-	dword _time_out=100000; //unsigned int
+	uint32_t _time_out=100000;
 	if(a_type==0)
 	{
-		while(_time_out--) //Data
+		while(_time_out--)
 		{
 			if((inb(0x64) & 1)==1)
 			{
@@ -200,7 +143,7 @@ void mouse_wait(byte a_type) //unsigned char
 	}
 	else
 	{
-		while(_time_out--) //Signal
+		while(_time_out--)
 		{
 			if((inb(0x64) & 2)==0)
 			{
@@ -211,19 +154,19 @@ void mouse_wait(byte a_type) //unsigned char
 	}
 }
 
-void mouse_write(byte a_write) //unsigned char
+void mouse_write(uint8_t a_write) //unsigned char
 {
 	//Wait to be able to send a command
 	mouse_wait(1);
 	//Tell the mouse we are sending a command
-	outportb(0x64, 0xD4);
+	outb(0xD4, 0x64);
 	//Wait for the final part
 	mouse_wait(1);
 	//Finally write
-	outportb(0x60, a_write);
+	outb(a_write, 0x60);
 }
 
-byte mouse_read()
+uint8_t mouse_read()
 {
 	//Get's response from mouse
 	mouse_wait(0); 
@@ -232,21 +175,21 @@ byte mouse_read()
 
 void init_mouse()
 {
-	byte _status;  //unsigned char
+	uint8_t _status;  //unsigned char
 
 	//Enable the auxiliary mouse device
 	mouse_wait(1);
-	outportb(0x64, 0xA8);
+	outb(0xA8, 0x64);
 	
 	//Enable the interrupts
 	mouse_wait(1);
-	outportb(0x64, 0x20);
+	outb(0x20, 0x64);
 	mouse_wait(0);
 	_status=(inb(0x60) | 2);
 	mouse_wait(1);
-	outportb(0x64, 0x60);
+	outb(0x60, 0x64);
 	mouse_wait(1);
-	outportb(0x60, _status);
+	outb(_status, 0x60);
 	
 	//Tell the mouse to use default settings
 	mouse_write(0xF6);

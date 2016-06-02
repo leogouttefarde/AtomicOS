@@ -136,6 +136,25 @@ static unsigned char get_RTC_register(int reg)
 	return inb(cmos_data);
 }
 
+
+// // Calcul dst (pas besoin en fait)
+// // http://stackoverflow.com/questions/5590429/calculating-daylight-saving-time-from-only-date
+// static bool is_dst(int day, int month, int year)
+// {
+// // Calculate day of week for Daylight savings time.
+// int dow = (day + (int)(2.6 * (((month + 12 - 3) % 12) + 1) - 0.2) - 40 + 
+//       (month < 3 ? year-1 : year) + (int)((month < 3 ? year-1 : year)/4) + 5) % 7;
+// if (month < 3 || month > 10)  return false; 
+// if (month > 3 && month < 10)  return true; 
+
+// int previousSunday = day - dow;
+
+// if (month == 3) return previousSunday >= 25;
+// if (month == 10) return previousSunday < 25;
+
+// return false; // this line never gonna happend
+// }
+
 // Source : http://wiki.osdev.org/CMOS#Reading_All_RTC_Time_and_Date_Registers
 static void read_rtc()
 {
@@ -216,6 +235,13 @@ static void read_rtc()
 		year += (CURRENT_YEAR / 100) * 100;
 		if(year < CURRENT_YEAR) year += 100;
 	}
+
+	// Ajout timezone + dst (à ne pas faire en fait)
+	// // UTC + 1 for France
+	// hour++;
+
+	// if (is_dst(day, month, year))
+	// 	hour++;
 
 	g_secs = second + ((hour/*+2*/) * 60 + minute) * 60;
 }

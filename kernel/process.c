@@ -1180,7 +1180,11 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SET_VIDEO_MODE:
-		ret = initGraphics(1366, 768, 32);
+		ret = init_graphics(1366, 768, 32);
+		break;
+
+	case SET_VBE_MODE:
+		init_vbe_mode(arg0);
 		break;
 
 	case GET_VIDEO_MODES:

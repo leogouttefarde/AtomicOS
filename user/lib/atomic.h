@@ -137,4 +137,6 @@ int getInputGame(void);
 //Attendre pour une entrée clavier
 void wait_keyboard(void);
 
+void set_vbe_mode(int mode);
+
 #endif

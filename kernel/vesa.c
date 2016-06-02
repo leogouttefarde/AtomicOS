@@ -278,41 +278,6 @@ uint16_t findMode(int x, int y, int d)
 }
 
 
-
-void setVBEMode(int mode)
-{
-	// union REGS in,out;
-	// in.x.ax = 0x4F02; in.x.bx = mode;
-	// int86(0x10,&in,&out);
-	struct bios_regs regs;
-	memset(&regs, 0, sizeof(struct bios_regs));
-
-	regs.eax = 0x4F02;
-	regs.ebx = mode | 0x4000;
-	// regs.ecx = 0x0000;
-	// regs.edx = 0x0000;
-	// regs.esi = 0x0000;
-	regs.es = 0x0000;
-	regs.edi = 0x5000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
-	regs.eflags = 0x202;
-	regs.ds = 0x18;
-	// regs.es = 0x18;
-	regs.fs = 0x18;
-	regs.gs = 0x18;
-	regs.ss = 0x18;
-
-	// printf("eax = %X\n", regs.eax);
-	do_bios_call(&regs, 0x10);
-
-	assert(REGX(regs.eax) == 0x004F);
-	// printf("eax = %X\n", regs.eax);
-	printf("setVBEMode done\n");
-
-}
-
-
 /* Plot a pixel (0xAARRGGBB format) at location (x,y) in specified color */
 static inline void putPixel(int x, int y, uint32_t color)
 {
@@ -356,45 +321,118 @@ static inline void putPixelRGB(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 }
 
 
-
-// void set_vesa()
-// {
-// 	struct bios_regs regs;
-// 	memset(&regs, 0, sizeof(struct bios_regs));
-
-// 	struct VbeInfoBlock *vib = mem_alloc(512);
-
-// 	regs.eax = 0x4F00;
-// 	// regs.ebx = 0x0000;
-// 	// regs.ecx = 0x0000;
-// 	// regs.edx = 0x0000;
-// 	// regs.esi = 0x0000;
-// 	regs.edi = (int)vib;
-// 	// regs.edi = 0x0000;
-// 	// regs.ebp = 0x100;
-// 	// regs.esp = 0x100;
-// 	// regs.eflags = 0x202;
-// 	regs.ds = 0x18;
-// 	regs.es = (int)vib;
-// 	// regs.es = 0x18;
-// 	regs.fs = 0x18;
-// 	regs.gs = 0x18;
-// 	regs.ss = 0x18;
-
-// 	// printf("eax = %X\n", regs.eax);
-// 	do_bios_call(&regs, 0x10);
-
-// 	assert(REGX(regs.eax) == 0x004F);
-// 	// printf("eax = %X\n", regs.eax);
-
-// 	// for (int i = 0; i < 20; i++) {
-// 	// 	vib[i].
-// 	// }
-
-// 	mem_free_nolength(vib);
-// }
+extern char pgdir[];
 
 
+static inline void map_video_memory()
+{
+	const Process *cur_proc = get_cur_proc();
+	void *pdir = pgdir;
+
+	if (cur_proc && cur_proc->pdir)
+		pdir = cur_proc->pdir;
+
+	if (!screenPtr || get_physaddr(pdir, screenPtr))
+		return;
+
+	const uint32_t size = xres*yres * bytesperline;
+	const uint32_t pages = compute_pages(size);
+
+	for (uint32_t i = 0; i < pages; i++) {
+		void *addr = (void*)((int)screenPtr + i * PAGESIZE);
+		map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
+	}
+}
+
+
+
+void set_vbe_mode(int mode)
+{
+	// union REGS in,out;
+	// in.x.ax = 0x4F02; in.x.bx = mode;
+	// int86(0x10,&in,&out);
+	struct bios_regs regs;
+	memset(&regs, 0, sizeof(struct bios_regs));
+
+	regs.eax = 0x4F02;
+	regs.ebx = mode | 0x4000;
+	// regs.ecx = 0x0000;
+	// regs.edx = 0x0000;
+	// regs.esi = 0x0000;
+	regs.es = 0x0000;
+	regs.edi = 0x5000;
+	regs.ebp = 0x100;
+	regs.esp = 0x100;
+	regs.eflags = 0x202;
+	regs.ds = 0x18;
+	// regs.es = 0x18;
+	regs.fs = 0x18;
+	regs.gs = 0x18;
+	regs.ss = 0x18;
+
+	// printf("eax = %X\n", regs.eax);
+	do_bios_call(&regs, 0x10);
+
+	if (REGX(regs.eax) != 0x004F) {
+		printf("set_vbe_mode failed\n");
+	}
+	else {
+		printf("set_vbe_mode done\n");
+	}
+}
+
+
+void init_vbe_mode(int mode)
+{
+	if (!getModeInfo(mode))
+		return;
+
+	xres = modeInfo->Xres;
+	yres = modeInfo->Yres;
+	bpp = modeInfo->bpp;
+	// bytesperline = modeInfo->BytesPerScanLine;
+	bytesperline = modeInfo->LinBytesPerScanLine;
+
+	printf("mode : %dx%dx%d\n", xres, yres, bpp);
+	screenPtr = (uint32_t*)modeInfo->physbase;
+	printf("bytesperline : 0x%X\n", (int)bytesperline);
+	printf("screenPtr : 0x%X\n", (int)screenPtr);
+
+	if (!screenPtr)
+		return;
+
+	set_vbe_mode(mode);
+
+	map_video_memory();
+
+	// Draw gradient bg
+	for (int32_t i = 0; i < xres; i++)
+		for (int32_t j = 0; j < yres; j++) {
+			// Format couleur : 0xAARRGGBB
+			// putPixel(i, j, 0xFF000000
+			// 	| (i%256) * 0x00010000
+			// 	| ((i+j)%256) * 0x00000100
+			// 	| (j%256) * 0x000000FF
+			// 	);
+			putPixelRGB(i, j, i, (i+j), j);
+			// putPixelRGB(i, j, 0xFF, 0, 0);
+		}
+
+	int32_t k = 0;
+	for (int32_t j = 200; j < 200+161; j++)
+		for (int32_t i = 400; i < 288+400; i++) {
+
+			if (k > ice_bin_size)break;
+
+			const char b = ice_bin[k++];
+			const char g = ice_bin[k++];
+			const char r = ice_bin[k++];
+			const char a = ice_bin[k++];
+			(void)a;
+
+			putPixelRGB(i, j, r, g, b);
+		}
+}
 
 
 /* Get SuperVGA information, returning true if VBE found */
@@ -476,12 +514,6 @@ int getModeInfo(int mode)
 
 	printf("attributes %d  memory_model %d  planes %d\n", attributes, memory_model, planes);
 
-	// if ((modeInfo->attributes & 0x1)
-	// 	&& modeInfo->memory_model == memPK
-	// 	&& modeInfo->bpp == 8
-	// 	&& modeInfo->planes == 1)
-	// 	return 1;
-
 	return 1;
 }
 
@@ -533,137 +565,17 @@ void list_modes(int min, int max)
 		do_bios_call(&regs, 0x10);
 		if ( REGX(regs.eax) != 0x004F ) continue;
 
-		if (inf->Xres > min && inf->Xres < max)
-		printf("0x%X : %dx%dx%d\n", modes[i], inf->Xres, inf->Yres, inf->bpp);
+		if (inf->Xres >= min && inf->Xres <= max)
+		printf("0x%X : %dx%dx%d 0x%X\n", modes[i], inf->Xres, inf->Yres, inf->bpp, inf->physbase);
 	}
 }
 
-
-extern char pgdir[];
-
-
-static inline void map_video_memory()
+int init_graphics(unsigned int x, unsigned int y, unsigned int d)
 {
-	const Process *cur_proc = get_cur_proc();
-	void *pdir = pgdir;
-
-	if (cur_proc && cur_proc->pdir)
-		pdir = cur_proc->pdir;
-
-	if (!screenPtr || get_physaddr(pdir, screenPtr))
-		return;
-
-	const uint32_t size = xres*yres * bytesperline;
-	const uint32_t pages = compute_pages(size);
-
-	for (uint32_t i = 0; i < pages; i++) {
-		void *addr = (void*)((int)screenPtr + i * PAGESIZE);
-		map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
-	}
-}
-
-
-
-/* Initialize the specified video mode. Notice how we determine a shift
-* factor for adjusting the Window granularity for bank switching. This
-* is much faster than doing it with a multiply (especially with direct
-* banking enabled).
-*/
-int initGraphics(unsigned int x, unsigned int y, unsigned int d)
-{
-	// uint16_t *p;
-
-	// if (!getVbeInfo())
-	// {
-	// 	printf("No VESA VBE detected\n");
-	// 	return;
-	// }
-
 	mode = findMode(x, y, d);
+	init_vbe_mode(mode);
 
-	// for (p = vbeInfo->VideoModePtr; *p != 0xFFFF; p++)
-	// {
-		// if (getModeInfo(*p) && modeInfo->XResolution == x
-		// 	&& modeInfo->YResolution == y) {
-		if (getModeInfo(mode)) {
-			xres = modeInfo->Xres;
-			yres = modeInfo->Yres;
-			bpp = modeInfo->bpp;
-			// bytesperline = modeInfo->BytesPerScanLine;
-			bytesperline = modeInfo->LinBytesPerScanLine;
-			// bankShift = 0;
-
-			printf("mode : %dx%dx%d\n", xres, yres, bpp);
-			screenPtr = (uint32_t*)modeInfo->physbase;
-			printf("bytesperline : 0x%X\n", (int)bytesperline);
-			printf("screenPtr : 0x%X\n", (int)screenPtr);
-			// while (1);
-
-			// while ((unsigned)(64 >> bankShift) != ModeInfoBlock.WinGranularity)
-			// 	bankShift++;
-
-			// bankSwitch = ModeInfoBlock.WinFuncPtr;
-
-			// curBank = -1;
-			// screenPtr = (char far *)( ((long)0xA000)<<16 | 0);
-			// oldMode = getVBEMode();
-
-			if (!screenPtr)
-				return 0;
-
-			setVBEMode(mode);
-
-			map_video_memory();
-
-			// Draw gradient bg
-			for (int32_t i = 0; i < xres; i++)
-				for (int32_t j = 0; j < yres; j++) {
-					// Format couleur : 0xAARRGGBB
-					// putPixel(i, j, 0xFF000000
-					// 	| (i%256) * 0x00010000
-					// 	| ((i+j)%256) * 0x00000100
-					// 	| (j%256) * 0x000000FF
-					// 	);
-					putPixelRGB(i, j, i, (i+j), j);
-					// putPixelRGB(i, j, 0xFF, 0, 0);
-				}
-			int32_t k = 0;
-			for (int32_t j = 200; j < 200+161; j++)
-				for (int32_t i = 400; i < 288+400; i++) {
-
-					if (k > ice_bin_size)break;
-
-					const char b = ice_bin[k++];
-					const char g = ice_bin[k++];
-					const char r = ice_bin[k++];
-					const char a = ice_bin[k++];
-					(void)a;
-
-					putPixelRGB(i, j, r, g, b);
-				}
-
-			// int32_t k = 0;
-			// for (int32_t j = 0; j < 768; j++)
-			// 	for (int32_t i = 0; i < 1366; i++) {
-
-					// if (k > matrix_bin_size)break;
-
-					// const char b = matrix_bin[k++];
-					// const char g = matrix_bin[k++];
-					// const char r = matrix_bin[k++];
-					// const char a = matrix_bin[k++];
-				// 	(void)a;
-
-				// 	putPixelRGB(i, j, r, g, b);
-				// }
-
-			return (int)screenPtr;
-		}
-	// }
-
-	printf("Video mode not found\n");
-
-	return 0;
+	return (int)screenPtr;
 }
 
 void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color)
@@ -675,12 +587,42 @@ void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t col
 	(void)h;
 	(void)color;
 
+
+	// // Draw gradient bg
+	// for (int32_t i = 0; i < xres; i++)
+	// 	for (int32_t j = 0; j < yres; j++) {
+	// 		// Format couleur : 0xAARRGGBB
+	// 		// putPixel(i, j, 0xFF000000
+	// 		// 	| (i%256) * 0x00010000
+	// 		// 	| ((i+j)%256) * 0x00000100
+	// 		// 	| (j%256) * 0x000000FF
+	// 		// 	);
+	// 		putPixelRGB(i, j, i, (i+j), j);
+	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
+	// 	}
+	int32_t k = 0;
+	// for (int32_t j = 200; j < 200+161; j++)
+	// 	for (int32_t i = 400; i < 288+400; i++) {
+
+	// 		if (k > ice_bin_size)break;
+
+	// 		const char b = ice_bin[k++];
+	// 		const char g = ice_bin[k++];
+	// 		const char r = ice_bin[k++];
+	// 		const char a = ice_bin[k++];
+	// 		(void)a;
+
+	// 		putPixelRGB(i, j, r, g, b);
+	// 	}
+
+
 	// for (uint32_t j = y; j < (y + h); j++) {
 	// 	for (uint32_t i = x; i < (x + w); i++) {
 	// 		putPixel(i, j, color);
 	// 	}
 	// }
-	int32_t k = 0;
+	// int32_t k = 0;
+	 k = 0;
 	for (uint32_t j = y; j < y+24; j++)
 		for (uint32_t i = x; i < 16+x; i++) {
 
