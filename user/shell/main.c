@@ -13,6 +13,10 @@ unsigned long fin_mot;
 unsigned long fin_commande;
 char commande[TAILLE_TAB];
 
+char *noms_commandes []={"autotest", "banner", "clear", "echo", "exit"
+				   ,"help", "kill", "ps", "reboot","sleep", 
+				   "snake", "test" ,"vesa"};
+
 
 static bool compare(const char *mot_courant, const char *nom_commande)
 {

@@ -44,6 +44,8 @@ char history[MAX_HISTORY][TAILLE_TAMP];
 int hist_size = 0;
 int hist_idx = -1;
 
+bool autocomp = false;
+bool tab_pressed = false;
 static void afficher_echo(char car);
 
 
@@ -180,6 +182,29 @@ int cons_write(const char *str, long size)
 	return 0;
 }
 
+unsigned long cons_look (char *string, unsigned long length) 
+//On regarde les caractères dans le tampon, sans les consommer
+{
+	unsigned long i=0;
+	unsigned long indice_lec_sauv = indice_lec;
+
+	while (i<length) {
+		
+		if (tampon[indice_lec]!=8) {
+			string [i]=tampon[indice_lec];
+			i++;
+		}
+		else
+			break;    
+
+		
+		avancer(&indice_lec);
+	}
+	
+	indice_lec = indice_lec_sauv;
+	string[i] = '\0';
+	return i;
+}
 
 unsigned long cons_read(char *string, unsigned long length)
 {
@@ -187,12 +212,19 @@ unsigned long cons_read(char *string, unsigned long length)
 
 	/*Si aucune ligne complète n'a été tapée, 
 	  le processus appelant est endormi*/
-	while (!nb_lig) { 
+	while (! (nb_lig ||tab_pressed )) { 
 		bloque_io();
 	}
 
+	if (tab_pressed) {
+		unsigned long ret = cons_look(string, length);
+		tab_pressed = false;
+		return ret;
+	}
+
 	bool fin=false; /*Indique si on le dernier caractère était 13*/
-	unsigned long i=0;    
+	unsigned long i=0;
+ 
 
 	while (i<length) {
 		//Parcours du tampon
@@ -219,6 +251,7 @@ unsigned long cons_read(char *string, unsigned long length)
 
 	return i;
 }
+
 
 static void effacer_car_lig_cour() {
 	char bs [3];

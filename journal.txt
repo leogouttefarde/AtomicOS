@@ -193,7 +193,7 @@ Azizi :
 Fin de debogage du jeu snake & 
 Debut de gestion fichiers FAT32 (recherche documentaire)
 
-Etienne :
+Etienne : Réflexion + début d'implémentation d'améliorations du shell
 
 Léo :
 
