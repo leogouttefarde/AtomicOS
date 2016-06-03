@@ -9,6 +9,9 @@
 #include "vmem.h"
 #include "mem.h"
 
+// #define VIDEO_MEMORY 0x60000000
+#define VIDEO_MEMORY 0xC0000000
+
 typedef struct VbeInfoBlock {
 	 char VbeSignature[4];             // == "VESA"
 	 uint16_t VbeVersion;                 // == 0x0300 for VBE 3.0
@@ -99,12 +102,6 @@ int xres, yres;
 /* Logical CRT scanline length */
 int bytesperline;
 
-/* Current read/write bank */
-// int curBank;
-
-/* Bank granularity adjust factor */
-// unsigned int bankShift;
-
 /* Old video mode number */
 int oldMode;
 
@@ -113,9 +110,6 @@ int bpp;
 /* Pointer to start of video memory */
 uint32_t *screenPtr = NULL;
 
-/* Direct bank switching function */
-// void (*bankSwitch)(void);
-
 
 uint16_t attributes = -1;
 uint8_t memory_model = -1;
@@ -123,59 +117,18 @@ uint8_t planes = -1;
 
 
 
-
-
-/* Set new read/write bank. We must set both Window A and Window B, as
-* many VBE's have these set as separately available read and write
-* windows. We also use a simple (but very effective) optimization of
-* checking if the requested bank is currently active.
-*/
-// void setBank(int bank)
-// {
-// 	union REGS in,out;
-// 	if (bank == curBank) return;
-
-// 	/* Bank is already active */
-// 	curBank = bank;
-
-// 	/* Save current bank number */
-// 	bank <<= bankShift;
-
-// 	/* Adjust to window granularity */
-// 	#ifdef DIRECT_BANKING
-// 		setbxdx(0,bank);
-// 		bankSwitch();
-// 		setbxdx(1,bank);
-// 		bankSwitch();
-// 	#else
-// 		in.x.ax = 0x4F05; in.x.bx = 0;
-// 		in.x.dx = bank;
-// 		int86(0x10, &in, &out);
-// 		in.x.ax = 0x4F05; in.x.bx = 1;
-// 		in.x.dx = bank;
-// 		int86(0x10, &in, &out);
-// 	#endif
-// }
-
-
 struct VbeInfoBlock *vbeInfo = (VbeInfoBlock*)0x3000;//&ctrls;
 struct ModeInfoBlock *modeInfo = (ModeInfoBlock*)0x4000;//&infs;
 
-
+bool changed = false;
 
 uint16_t findMode(int x, int y, int d)
 {
-	// vbeInfo = mem_alloc(4096);
-	// modeInfo = mem_alloc(4096);
-	// struct VbeInfoBlock ctrls;
-	// struct ModeInfoBlock infs;
-	struct VbeInfoBlock *ctrl = vbeInfo;//&ctrls;
-	struct ModeInfoBlock *inf = modeInfo;//&infs;
+	struct VbeInfoBlock *ctrl = vbeInfo;
+	struct ModeInfoBlock *inf = modeInfo;
 
-	// memset(ctrl, 0, sizeof(VbeInfoBlock));
-	// memset(inf, 0, sizeof(ModeInfoBlock));
-	// mem_free_nolength(ctrl);
-	// mem_free_nolength(inf);
+	memset(ctrl, 0, sizeof(VbeInfoBlock));
+	memset(inf, 0, sizeof(ModeInfoBlock));
 	uint16_t *modes;
 	int i;
 	uint16_t best = 0x13;
@@ -193,8 +146,8 @@ uint16_t findMode(int x, int y, int d)
 	regs.eax = 0x4F00;
 	regs.edi = ((int)ctrl);
 	regs.es = (int)ctrl>>16;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -214,20 +167,16 @@ uint16_t findMode(int x, int y, int d)
 	if (!ctrl->VideoModePtr)
 		return best;
  
-	modes = (uint16_t*)REALPTR(ctrl->VideoModePtr);
+	modes = (uint16_t*)ctrl->VideoModePtr;
 	for ( i = 0 ; modes[i] != 0xFFFF ; ++i ) {
-
-	 //  	printf("mode %X\n", modes[i]);
-
-		// printf("OK 1\n");
 
 		memset(&regs, 0, sizeof(regs));
 		regs.eax = 0x4F01;
 		regs.ecx = (int)modes[i];
 		regs.edi = ((int)inf);
 		regs.es = (int)inf >> 16;
-		regs.ebp = 0x100;
-		regs.esp = 0x100;
+		regs.ebp = 0x5000;
+		regs.esp = 0x5000;
 		regs.eflags = 0x202;
 		regs.ds = 0x18;
 		// regs.es = 0x18;
@@ -237,9 +186,7 @@ uint16_t findMode(int x, int y, int d)
 
 		// printf("eax = %X\n", regs.eax);
 		do_bios_call(&regs, 0x10);
-		// printf("OK 11\n");
 		if ( REGX(regs.eax) != 0x004F ) continue;
-		// printf("  OK 12");
 
 		// Skip invalid modes
 		if ( x < inf->Xres || y < inf->Yres ) continue;
@@ -277,24 +224,37 @@ uint16_t findMode(int x, int y, int d)
 	return best;
 }
 
+extern char pgdir[];
+
+static inline void *get_pdir()
+{
+	const Process *cur_proc = get_cur_proc();
+	void *pdir = pgdir;
+
+	if (cur_proc && cur_proc->pdir)
+		pdir = cur_proc->pdir;
+
+	return pdir;
+}
+
 
 /* Plot a pixel (0xAARRGGBB format) at location (x,y) in specified color */
 static inline void putPixel(int x, int y, uint32_t color)
 {
 	const uint8_t nb_bytes = bpp/8;
 	long addr = (long)y * bytesperline + x * nb_bytes;
-	//setBank((int)(addr >> 16));
 
-	if (!screenPtr)return;
-	if (x > xres || y > yres)return;
+	if (!screenPtr || !changed)
+		return;
 
-	unsigned char *ptr = (unsigned char *)screenPtr;
+	if (x > xres || y > yres)
+		return;
+
+	unsigned char *ptr = (unsigned char *)VIDEO_MEMORY;
 
 	for (int i = 0; i < nb_bytes; i++) {
 		*(ptr + addr + i) = (color >> 8*i) & 0xFF;
 	}
-	// *(screenPtr + (addr & 0xFFFFFF)) = color;
-	// screenPtr[addr] = color;
 }
 
 static inline void putPixelRGB(int x, int y, uint8_t r, uint8_t g, uint8_t b)
@@ -321,16 +281,9 @@ static inline void putPixelRGB(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 }
 
 
-extern char pgdir[];
-
-
 static inline void map_video_memory()
 {
-	const Process *cur_proc = get_cur_proc();
-	void *pdir = pgdir;
-
-	if (cur_proc && cur_proc->pdir)
-		pdir = cur_proc->pdir;
+	void *pdir = get_pdir();
 
 	if (!screenPtr || get_physaddr(pdir, screenPtr))
 		return;
@@ -340,7 +293,8 @@ static inline void map_video_memory()
 
 	for (uint32_t i = 0; i < pages; i++) {
 		void *addr = (void*)((int)screenPtr + i * PAGESIZE);
-		map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
+		void *vaddr = (void*)(VIDEO_MEMORY + i * PAGESIZE);
+		map_page((void*)pdir, addr, vaddr, P_USERSUP | P_RW);
 	}
 }
 
@@ -355,14 +309,17 @@ void set_vbe_mode(int mode)
 	memset(&regs, 0, sizeof(struct bios_regs));
 
 	regs.eax = 0x4F02;
-	regs.ebx = mode | 0x4000;
+
+	// Use linear framebuffer
+	regs.ebx = mode | 0x4000; 
+
 	// regs.ecx = 0x0000;
 	// regs.edx = 0x0000;
 	// regs.esi = 0x0000;
 	regs.es = 0x0000;
 	regs.edi = 0x5000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -377,8 +334,14 @@ void set_vbe_mode(int mode)
 		printf("set_vbe_mode failed\n");
 	}
 	else {
-		printf("set_vbe_mode done\n");
+		changed = true;
+		//printf("set_vbe_mode done\n");
 	}
+}
+
+bool is_console_mode()
+{
+	return !changed;
 }
 
 
@@ -403,35 +366,35 @@ void init_vbe_mode(int mode)
 
 	set_vbe_mode(mode);
 
-	map_video_memory();
+	// map_video_memory();
 
-	// Draw gradient bg
-	for (int32_t i = 0; i < xres; i++)
-		for (int32_t j = 0; j < yres; j++) {
-			// Format couleur : 0xAARRGGBB
-			// putPixel(i, j, 0xFF000000
-			// 	| (i%256) * 0x00010000
-			// 	| ((i+j)%256) * 0x00000100
-			// 	| (j%256) * 0x000000FF
-			// 	);
-			putPixelRGB(i, j, i, (i+j), j);
-			// putPixelRGB(i, j, 0xFF, 0, 0);
-		}
+	// // Draw gradient bg
+	// for (int32_t i = 0; i < xres; i++)
+	// 	for (int32_t j = 0; j < yres; j++) {
+	// 		// Format couleur : 0xAARRGGBB
+	// 		// putPixel(i, j, 0xFF000000
+	// 		// 	| (i%256) * 0x00010000
+	// 		// 	| ((i+j)%256) * 0x00000100
+	// 		// 	| (j%256) * 0x000000FF
+	// 		// 	);
+	// 		putPixelRGB(i, j, i, (i+j), j);
+	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
+	// 	}
 
-	int32_t k = 0;
-	for (int32_t j = 200; j < 200+161; j++)
-		for (int32_t i = 400; i < 288+400; i++) {
+	// int32_t k = 0;
+	// for (int32_t j = 200; j < 200+161; j++)
+	// 	for (int32_t i = 400; i < 288+400; i++) {
 
-			if (k > ice_bin_size)break;
+	// 		if (k > ice_bin_size)break;
 
-			const char b = ice_bin[k++];
-			const char g = ice_bin[k++];
-			const char r = ice_bin[k++];
-			const char a = ice_bin[k++];
-			(void)a;
+	// 		const char b = ice_bin[k++];
+	// 		const char g = ice_bin[k++];
+	// 		const char r = ice_bin[k++];
+	// 		const char a = ice_bin[k++];
+	// 		(void)a;
 
-			putPixelRGB(i, j, r, g, b);
-		}
+	// 		putPixelRGB(i, j, r, g, b);
+	// 	}
 }
 
 
@@ -449,8 +412,8 @@ int getVbeInfo()
 	// regs.edx = 0x0000;
 	// regs.esi = 0x0000;
 	// regs.edi = 0x0000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -472,12 +435,10 @@ int getVbeInfo()
 int getModeInfo(int mode)
 {
 	printf("modeInfo %X\n", mode);
-	// union REGS in,out;
-	// struct SREGS segs;
-	// char far *modeInfo = (char far *)&ModeInfoBlock;
-	if (mode < 0x100) return 0;
 
 	// /* Ignore non-VBE modes */
+	if (mode < 0x100) return 0;
+
 	// in.x.ax = 0x4F01;
 	// in.x.cx = mode;
 	// in.x.di = FP_OFF(modeInfo);
@@ -494,8 +455,8 @@ int getModeInfo(int mode)
 	// regs.edx = 0x0000;
 	// regs.esi = 0x0000;
 	// regs.edi = 0x0000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -505,7 +466,9 @@ int getModeInfo(int mode)
 
 	do_bios_call(&regs, 0x10);
 
-	if (REGX(regs.eax) != 0x004F) return 0;
+	if (REGX(regs.eax) != 0x004F)
+		return 0;
+
 	printf("regs.eax %X\n", regs.eax);
 
 	attributes = modeInfo->attributes;
@@ -536,8 +499,8 @@ void list_modes(int min, int max)
 	regs.eax = 0x4F00;
 	regs.edi = ((int)ctrl);
 	regs.es = (int)ctrl>>16;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	regs.fs = 0x18;
@@ -545,17 +508,19 @@ void list_modes(int min, int max)
 	regs.ss = 0x18;
 
 	do_bios_call(&regs, 0x10);
-	if ( REGX(regs.eax) != 0x004F ) return;
 
-	modes = (uint16_t*)REALPTR(ctrl->VideoModePtr);
+	if (REGX(regs.eax) != 0x004F)
+		return;
+
+	modes = (uint16_t*)ctrl->VideoModePtr;
 	for ( i = 0 ; modes[i] != 0xFFFF ; ++i ) {
 		memset(&regs, 0, sizeof(regs));
 		regs.eax = 0x4F01;
 		regs.ecx = (int)modes[i];
 		regs.edi = ((int)inf);
 		regs.es = (int)inf >> 16;
-		regs.ebp = 0x100;
-		regs.esp = 0x100;
+		regs.ebp = 0x5000;
+		regs.esp = 0x5000;
 		regs.eflags = 0x202;
 		regs.ds = 0x18;
 		regs.fs = 0x18;
@@ -563,7 +528,8 @@ void list_modes(int min, int max)
 		regs.ss = 0x18;
 
 		do_bios_call(&regs, 0x10);
-		if ( REGX(regs.eax) != 0x004F ) continue;
+		if (REGX(regs.eax) != 0x004F)
+			continue;
 
 		if (inf->Xres >= min && inf->Xres <= max)
 		printf("0x%X : %dx%dx%d 0x%X\n", modes[i], inf->Xres, inf->Yres, inf->bpp, inf->physbase);

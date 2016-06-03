@@ -222,7 +222,7 @@ static bool interpreter ()
 		char *next = get_argument();
 
 		if (next != NULL) {
-			set_vbe_mode(parse_hex(next));
+			init_vbe_mode(parse_hex(next));
 		}
 	}
 
@@ -253,7 +253,9 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "snake")) {
-		child = start("snake", 4000, 42, NULL);
+
+		// 1MB stack
+		child = start("snake", 1024*4*1024, 42, NULL);
 	}
 
 	else if (!strncmp(mot_courant, "banner", 4)) {

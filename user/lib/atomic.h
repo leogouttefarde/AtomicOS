@@ -2,7 +2,6 @@
 #ifndef __ATOMIC_H__
 #define __ATOMIC_H__
 
-
 #define CONS_READ_LINE 2000 //?
 #define WITH_SEM 200 //?
 
@@ -112,6 +111,7 @@ int getppid();
 void print_banner();
 int set_video_mode();
 void get_video_modes(int min_width, int max_width);
+void init_vbe_mode(int mode);
 
 //Déplacer le curseur à une position (x,y) de l'écran 
 void set_cursor(int lig, int col);
@@ -137,6 +137,5 @@ int getInputGame(void);
 //Attendre pour une entrée clavier
 void wait_keyboard(void);
 
-void set_vbe_mode(int mode);
 
 #endif

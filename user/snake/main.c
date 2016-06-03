@@ -381,8 +381,9 @@ static void delayTime_info() // A MODIF
 	set_cursor(0, 25);
 	printf("SCORE: %d",score);
 	cons_reset_color();
-	for(long long i=0; i<=(50000000); i++);
-	//wait_clock(((unsigned long)(current_clock))+1); // A MODIF
+	// for(long long i=0; i<=(50000000); i++);
+
+	wait_clock(current_clock()+7); // A MODIF
 }
 
 //Tester si le jeu est fini pour une vie du serpent

@@ -496,13 +496,13 @@ set_video_mode:
 	ret
 
 	.text
-	.globl set_vbe_mode
-set_vbe_mode:
+	.globl init_vbe_mode
+init_vbe_mode:
 	pushl %ebp
 	movl %esp, %ebp
 	pushl %ebx
 	movl 8(%ebp), %ebx
-	movl $SET_VBE_MODE, %eax
+	movl $INIT_VBE_MODE, %eax
 	int $49
 	popl %ebx
 	popl %ebp
