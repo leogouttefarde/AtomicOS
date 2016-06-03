@@ -18,7 +18,6 @@ void kernel_start(void)
 	init_process();
 	init_time();
 	init_clavier();
-	init_souris();
 	init_messages();
 	init_sema();
 	init_mouse();
