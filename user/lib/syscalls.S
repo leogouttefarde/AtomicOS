@@ -455,6 +455,19 @@ cons_set_bg_color:
 	ret
 
 	.text
+	.globl keyboard_data
+keyboard_data:	
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $KEYBOARD_DATA, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
 	.globl reboot
 reboot:
 	movl $REBOOT, %eax

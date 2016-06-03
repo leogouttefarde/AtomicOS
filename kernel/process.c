@@ -16,6 +16,7 @@
 #include "screen.h"
 #include "processor_structs.h"
 #include "vesa.h"
+#include "kbd.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -1161,6 +1162,9 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	case CONS_RESET_COLOR:
 		reset_color();
+		break;
+	case KEYBOARD_DATA:
+		keyboard_data((char*) arg0);
 		break;
 
 	case REBOOT:

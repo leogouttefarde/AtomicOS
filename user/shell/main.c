@@ -282,7 +282,7 @@ static bool interpreter ()
 time (commande affichant le nombre de tics depuis le début)
 */
 
-static unsigned int nb_commandes_possibles(bool afficher) {
+static unsigned int nb_commandes_possibles(bool afficher, int *numero_commande) {
 
 	int nb_commandes = sizeof(noms_commandes)/sizeof(char *);
 	int res = 0;
@@ -296,6 +296,7 @@ static unsigned int nb_commandes_possibles(bool afficher) {
 				}
 			}
 			if (est_candidat) {
+				*numero_commande = i;
 				res++;
 				if (afficher)
 					printf ("%s\n",noms_commandes[i]);
@@ -320,11 +321,22 @@ static void afficher_msg (int reaf) {
 int reafficher=0;
 
 int autocompleter() {
-	unsigned int nb = nb_commandes_possibles(false);
+	int num_commande;
+	unsigned int nb = nb_commandes_possibles(false,&num_commande);
+	if (nb==1) {
+		unsigned int taille_nom = strlen(noms_commandes[num_commande]);
+		for (unsigned int i = fin_commande; i < taille_nom; i ++) {
+			char ch[2];
+			ch[0]=noms_commandes[num_commande][i];
+			ch[1]=0;	
+			keyboard_data(ch);
+		}
+		return -1;
+	}
 
-	if (nb > 0) {
+	else if (nb > 0) {
 		printf ("\n");
-		nb_commandes_possibles(true);		
+		nb_commandes_possibles(true,&num_commande);		
 		return 1;
 	}
 	else {

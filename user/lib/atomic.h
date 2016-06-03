@@ -137,5 +137,6 @@ int getInputGame(void);
 //Attendre pour une entrée clavier
 void wait_keyboard(void);
 
-
+//Ecrire dans le buffer du clavier
+void keyboard_data(char *str);
 #endif
