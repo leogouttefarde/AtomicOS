@@ -44,7 +44,7 @@ char history[MAX_HISTORY][TAILLE_TAMP];
 int hist_size = 0;
 int hist_idx = -1;
 
-bool autocomp = false;
+bool autocomp = true;
 bool tab_pressed = false;
 static void afficher_echo(char car);
 
@@ -187,10 +187,9 @@ unsigned long cons_look (char *string, unsigned long length)
 {
 	unsigned long i=0;
 	unsigned long indice_lec_sauv = indice_lec;
-
 	while (i<length) {
 		
-		if (tampon[indice_lec]!=8) {
+		if (tampon[indice_lec]!='\t') {
 			string [i]=tampon[indice_lec];
 			i++;
 		}
@@ -202,7 +201,8 @@ unsigned long cons_look (char *string, unsigned long length)
 	}
 	
 	indice_lec = indice_lec_sauv;
-	string[i] = '\0';
+	reculer(&indice_ecr);
+	string[i] = '\t';
 	return i;
 }
 
@@ -440,6 +440,12 @@ void keyboard_data(char *str)
 				else if (first=='\t') {
 					anc_lig[indice_ecr]=(col_cour()>=73);
 					anc_col[indice_ecr]=col_cour();
+					if (autocomp) {
+						tab_pressed=true;
+						avancer(&indice_ecr);
+						return;
+					}
+
 				}
 				avancer(&indice_ecr);                         
 				if (echo)

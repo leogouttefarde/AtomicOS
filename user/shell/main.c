@@ -16,8 +16,6 @@ char commande[TAILLE_TAB];
 char *noms_commandes []={"autotest", "banner", "clear", "echo", "exit"
 				   ,"help", "kill", "ps", "reboot","sleep", 
 				   "snake", "test" ,"vesa"};
-
-
 static bool compare(const char *mot_courant, const char *nom_commande)
 {
 	if (mot_courant != NULL && nom_commande != NULL)
@@ -174,7 +172,7 @@ static bool interpreter ()
 {
 	bool error = false;
 	int child = -1;
-	char *mot_courant = extraire_mot();
+	char *mot_courant = extraire_mot();	
 
 	if (compare(mot_courant, "echo")) {
 		echo();
@@ -284,21 +282,76 @@ static bool interpreter ()
 time (commande affichant le nombre de tics depuis le début)
 */
 
+static unsigned int nb_commandes_possibles(bool afficher) {
+
+	int nb_commandes = sizeof(noms_commandes)/sizeof(char *);
+	int res = 0;
+	for (int i =0; i < nb_commandes; i++) {
+		if ( strlen(noms_commandes[i]) >= fin_commande) {
+			bool est_candidat =true;
+			for (unsigned int j = 0; j < fin_commande; j++) {
+				if (noms_commandes[i][j] != commande[j]) {
+					est_candidat=false;
+					break;
+				}
+			}
+			if (est_candidat) {
+				res++;
+				if (afficher)
+					printf ("%s\n",noms_commandes[i]);
+			}
+		}
+	}
+	return res;
+}
+
+static void afficher_msg (int reaf) {
+	if (reaf == -1)
+		return;
+	cons_set_fg_color(LIGHT_CYAN);
+	printf("AtomicOS>");
+	cons_reset_color();
+	if (reaf==1) {
+		for (unsigned int i = 0; i <fin_commande; i++)
+			printf("%c",commande[i]);
+	}
+}
+
+int reafficher=0;
+
+int autocompleter() {
+	unsigned int nb = nb_commandes_possibles(false);
+
+	if (nb > 0) {
+		printf ("\n");
+		nb_commandes_possibles(true);		
+		return 1;
+	}
+	else {
+		return -1;
+	}
+	
+}
+
 int main()
 {
 	bool execute = true;
 
 	while (execute) {
-		cons_set_fg_color(LIGHT_CYAN);
-		printf("AtomicOS>");
-		cons_reset_color();
+		afficher_msg(reafficher);		
 
 		debut_mot = 0;
 		fin_commande = cons_read(commande,TAILLE_TAB);
 
-		if (fin_commande > 0) {
+		if (commande[fin_commande]=='\t') {
+			commande[fin_commande]='\0';
+			reafficher=autocompleter();
+		}
+			
+		else if (fin_commande > 0){
 			fin_commande--;
 			execute = interpreter(commande);
+			reafficher=0;
 		}
 	}
 
