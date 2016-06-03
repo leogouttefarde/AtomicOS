@@ -196,6 +196,11 @@ Debut de gestion fichiers FAT32 (recherche documentaire)
 Etienne :
 
 Léo :
+Optimisation du driver de souris PS/2 et améliorations diverses.
+Poursuite du mode HD VESA : améliorations du code, et notamment
+recherche d'un bug sur ma machine personnelle lors du retour
+en mode user après changement de mode graphique (fonctionnel sur
+la plupart des autres machines testées dont celles de l'Ensimag).
 
 
 Vendredi 3 juin :

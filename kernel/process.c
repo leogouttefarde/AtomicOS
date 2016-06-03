@@ -1183,7 +1183,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ret = init_graphics(1366, 768, 32);
 		break;
 
-	case SET_VBE_MODE:
+	case INIT_VBE_MODE:
 		init_vbe_mode(arg0);
 		break;
 

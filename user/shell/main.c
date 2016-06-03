@@ -218,7 +218,7 @@ static bool interpreter ()
 		char *next = get_argument();
 
 		if (next != NULL) {
-			set_vbe_mode(parse_hex(next));
+			init_vbe_mode(parse_hex(next));
 		}
 	}
 

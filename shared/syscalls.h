@@ -55,6 +55,6 @@
 #define TEST_INPUTGAME 46
 #define GET_INPUTGAME 47
 #define WAIT_KEYBOARD 48
-#define SET_VBE_MODE 49
+#define INIT_VBE_MODE 49
 
 #endif
