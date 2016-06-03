@@ -9,6 +9,9 @@
 #include "vmem.h"
 #include "mem.h"
 
+// #define VIDEO_MEMORY 0x60000000
+#define VIDEO_MEMORY 0xC0000000
+
 typedef struct VbeInfoBlock {
 	 char VbeSignature[4];             // == "VESA"
 	 uint16_t VbeVersion;                 // == 0x0300 for VBE 3.0
@@ -161,7 +164,7 @@ uint8_t planes = -1;
 struct VbeInfoBlock *vbeInfo = (VbeInfoBlock*)0x3000;//&ctrls;
 struct ModeInfoBlock *modeInfo = (ModeInfoBlock*)0x4000;//&infs;
 
-
+bool changed = false;
 
 uint16_t findMode(int x, int y, int d)
 {
@@ -193,8 +196,8 @@ uint16_t findMode(int x, int y, int d)
 	regs.eax = 0x4F00;
 	regs.edi = ((int)ctrl);
 	regs.es = (int)ctrl>>16;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -226,8 +229,8 @@ uint16_t findMode(int x, int y, int d)
 		regs.ecx = (int)modes[i];
 		regs.edi = ((int)inf);
 		regs.es = (int)inf >> 16;
-		regs.ebp = 0x100;
-		regs.esp = 0x100;
+		regs.ebp = 0x5000;
+		regs.esp = 0x5000;
 		regs.eflags = 0x202;
 		regs.ds = 0x18;
 		// regs.es = 0x18;
@@ -277,6 +280,19 @@ uint16_t findMode(int x, int y, int d)
 	return best;
 }
 
+extern char pgdir[];
+
+static inline void *get_pdir()
+{
+	const Process *cur_proc = get_cur_proc();
+	void *pdir = pgdir;
+
+	if (cur_proc && cur_proc->pdir)
+		pdir = cur_proc->pdir;
+
+	return pdir;
+}
+
 
 /* Plot a pixel (0xAARRGGBB format) at location (x,y) in specified color */
 static inline void putPixel(int x, int y, uint32_t color)
@@ -288,7 +304,7 @@ static inline void putPixel(int x, int y, uint32_t color)
 	if (!screenPtr)return;
 	if (x > xres || y > yres)return;
 
-	unsigned char *ptr = (unsigned char *)screenPtr;
+	unsigned char *ptr = (unsigned char *)VIDEO_MEMORY;
 
 	for (int i = 0; i < nb_bytes; i++) {
 		*(ptr + addr + i) = (color >> 8*i) & 0xFF;
@@ -321,16 +337,9 @@ static inline void putPixelRGB(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 }
 
 
-extern char pgdir[];
-
-
 static inline void map_video_memory()
 {
-	const Process *cur_proc = get_cur_proc();
-	void *pdir = pgdir;
-
-	if (cur_proc && cur_proc->pdir)
-		pdir = cur_proc->pdir;
+	void *pdir = get_pdir();
 
 	if (!screenPtr || get_physaddr(pdir, screenPtr))
 		return;
@@ -340,7 +349,8 @@ static inline void map_video_memory()
 
 	for (uint32_t i = 0; i < pages; i++) {
 		void *addr = (void*)((int)screenPtr + i * PAGESIZE);
-		map_page((void*)pdir, addr, addr, P_USERSUP | P_RW);
+		void *vaddr = (void*)(VIDEO_MEMORY + i * PAGESIZE);
+		map_page((void*)pdir, addr, vaddr, P_USERSUP | P_RW);
 	}
 }
 
@@ -361,8 +371,8 @@ void set_vbe_mode(int mode)
 	// regs.esi = 0x0000;
 	regs.es = 0x0000;
 	regs.edi = 0x5000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -377,8 +387,14 @@ void set_vbe_mode(int mode)
 		printf("set_vbe_mode failed\n");
 	}
 	else {
+		changed = true;
 		printf("set_vbe_mode done\n");
 	}
+}
+
+bool is_console_mode()
+{
+	return !changed;
 }
 
 
@@ -403,35 +419,35 @@ void init_vbe_mode(int mode)
 
 	set_vbe_mode(mode);
 
-	map_video_memory();
+	// map_video_memory();
 
-	// Draw gradient bg
-	for (int32_t i = 0; i < xres; i++)
-		for (int32_t j = 0; j < yres; j++) {
-			// Format couleur : 0xAARRGGBB
-			// putPixel(i, j, 0xFF000000
-			// 	| (i%256) * 0x00010000
-			// 	| ((i+j)%256) * 0x00000100
-			// 	| (j%256) * 0x000000FF
-			// 	);
-			putPixelRGB(i, j, i, (i+j), j);
-			// putPixelRGB(i, j, 0xFF, 0, 0);
-		}
+	// // Draw gradient bg
+	// for (int32_t i = 0; i < xres; i++)
+	// 	for (int32_t j = 0; j < yres; j++) {
+	// 		// Format couleur : 0xAARRGGBB
+	// 		// putPixel(i, j, 0xFF000000
+	// 		// 	| (i%256) * 0x00010000
+	// 		// 	| ((i+j)%256) * 0x00000100
+	// 		// 	| (j%256) * 0x000000FF
+	// 		// 	);
+	// 		putPixelRGB(i, j, i, (i+j), j);
+	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
+	// 	}
 
-	int32_t k = 0;
-	for (int32_t j = 200; j < 200+161; j++)
-		for (int32_t i = 400; i < 288+400; i++) {
+	// int32_t k = 0;
+	// for (int32_t j = 200; j < 200+161; j++)
+	// 	for (int32_t i = 400; i < 288+400; i++) {
 
-			if (k > ice_bin_size)break;
+	// 		if (k > ice_bin_size)break;
 
-			const char b = ice_bin[k++];
-			const char g = ice_bin[k++];
-			const char r = ice_bin[k++];
-			const char a = ice_bin[k++];
-			(void)a;
+	// 		const char b = ice_bin[k++];
+	// 		const char g = ice_bin[k++];
+	// 		const char r = ice_bin[k++];
+	// 		const char a = ice_bin[k++];
+	// 		(void)a;
 
-			putPixelRGB(i, j, r, g, b);
-		}
+	// 		putPixelRGB(i, j, r, g, b);
+	// 	}
 }
 
 
@@ -449,8 +465,8 @@ int getVbeInfo()
 	// regs.edx = 0x0000;
 	// regs.esi = 0x0000;
 	// regs.edi = 0x0000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -494,8 +510,8 @@ int getModeInfo(int mode)
 	// regs.edx = 0x0000;
 	// regs.esi = 0x0000;
 	// regs.edi = 0x0000;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
@@ -536,8 +552,8 @@ void list_modes(int min, int max)
 	regs.eax = 0x4F00;
 	regs.edi = ((int)ctrl);
 	regs.es = (int)ctrl>>16;
-	regs.ebp = 0x100;
-	regs.esp = 0x100;
+	regs.ebp = 0x5000;
+	regs.esp = 0x5000;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	regs.fs = 0x18;
@@ -554,8 +570,8 @@ void list_modes(int min, int max)
 		regs.ecx = (int)modes[i];
 		regs.edi = ((int)inf);
 		regs.es = (int)inf >> 16;
-		regs.ebp = 0x100;
-		regs.esp = 0x100;
+		regs.ebp = 0x5000;
+		regs.esp = 0x5000;
 		regs.eflags = 0x202;
 		regs.ds = 0x18;
 		regs.fs = 0x18;

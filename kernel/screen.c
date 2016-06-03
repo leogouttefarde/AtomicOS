@@ -1,5 +1,6 @@
 
 #include "screen.h"
+#include "vesa.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -23,11 +24,12 @@ uint8_t lig_cour()
 {
         return cur_lig;
 }
+
 // Ecrit le caractère c aux coordonnées spécifiées, en spécifiant le style.
 void ecrit_car_style(uint32_t lig, uint32_t col, char c,
 			Color couleur, Color fond, uint8_t clignotement)
 {
-	if (lig < NB_LIG && col < NB_COLS) {
+	if (lig < NB_LIG && col < NB_COLS && is_console_mode()) {
 		uint16_t *block = ptr_mem(lig, col);
 
 		uint8_t style = (((clignotement & 1) << 1)
