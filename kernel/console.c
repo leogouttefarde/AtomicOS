@@ -372,12 +372,12 @@ static void afficher_echo(char car)
 
 void keyboard_data(char *str)
 {
+	char first;
 	int len = strlen(str);
 
-	if (len < 0)
-		return;
+	switch (len) {
 
-	else if (len == 3) {
+	case 3:
 		if (!strcmp(str, UP_ARROW)) {
 			up=true;
 			len=1;
@@ -403,13 +403,11 @@ void keyboard_data(char *str)
 		// 		avancer();
 		// 	}
 		}
-	}
-	if (len == 1) {
+		break;
 
-
-	// printf("kb read : %d\n", str[0]);
-
-		const char first = str[0];
+	case 1:
+		first = str[0];
+		// printf("kb read : %d\n", str[0]);
 
 		switch (first) {
 		case 27:
@@ -465,6 +463,10 @@ void keyboard_data(char *str)
 			}
 			break;
 		}
+		break;
+
+	default:
+		break;
 	}
 }
 
