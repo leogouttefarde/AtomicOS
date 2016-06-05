@@ -5,17 +5,25 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
+#include "mem.h"
+
 
 #define TAILLE_TAB 2000
+#define TAILLE_HISTO 50
 
 unsigned long debut_mot;
 unsigned long fin_mot;
 unsigned long fin_commande;
 char commande[TAILLE_TAB];
 
+char *histo[TAILLE_HISTO];
+
 char *noms_commandes []={"autotest", "banner", "clear", "echo", "exit"
-				   ,"help", "kill", "ps", "reboot","sleep", 
+			 ,"help","history" ,"kill", "ps", "reboot","sleep", 
 				   "snake", "test" ,"vesa"};
+int plus_recent = -1;
+unsigned int nb_histo=0;
+
 static bool compare(const char *mot_courant, const char *nom_commande)
 {
 	if (mot_courant != NULL && nom_commande != NULL)
@@ -146,6 +154,14 @@ void cmd_usage(char *cmd, char *usage)
 	printf("\n");
 }
 
+static void history() {
+	unsigned int comm = plus_recent; 
+	for (unsigned int i = 0; i < nb_histo; i++) {
+		printf ("%i %s\n", i+1, histo[comm]);
+		comm = (comm > 0) ? comm -1 : TAILLE_HISTO-1;		
+	}
+}
+
 void usage()
 {
 	cons_set_fg_color(LIGHT_CYAN);
@@ -193,6 +209,9 @@ static bool interpreter ()
 
 	else if (compare(mot_courant, "help")) {
 		usage();
+	}
+	else if (compare(mot_courant, "history")) {
+		history();
 	}
 
 	else if (compare(mot_courant, "sleep")) {
@@ -319,6 +338,7 @@ static void afficher_msg (int reaf) {
 }
 
 int reafficher=0;
+int post_hist=-1; 
 
 int autocompleter() {
 	int num_commande;
@@ -359,11 +379,37 @@ int main()
 			commande[fin_commande]='\0';
 			reafficher=autocompleter();
 		}
+
+		else if (commande[fin_commande]==(char)252) {
+			
+			if (post_hist==-1)
+				post_hist = plus_recent;
+			else
+				post_hist = (post_hist > 0) ? post_hist -1 : TAILLE_HISTO-1;
+			
+			printf ("%s\n",histo[post_hist]);
+		}
 			
 		else if (fin_commande > 0){
+			
 			fin_commande--;
 			execute = interpreter(commande);
+
+			plus_recent = (plus_recent + 1) % TAILLE_HISTO;
+
+			if (nb_histo == TAILLE_HISTO) {
+				//printf("%u",strlen(histo[plus_recent]));
+				//mem_free(histo[plus_recent],2+strlen(histo[plus_recent]));
+				mem_free(histo[plus_recent],1+strlen(histo[plus_recent]));
+			}
+			else {
+				nb_histo++;
+			}
+			histo[plus_recent] = mem_alloc(fin_commande+2);
+			memcpy(histo[plus_recent],commande,fin_commande+2);
+
 			reafficher=0;
+			post_hist=-1;
 		}
 	}
 

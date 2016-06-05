@@ -46,6 +46,7 @@ int hist_idx = -1;
 
 bool autocomp = true;
 bool tab_pressed = false;
+bool up=false;
 static void afficher_echo(char car);
 
 
@@ -182,14 +183,14 @@ int cons_write(const char *str, long size)
 	return 0;
 }
 
-unsigned long cons_look (char *string, unsigned long length) 
+unsigned long cons_look (char *string, unsigned long length, unsigned char car) 
 //On regarde les caractères dans le tampon, sans les consommer
 {
 	unsigned long i=0;
 	unsigned long indice_lec_sauv = indice_lec;
 	while (i<length) {
 		
-		if (tampon[indice_lec]!='\t') {
+		if (tampon[indice_lec]!=car) {
 			string [i]=tampon[indice_lec];
 			i++;
 		}
@@ -202,7 +203,7 @@ unsigned long cons_look (char *string, unsigned long length)
 	
 	indice_lec = indice_lec_sauv;
 	reculer(&indice_ecr);
-	string[i] = '\t';
+	string[i] = car;
 	return i;
 }
 
@@ -212,13 +213,21 @@ unsigned long cons_read(char *string, unsigned long length)
 
 	/*Si aucune ligne complète n'a été tapée, 
 	  le processus appelant est endormi*/
-	while (! (nb_lig ||tab_pressed )) { 
+	while (! (nb_lig ||tab_pressed || up)) { 
 		bloque_io();
 	}
 
+	//Cas de l'autocomplétion
 	if (tab_pressed) {
-		unsigned long ret = cons_look(string, length);
+		unsigned long ret = cons_look(string, length, '\t');
 		tab_pressed = false;
+		return ret;
+	}
+
+	//Cas d'un appui sur up
+	if (up) {	
+		unsigned long ret=cons_look(string, length,255);
+		up=false;
 		return ret;
 	}
 
@@ -363,13 +372,16 @@ static void afficher_echo(char car)
 
 void keyboard_data(char *str)
 {
-	const int len = strlen(str);
+	int len = strlen(str);
 
 	if (len < 0)
 		return;
 
 	else if (len == 3) {
 		if (!strcmp(str, UP_ARROW)) {
+			up=true;
+			len=1;
+			str[0]=252;
 			inputGame = UP;
 		// 	history_next();
 		}
@@ -392,7 +404,7 @@ void keyboard_data(char *str)
 		// 	}
 		}
 	}
-	else if (len == 1) {
+	if (len == 1) {
 
 
 	// printf("kb read : %d\n", str[0]);
