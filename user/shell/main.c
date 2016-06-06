@@ -382,23 +382,51 @@ int main()
 		else if (commande[fin_commande]==(char)252) {
 
 			if (fleches_consec + 1 <= nb_histo) {
-				
 				if (post_hist==-1) {
 					post_hist = plus_recent;
 				}
 				else {
-					clear_line();
+					
 					post_hist = (post_hist > 0) ? post_hist -1 : TAILLE_HISTO-1;
 				}
 				fleches_consec ++;
-				
-				for (unsigned int i = 0; i < strlen(histo[post_hist]); i ++) {
-					char c[] ={histo[post_hist][i],0} ;
-					//printf("%s",c);
-					keyboard_data(c);
+				clear_line();
+				char c[10];//
+				unsigned int i = 0;
+				while ( i < strlen(histo[post_hist])) {
+					c[i] = histo[post_hist][i];
+					i++;
+					//char c[] ={histo[post_hist][i],0} ;
+					//keyboard_data(c);
 				}
+				c[i] = 0;
+				keyboard_data(c);
 			}
 			reafficher=-1;
+		}
+		else if (commande[fin_commande]==(char)254) {
+			if (post_hist != -1) {
+				clear_line();
+
+				if (post_hist != plus_recent) {
+					//printf("DONE");
+					post_hist = (post_hist +1) % TAILLE_HISTO;
+				
+				
+					for (unsigned int i = 0; i < strlen(histo[post_hist]); i ++) {
+						char c[] ={histo[post_hist][i],0} ;
+						//printf("%s",c);
+						keyboard_data(c);
+					}
+				}
+				else  {					
+					post_hist=-1;
+				}
+				fleches_consec --;
+
+			}
+			reafficher=-1;
+			
 		}
 			
 		else if (fin_commande > 0){

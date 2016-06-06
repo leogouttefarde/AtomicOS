@@ -47,22 +47,8 @@ int hist_idx = -1;
 bool autocomp = true;
 bool tab_pressed = false;
 bool up=false;
+bool down = false;
 static void afficher_echo(char car);
-
-
-void history_add(char *string)
-{
-		// printf ("taille %s %d\n", string, strlen(string));
-	if (hist_size == MAX_HISTORY-1) {
-		memcpy((void*)((int)history + TAILLE_TAMP), history, sizeof(history) - TAILLE_TAMP);
-		strcpy((char*)history, string);
-	}
-	else if (strlen(string) > 0) {
-		strcpy((char*)&history[hist_size++][0], string);
-	}
-
-	hist_idx = -1;
-}
 
 //Avancer d'une case sur le tampon circulaire
 static void avancer(unsigned long *i)
@@ -92,32 +78,6 @@ static inline char *get_history(int i)
 	return (char*)&history[hist_size-1 - i];
 }
 
-void history_prev()
-{
-	char *cmd = NULL;
-
-	if (0 < hist_size && hist_idx > 0) {
-		cmd = get_history(--hist_idx);
-	}
-	else if (hist_idx == 0) {
-		cmd = "";
-		hist_idx--;
-	}
-
-	set_cmd(cmd);
-}
-
-void history_next()
-{
-	char *cmd = NULL;
-
-	if (0 < hist_size && hist_idx < hist_size-1) {
-		cmd = get_history(++hist_idx);
-// printf("i %d next = %s\n", hist_idx, cmd);
-	}
-	set_cmd(cmd);
-}
-
 void cons_echo(int on)
 {
 	echo = on ? true : false;
@@ -132,9 +92,9 @@ void init_clavier(void)
 
 void traitant_clavier(void)
 {
-	outb(0x20, 0x20);
 	char caractere=inb(0x60);
 	do_scancode(caractere);
+	outb(0x20, 0x20);
 	debloque_io();
 }
 
@@ -148,10 +108,25 @@ void clear_line() {
 	long unsigned int prec = (indice_ecr > 0) ? indice_ecr -1 : TAILLE_TAMP-1;
 	//long unsigned int prec = indice_ecr;
 	//printf("%c",tampon[prec]);
+	//while (tampon[prec] != 13 && tampon[prec] != (char) 252 && tampon[prec] != (char) 254) {
 	while (tampon[prec] != 13) {
+		/*if (tampon[prec] == (char) 252 || tampon[prec] == (char) 254) {
+			printf("!");
+			sleep(5);		}*/
 		//printf("!");
-		char c[] ={127,0}; 
+		char c[] ={127,0};
+		bool anc_echo = echo;
+		if (!anc_echo) {
+			printf("!");
+			sleep(5);
+		}
+		if (tampon[prec] == (char) 252 || tampon[prec] == (char) 254 || tampon[prec] == (char) 127) {
+			printf ("%lu",prec);
+			sleep(5);
+			echo=false;
+		}
 		keyboard_data(c);
+		echo=anc_echo;
 		prec = (prec > 0) ? prec -1 : TAILLE_TAMP-1;
 	}
 }
@@ -190,7 +165,7 @@ unsigned long cons_read(char *string, unsigned long length)
 
 	/*Si aucune ligne complète n'a été tapée, 
 	  le processus appelant est endormi*/
-	while (! (nb_lig ||tab_pressed || up)) { 
+	while (! (nb_lig ||tab_pressed || up || down)) { 
 		bloque_io();
 	}
 
@@ -205,6 +180,12 @@ unsigned long cons_read(char *string, unsigned long length)
 	if (up) {	
 		unsigned long ret=cons_look(string, length,252);
 		up=false;
+		return ret;
+	}
+
+	if (down) {	
+		unsigned long ret=cons_look(string, length,254);
+		down=false;
 		return ret;
 	}
 
@@ -226,8 +207,6 @@ unsigned long cons_read(char *string, unsigned long length)
 		avancer(&indice_lec);
 
 		if (fin) {
-			history_add(string);
-
 			//Si on est sur un caractere 13
 			nb_lig--;
 			break;
@@ -286,6 +265,8 @@ static void afficher_echo(char car)
 
 		case 127:  
 			//caractère backspace
+			if (tampon[indice_ecr]<0 || tampon[indice_ecr]==127)
+				return;
 
 			if (tampon[indice_ecr]=='\t') {
 				//Le caractere à effacer est une tabulation
@@ -364,11 +345,12 @@ void keyboard_data(char *str)
 			len=1;
 			first=252;
 			inputGame = UP;
-		// 	history_next();
 		}
 		else if (!strcmp(str, DN_ARROW)) {
+			down=true;
+			len=1;
+			first=254;
 			inputGame = DOWN;
-		// 	history_prev();
 		}
 		else if (!strcmp(str, LT_ARROW)) {
 			inputGame = LEFT;
@@ -443,6 +425,13 @@ void keyboard_data(char *str)
 		}
 		
 	}
+	if (len==2 || len==4) {
+		for (int i=0; i<len; i++) {
+			char c []={str[i],0};
+			keyboard_data(c);
+		}
+	}
+	
 }
 
 // void kbd_leds(unsigned char leds)
