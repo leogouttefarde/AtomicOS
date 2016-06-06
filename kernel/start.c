@@ -9,6 +9,7 @@
 #include "messages.h"
 #include "mouse.h"
 #include "vesa.h"
+#include "file.h"
 
 void kernel_start(void)
 {
@@ -21,6 +22,7 @@ void kernel_start(void)
 	init_messages();
 	init_sema();
 	init_mouse();
+	init_fs();
 
 	// initGraphics(1366, 768, 32);
 
@@ -28,8 +30,7 @@ void kernel_start(void)
 	// 	hlt();
 
 	// start("autotest", 4000, 10, NULL);
-	// start("test16", 4000, 128, NULL);
-	// start("test17", 4000, 128, NULL);
+	//start("test_fs", 4000, 128, NULL);
 	launch_new_shell();
 
 	idle();

@@ -58,5 +58,10 @@
 #define INIT_VBE_MODE 49
 #define KEYBOARD_DATA 50
 #define CLEAR_LINE 51
+#define ATOMICOPEN 52
+#define ATOMICREAD 53
+#define ATOMICWRITE 54
+#define ATOMICCLOSE 55
+#define ATOMICEOF 56
 
 #endif

@@ -210,5 +210,31 @@ Azizi :
 Etienne :
 
 Léo :
+Debug du mode VESA sur ma machine personnelle.
+Réflexion sur l'implémentation du système de fichiers.
+
+
+Lundi 6 juin :
+
+Azizi :
+Début d'implémentation du système de fichiers.
+
+Etienne :
+
+Léo :
+Debug du mode VESA sur ma machine personnelle.
+Finalisation de l'implémentation du système de fichiers.
+
+
+Mardi 7 juin :
+
+Azizi :
+
+Etienne :
+
+Léo :
+
+
+
 
 

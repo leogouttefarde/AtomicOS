@@ -614,3 +614,72 @@ wait_keyboard:
 	int $49
 	ret
 
+	.text
+	.globl atomicOpen
+atomicOpen:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $ATOMICOPEN, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl atomicClose
+atomicClose:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $ATOMICCLOSE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl atomicRead
+atomicRead:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl 16(%ebp), %edx
+	movl $ATOMICREAD, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl atomicWrite
+atomicWrite:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl 16(%ebp), %edx
+	movl $ATOMICWRITE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl atomicEOF
+atomicEOF:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $ATOMICEOF, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
