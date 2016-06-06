@@ -423,6 +423,11 @@ int main()
 			reafficher=0;
 			post_hist=-1;
 		}
+		else {
+			fleches_consec=0;
+			reafficher=0;
+			post_hist=-1;
+		}
 	}
 
 	return 0;
