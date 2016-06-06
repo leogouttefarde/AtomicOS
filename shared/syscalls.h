@@ -57,5 +57,6 @@
 #define WAIT_KEYBOARD 48
 #define INIT_VBE_MODE 49
 #define KEYBOARD_DATA 50
+#define CLEAR_LINE 51
 
 #endif

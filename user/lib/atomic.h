@@ -139,4 +139,7 @@ void wait_keyboard(void);
 
 //Ecrire dans le buffer du clavier
 void keyboard_data(char *str);
+
+//Effacer la ligne courante dans la console
+void clear_line();
 #endif

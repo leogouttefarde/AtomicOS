@@ -19,4 +19,7 @@ int get_InputGame(void);
 //Tant qu'on n'a pas appuyé le clavier, le processus appelant est endormi
 void wait_for_keyboard(void);
 
+//Effacer la ligne courante
+void clear_line();
+
 #endif

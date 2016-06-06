@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include "mem.h"
 
-
 #define TAILLE_TAB 2000
 #define TAILLE_HISTO 50
 
@@ -339,7 +338,7 @@ static void afficher_msg (int reaf) {
 
 int reafficher=0;
 int post_hist=-1; 
-
+unsigned int fleches_consec=0;
 int autocompleter() {
 	int num_commande;
 	unsigned int nb = nb_commandes_possibles(false,&num_commande);
@@ -370,7 +369,7 @@ int main()
 	bool execute = true;
 
 	while (execute) {
-		afficher_msg(reafficher);		
+		afficher_msg(reafficher);
 
 		debut_mot = 0;
 		fin_commande = cons_read(commande,TAILLE_TAB);
@@ -381,13 +380,25 @@ int main()
 		}
 
 		else if (commande[fin_commande]==(char)252) {
-			
-			if (post_hist==-1)
-				post_hist = plus_recent;
-			else
-				post_hist = (post_hist > 0) ? post_hist -1 : TAILLE_HISTO-1;
-			
-			printf ("%s\n",histo[post_hist]);
+
+			if (fleches_consec + 1 <= nb_histo) {
+				
+				if (post_hist==-1) {
+					post_hist = plus_recent;
+				}
+				else {
+					clear_line();
+					post_hist = (post_hist > 0) ? post_hist -1 : TAILLE_HISTO-1;
+				}
+				fleches_consec ++;
+				
+				for (unsigned int i = 0; i < strlen(histo[post_hist]); i ++) {
+					char c[] ={histo[post_hist][i],0} ;
+					//printf("%s",c);
+					keyboard_data(c);
+				}
+			}
+			reafficher=-1;
 		}
 			
 		else if (fin_commande > 0){
@@ -408,6 +419,7 @@ int main()
 			histo[plus_recent] = mem_alloc(fin_commande+2);
 			memcpy(histo[plus_recent],commande,fin_commande+2);
 
+			fleches_consec=0;
 			reafficher=0;
 			post_hist=-1;
 		}

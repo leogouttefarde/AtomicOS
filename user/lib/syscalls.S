@@ -468,6 +468,14 @@ keyboard_data:
 	ret
 
 	.text
+	.globl clear_line
+clear_line:
+	movl $CLEAR_LINE, %eax
+	int $49
+	ret
+	
+
+	.text
 	.globl reboot
 reboot:
 	movl $REBOOT, %eax

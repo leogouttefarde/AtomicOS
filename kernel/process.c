@@ -1163,8 +1163,13 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 	case CONS_RESET_COLOR:
 		reset_color();
 		break;
+
 	case KEYBOARD_DATA:
 		keyboard_data((char*) arg0);
+		break;
+
+	case CLEAR_LINE:
+		clear_line();
 		break;
 
 	case REBOOT:

@@ -84,45 +84,6 @@ void set_cmd(char *cmd)
 	if (cmd == NULL) {
 		return;
 	}
-/*
-	// printf("cmd = %s\n", cmd);
-
-	int len = strlen(cmd);
-
-
-	// for (uint32_t i = 0; i < indice_ecr; i++) {
-	// 	afficher_echo((char)127);
-	// }
-	int pos = indice_ecr - indice_lec;
-	// printf("pos %d\n", (int)pos);
-	int il = lig_cour();
-	int ic = col_cour()-pos;
-	place_curseur(il, ic);
-
-	// for (uint32_t i = col_cour(); i < indice_ecr; i++) {
-	// 	afficher_echo(' ');
-	// }
-	// place_curseur(il, ic);
-
-	cases_dispos += len - pos;
-	nb_lig = 0;
-	indice_ecr -= pos;
-
-	if (len > 0) {
-		for (int i = 0; i < len+1; i++) {
-			tampon[indice_ecr] = cmd[i];
-			avancer(&indice_ecr);
-		}
-	}
-
-	tampon[TAILLE_TAMP-1] = 0;
-
-		// printf(cmd);
-	for (int i = 0; i < len; i++) {
-		afficher_echo(cmd[i]);
-	}
-
-	// place_curseur(il, ic);*/
 }
 
 static inline char *get_history(int i)
@@ -183,6 +144,17 @@ int cons_write(const char *str, long size)
 	return 0;
 }
 
+void clear_line() {
+	long unsigned int prec = (indice_ecr > 0) ? indice_ecr -1 : TAILLE_TAMP-1;
+	//long unsigned int prec = indice_ecr;
+	//printf("%c",tampon[prec]);
+	while (tampon[prec] != 13) {
+		//printf("!");
+		char c[] ={127,0}; 
+		keyboard_data(c);
+		prec = (prec > 0) ? prec -1 : TAILLE_TAMP-1;
+	}
+}
 unsigned long cons_look (char *string, unsigned long length, unsigned char car) 
 //On regarde les caractères dans le tampon, sans les consommer
 {
@@ -202,7 +174,12 @@ unsigned long cons_look (char *string, unsigned long length, unsigned char car)
 	}
 	
 	indice_lec = indice_lec_sauv;
-	reculer(&indice_ecr);
+	//reculer(&indice_ecr);
+	char c [] = {127,0};
+	bool anc_echo = echo;
+	echo=false;
+	keyboard_data(c);
+	echo=anc_echo;
 	string[i] = car;
 	return i;
 }
@@ -226,7 +203,7 @@ unsigned long cons_read(char *string, unsigned long length)
 
 	//Cas d'un appui sur up
 	if (up) {	
-		unsigned long ret=cons_look(string, length,255);
+		unsigned long ret=cons_look(string, length,252);
 		up=false;
 		return ret;
 	}
@@ -279,6 +256,9 @@ static void effacer_car_lig_prec() {
 
 static void afficher_echo(char car)
 {
+	if (car<0)
+		return;
+
 	//Caractères affichés normalement
 	if ((32 <= car && car <= 126) || car==9) {
 		char chaine[1];
@@ -294,7 +274,7 @@ static void afficher_echo(char car)
 		chaine[1] = 96 + car;
 		console_putbytes(chaine,2);
 	}
-	else  {
+	else {
 		switch (car) {
 			char chaine[1];
 			char bsctrl [6];
@@ -373,15 +353,17 @@ static void afficher_echo(char car)
 void keyboard_data(char *str)
 {
 	int len = strlen(str);
+	char first = str[0];
 
 	if (len < 0)
 		return;
 
 	else if (len == 3) {
+
 		if (!strcmp(str, UP_ARROW)) {
 			up=true;
 			len=1;
-			str[0]=252;
+			first=252;
 			inputGame = UP;
 		// 	history_next();
 		}
@@ -409,7 +391,6 @@ void keyboard_data(char *str)
 
 	// printf("kb read : %d\n", str[0]);
 
-		const char first = str[0];
 
 		switch (first) {
 		case 27:
