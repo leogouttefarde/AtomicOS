@@ -21,6 +21,7 @@ void traitant_IT_33();
 
 bool echo=true;
 char tampon [TAILLE_TAMP];
+bool premier_car=true;
 
 int inputGame=0; 
 
@@ -39,15 +40,12 @@ const char DN_ARROW[] = { 0x1B, 0x5B, 0x42, 0 };
 const char RT_ARROW[] = { 0x1B, 0x5B, 0x43, 0 };
 const char LT_ARROW[] = { 0x1B, 0x5B, 0x44, 0 };
 
-char history[MAX_HISTORY][TAILLE_TAMP];
-
-int hist_size = 0;
-int hist_idx = -1;
-
 bool autocomp = true;
 bool tab_pressed = false;
 bool up=false;
 bool down = false;
+unsigned int car_avant_fin=0;
+
 static void afficher_echo(char car);
 
 //Avancer d'une case sur le tampon circulaire
@@ -70,12 +68,6 @@ void set_cmd(char *cmd)
 	if (cmd == NULL) {
 		return;
 	}
-}
-
-static inline char *get_history(int i)
-{
-	// printf("idx = %d  s %d  i %d\n", hist_size-1 - i, hist_size, i);
-	return (char*)&history[hist_size-1 - i];
 }
 
 void cons_echo(int on)
@@ -106,23 +98,12 @@ int cons_write(const char *str, long size)
 
 void clear_line() {
 	long unsigned int prec = (indice_ecr > 0) ? indice_ecr -1 : TAILLE_TAMP-1;
-	//long unsigned int prec = indice_ecr;
-	//printf("%c",tampon[prec]);
-	//while (tampon[prec] != 13 && tampon[prec] != (char) 252 && tampon[prec] != (char) 254) {
 	while (tampon[prec] != 13) {
-		/*if (tampon[prec] == (char) 252 || tampon[prec] == (char) 254) {
-			printf("!");
-			sleep(5);		}*/
-		//printf("!");
+		
 		char c[] ={127,0};
 		bool anc_echo = echo;
-		if (!anc_echo) {
-			printf("!");
-			sleep(5);
-		}
+		
 		if (tampon[prec] == (char) 252 || tampon[prec] == (char) 254 || tampon[prec] == (char) 127) {
-			printf ("%lu",prec);
-			sleep(5);
 			echo=false;
 		}
 		keyboard_data(c);
@@ -169,6 +150,7 @@ unsigned long cons_read(char *string, unsigned long length)
 		bloque_io();
 	}
 
+	car_avant_fin = 0;
 	//Cas de l'autocomplétion
 	if (tab_pressed) {
 		unsigned long ret = cons_look(string, length, '\t');
@@ -339,6 +321,11 @@ void keyboard_data(char *str)
 	if (len < 0)
 		return;
 
+	if (len==2 || len ==4) {
+		
+	}
+	
+
 	if (len == 3) {
 		if (!strcmp(str, UP_ARROW)) {
 			up=true;
@@ -354,6 +341,11 @@ void keyboard_data(char *str)
 		}
 		else if (!strcmp(str, LT_ARROW)) {
 			inputGame = LEFT;
+			long unsigned int prec = (indice_ecr > 0) ? indice_ecr -1 : TAILLE_TAMP-1;
+			if (tampon[prec] != 13 && tampon[prec] !=0) {
+				car_avant_fin ++;
+			}
+			return;
 		// 	if (col_cour() > 0) {
 		// 		place_curseur(lig_cour(), col_cour()-1);
 		// 		reculer();
@@ -365,6 +357,12 @@ void keyboard_data(char *str)
 		// 		place_curseur(lig_cour(), col_cour()+1);
 		// 		avancer();
 		// 	}
+		}
+	}
+	if (len > 1 && ! premier_car) {
+		for (int i=0; i<len; i++) {
+			char c []={str[i],0};
+			keyboard_data(c);
 		}
 	}
 		
@@ -401,7 +399,26 @@ void keyboard_data(char *str)
 			   du caractere au tampon*/
 			if (cases_dispos>0) {
 				cases_dispos--;
-				tampon[indice_ecr]=first;
+				//tampon[indice_ecr]=first;
+				
+				if (first != 13) {
+					long unsigned int i_lec = indice_ecr;
+					long unsigned i_ecr = indice_ecr;
+					reculer(&i_lec);
+					for (long unsigned int i=0; i < car_avant_fin; i++) {
+						tampon[i_ecr] = tampon[i_lec];
+						reculer(&i_lec);
+						reculer(&i_ecr);
+					}
+					
+					//printf("%lu",indice_car);
+					printf("%c",tampon[1]);
+					tampon[i_ecr]=first;
+				}
+				else {
+					tampon[indice_ecr]=first;
+				}
+
 				if (first==13) {
 					nb_lig++;
 					// wake_proc_waitio();
@@ -421,17 +438,12 @@ void keyboard_data(char *str)
 				if (echo)
 					afficher_echo(first);
 			}
+			premier_car = false;
 			break;
 		}
 		
+
 	}
-	if (len==2 || len==4) {
-		for (int i=0; i<len; i++) {
-			char c []={str[i],0};
-			keyboard_data(c);
-		}
-	}
-	
 }
 
 // void kbd_leds(unsigned char leds)

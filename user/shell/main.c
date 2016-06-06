@@ -391,13 +391,11 @@ int main()
 				}
 				fleches_consec ++;
 				clear_line();
-				char c[10];//
-				unsigned int i = 0;
+				char c[strlen(histo[post_hist])+1];
+				unsigned int i=0;
 				while ( i < strlen(histo[post_hist])) {
 					c[i] = histo[post_hist][i];
 					i++;
-					//char c[] ={histo[post_hist][i],0} ;
-					//keyboard_data(c);
 				}
 				c[i] = 0;
 				keyboard_data(c);
@@ -411,13 +409,21 @@ int main()
 				if (post_hist != plus_recent) {
 					//printf("DONE");
 					post_hist = (post_hist +1) % TAILLE_HISTO;
-				
-				
-					for (unsigned int i = 0; i < strlen(histo[post_hist]); i ++) {
+					char c[strlen(histo[post_hist])+1];
+					//char c[(int)histo[post_hist]+1];
+					unsigned int i=0;
+				while ( i < strlen(histo[post_hist])) {
+					c[i] = histo[post_hist][i];
+					i++;
+				}
+				c[i] = 0;
+				keyboard_data(c);
+					/*for (unsigned int i = 0; i < strlen(histo[post_hist]); i ++) {
 						char c[] ={histo[post_hist][i],0} ;
 						//printf("%s",c);
 						keyboard_data(c);
-					}
+						}*/
+					
 				}
 				else  {					
 					post_hist=-1;
