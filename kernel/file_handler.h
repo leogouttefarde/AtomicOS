@@ -16,4 +16,8 @@ int renameFile(const char *filename1, const char *filename2);
 //L'affichage de nom de tous les fichiers
 void listAllFiles();
 
+//int putBinaryData(const char *filename, const char *data);
+
+//int modifyBinaryData(const char *filename, const char *newData);
+
 #endif
