@@ -554,18 +554,18 @@ void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t col
 	(void)color;
 
 
-	// // Draw gradient bg
-	// for (int32_t i = 0; i < xres; i++)
-	// 	for (int32_t j = 0; j < yres; j++) {
-	// 		// Format couleur : 0xAARRGGBB
-	// 		// putPixel(i, j, 0xFF000000
-	// 		// 	| (i%256) * 0x00010000
-	// 		// 	| ((i+j)%256) * 0x00000100
-	// 		// 	| (j%256) * 0x000000FF
-	// 		// 	);
-	// 		putPixelRGB(i, j, i, (i+j), j);
-	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
-	// 	}
+	// Draw gradient bg
+	for (int32_t i = 0; i < xres; i++)
+		for (int32_t j = 0; j < yres; j++) {
+			// Format couleur : 0xAARRGGBB
+			// putPixel(i, j, 0xFF000000
+			// 	| (i%256) * 0x00010000
+			// 	| ((i+j)%256) * 0x00000100
+			// 	| (j%256) * 0x000000FF
+			// 	);
+			putPixelRGB(i, j, i, (i+j), j);
+			// putPixelRGB(i, j, 0xFF, 0, 0);
+		}
 	int32_t k = 0;
 	// for (int32_t j = 200; j < 200+161; j++)
 	// 	for (int32_t i = 400; i < 288+400; i++) {

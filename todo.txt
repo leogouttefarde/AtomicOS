@@ -7,10 +7,10 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Po
 - système de fichiers primitif (améliorable plus tard en FAT32)
 - CTRL+L : effacement écran (remonter ligne courante)
 - activation des leds selon les appuis clavier (verr num, caps lock)
-- mode graphique VESA
 - driver son carte mère (testable à l'imag)
 - éditeur de fichiers
 - Améliorer le shell (cmds asynchrones avec & etc)
+- mode graphique VESA (affichage d'images par exemple)
 - (shells multiples)
 - driver usb / disque dur ? (à priori trop complexe / long, sauf si vieux driver)
 

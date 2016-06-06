@@ -354,12 +354,11 @@ void keyboard_data(char *str)
 {
 	int len = strlen(str);
 	char first = str[0];
-
+	
 	if (len < 0)
 		return;
 
-	else if (len == 3) {
-
+	if (len == 3) {
 		if (!strcmp(str, UP_ARROW)) {
 			up=true;
 			len=1;
@@ -386,12 +385,8 @@ void keyboard_data(char *str)
 		// 	}
 		}
 	}
-	if (len == 1) {
-
-
-	// printf("kb read : %d\n", str[0]);
-
-
+		
+	if (len ==1) {
 		switch (first) {
 		case 27:
 			// Ignore ESC
@@ -446,6 +441,7 @@ void keyboard_data(char *str)
 			}
 			break;
 		}
+		
 	}
 }
 
