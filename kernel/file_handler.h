@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 
-//La création d'un fichier
-int createFile(const char *filename, uint32_t filesize);
+//La création d'un fichier vide
+int createFile(const char *filename);
 
 //La suppression d'un fichier
 int deleteFile (const char *filename);
@@ -16,8 +16,13 @@ int renameFile(const char *filename1, const char *filename2);
 //L'affichage de nom de tous les fichiers
 void listAllFiles();
 
-//int putBinaryData(const char *filename, const char *data);
+//La lecture de données binaires d'un fichier
+//Interdit de modifier directement ces données binaires ("dataToRead")
+int readBinaryData(const char *filename, char **dataToRead, 
+		    uint32_t *sizeToRead);
 
-//int modifyBinaryData(const char *filename, const char *newData);
+//L'écriture de données binaires avec la mode écrasement dans un fichier
+int writeBinaryData(const char *filename, char *dataToWrite, 
+		     uint32_t sizeToWrite);
 
 #endif

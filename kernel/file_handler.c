@@ -108,8 +108,8 @@ static inline void insertFile (RootFileTable *plist, File *pfile)
 	}
 }
 
-//La création d'un fichier
-int createFile(const char *filename, uint32_t filesize)
+//La création d'un fichier vide
+int createFile(const char *filename)
 {
 	if(filename == NULL){
 		return -1;
@@ -147,13 +147,8 @@ int createFile(const char *filename, uint32_t filesize)
 	newFile -> createdTime = get_time();
 	newFile -> modifiedTime = 0;
 
-	newFile -> filesize = filesize;
-	newFile -> binaryData = mem_alloc(filesize * sizeof(char));
-	if(newFile->binaryData == NULL){
-		mem_free_nolength(newFile->filename);
-		mem_free_nolength(newFile);
-		return -1;
-	}
+	newFile -> filesize = 0;
+        newFile -> binaryData = NULL;
 
 	newFile -> next = NULL;
 
@@ -176,7 +171,9 @@ int deleteFile (const char *filename)
 
 	mem_free_nolength(fileToDelete->filename);
 	mem_free_nolength(fileToDelete->extension);
-	mem_free_nolength(fileToDelete->binaryData);
+	if(fileToDelete->binaryData != NULL){
+		mem_free_nolength(fileToDelete->binaryData);
+	}
 	mem_free_nolength(fileToDelete);
 	
 	return 0;
@@ -234,4 +231,51 @@ void listAllFiles()
 		counter++;
 		current = current->next;
 	}
+}
+
+//La lecture de données binaires d'un fichier
+//Interdit de modifier directement ces données binaires ("dataToRead")
+int readBinaryData(const char *filename, char **dataToRead, 
+		    uint32_t *sizeToRead)
+//const char aussi pour dataToRead ????
+{
+	//Recherche pour le fichier à lire
+	//Pour l'instant dans le repertoire racine A MODIF
+	File *fileToRead = searchFile(&rootDirectory, filename);
+	if (fileToRead == NULL){
+		return -1;
+	}
+
+	*dataToRead = fileToRead->binaryData;
+	*sizeToRead = fileToRead->filesize;
+
+	return 0;
+}
+
+//L'écriture de données binaires avec la mode écrasement dans un fichier
+int writeBinaryData(const char *filename, char *dataToWrite, 
+		     uint32_t sizeToWrite)
+{
+	//Recherche pour le fichier à lire
+	//Pour l'instant dans le repertoire racine A MODIF
+	File *fileToWrite = searchFile(&rootDirectory, filename);
+	//Si le fichier n'est pas encore créé, on le crée
+	if (fileToWrite == NULL){
+		createFile(filename);
+		fileToWrite = searchFile(&rootDirectory, filename);
+	}
+
+	if(dataToWrite == NULL){
+		return -1;
+	}else{
+		//Si le fichier contient déjà des données, on les supprime
+		if (fileToWrite -> filesize != 0){
+			mem_free_nolength(fileToWrite->binaryData);
+		}
+
+		fileToWrite -> filesize = sizeToWrite;
+		fileToWrite -> binaryData = dataToWrite;
+	}
+
+	return 0;
 }
