@@ -44,7 +44,6 @@ bool autocomp = true;
 bool tab_pressed = false;
 bool up=false;
 bool down = false;
-unsigned int car_avant_fin=0;
 
 static void afficher_echo(char car);
 
@@ -150,7 +149,6 @@ unsigned long cons_read(char *string, unsigned long length)
 		bloque_io();
 	}
 
-	car_avant_fin = 0;
 	//Cas de l'autocomplétion
 	if (tab_pressed) {
 		unsigned long ret = cons_look(string, length, '\t');
@@ -320,10 +318,6 @@ void keyboard_data(char *str)
 	
 	if (len < 0)
 		return;
-
-	if (len==2 || len ==4) {
-		
-	}
 	
 
 	if (len == 3) {
@@ -341,11 +335,7 @@ void keyboard_data(char *str)
 		}
 		else if (!strcmp(str, LT_ARROW)) {
 			inputGame = LEFT;
-			long unsigned int prec = (indice_ecr > 0) ? indice_ecr -1 : TAILLE_TAMP-1;
-			if (tampon[prec] != 13 && tampon[prec] !=0) {
-				car_avant_fin ++;
-			}
-			return;
+			
 		// 	if (col_cour() > 0) {
 		// 		place_curseur(lig_cour(), col_cour()-1);
 		// 		reculer();
@@ -399,26 +389,8 @@ void keyboard_data(char *str)
 			   du caractere au tampon*/
 			if (cases_dispos>0) {
 				cases_dispos--;
-				//tampon[indice_ecr]=first;
+				tampon[indice_ecr]=first;
 				
-				if (first != 13) {
-					long unsigned int i_lec = indice_ecr;
-					long unsigned i_ecr = indice_ecr;
-					reculer(&i_lec);
-					for (long unsigned int i=0; i < car_avant_fin; i++) {
-						tampon[i_ecr] = tampon[i_lec];
-						reculer(&i_lec);
-						reculer(&i_ecr);
-					}
-					
-					//printf("%lu",indice_car);
-					printf("%c",tampon[1]);
-					tampon[i_ecr]=first;
-				}
-				else {
-					tampon[indice_ecr]=first;
-				}
-
 				if (first==13) {
 					nb_lig++;
 					// wake_proc_waitio();
@@ -481,6 +453,3 @@ void wait_for_keyboard(void)
 		bloque_io();
 	}
 }
-
-
-;
