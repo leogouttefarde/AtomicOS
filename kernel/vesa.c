@@ -188,6 +188,7 @@ uint16_t findMode(int x, int y, int d)
 		if ( REGX(regs.eax) != 0x004F ) continue;
 
 		// Skip invalid modes
+		if ( !inf->physbase ) continue;
 		if ( x < inf->Xres || y < inf->Yres ) continue;
 
 		if (inf->Xres > 700)

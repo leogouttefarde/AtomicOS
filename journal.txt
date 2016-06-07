@@ -58,7 +58,7 @@ Prochaine étape : allocateur de pages dans le bon espace mémoire.
 Samedi 21 mai
 
 Etienne :
-Fin de l'implantaion de la localisation des applications.
+Fin de l'implantation de la localisation des applications.
 Installation des outils adéquats pour pouvoir poursuivre le projet sur machine personnelle.
 
 Léo :
@@ -160,6 +160,7 @@ Azizi :
 Poursuite du jeu snake
 
 Etienne :
+Fin du debug des sémaphores.
 
 Léo :
 Complétion du shell et réalisation d'appels bios avec succès.
@@ -193,7 +194,8 @@ Azizi :
 Fin de debogage du jeu snake & 
 Debut de gestion fichiers FAT32 (recherche documentaire)
 
-Etienne : Réflexion + début d'implémentation d'améliorations du shell
+Etienne :
+Réflexion + début d'implémentation d'améliorations du shell
 
 Léo :
 Optimisation du driver de souris PS/2 et améliorations diverses.
@@ -233,8 +235,8 @@ Azizi :
 Etienne :
 
 Léo :
-
-
+Rédaction de la page web.
+Gestion de l'affichage d'images en mode graphique avec la commande display.
 
 
 

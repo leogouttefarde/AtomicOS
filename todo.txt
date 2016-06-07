@@ -15,7 +15,6 @@ http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Po
 Mineur :
 
 - Vérification des paramètres de syscall (implém à check)
-- journal de bord à update
 - trouver cmt choisir 1er mode hd fonctionnel automatiquement
 
 
