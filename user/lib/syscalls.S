@@ -683,3 +683,16 @@ atomicEOF:
 	popl %ebp
 	ret
 
+	.text
+	.globl display
+display:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $DISPLAY, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+

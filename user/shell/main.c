@@ -237,6 +237,26 @@ static bool interpreter ()
 		set_video_mode();
 	}
 
+	else if (compare(mot_courant, "display")) {
+		char *next = get_argument();
+
+		if (next != NULL) {
+			bool loop;
+			set_video_mode();
+			
+			loop = display(next);
+
+			while (loop) {
+				wait_clock(current_clock() + 3);
+
+				loop &= getInputGame() != QUIT;
+			}
+
+			init_vbe_mode(0x3);
+			print_banner();
+		}
+	}
+
 	else if (compare(mot_courant, "vbe")) {
 		char *next = get_argument();
 

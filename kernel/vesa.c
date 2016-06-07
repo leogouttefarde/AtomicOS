@@ -4,10 +4,11 @@
 #include "vmem.h"
 #include <string.h>
 #include <stdio.h>
-#include "ice.h"
+// #include "ice.h"
 #include "cursor.h"
 #include "vmem.h"
 #include "mem.h"
+#include "file.h"
 
 // #define VIDEO_MEMORY 0x60000000
 #define VIDEO_MEMORY 0xC0000000
@@ -22,7 +23,6 @@ typedef struct VbeInfoBlock {
 	 uint32_t VideoModePtr;         // isa vbeFarPtr
 	 uint16_t TotalMemory;             // as # of 64KB blocks
 } __attribute__((packed)) VbeInfoBlock;
-
 
 typedef struct ModeInfoBlock {
 	uint16_t attributes;
@@ -91,13 +91,13 @@ typedef enum {
 } memModels;
 
 
-int mode = 0;
+int g_mode = 3;
 
 char mystr[256];
 char *get_str();
 
 /* Resolution of video mode used */
-int xres, yres;
+uint32_t xres, yres;
 
 /* Logical CRT scanline length */
 int bytesperline;
@@ -109,6 +109,7 @@ int bpp;
 
 /* Pointer to start of video memory */
 uint32_t *screenPtr = NULL;
+uint32_t *screenBuf = NULL;
 
 
 uint16_t attributes = -1;
@@ -119,8 +120,6 @@ uint8_t planes = -1;
 
 struct VbeInfoBlock *vbeInfo = (VbeInfoBlock*)0x3000;//&ctrls;
 struct ModeInfoBlock *modeInfo = (ModeInfoBlock*)0x4000;//&infs;
-
-bool changed = false;
 
 uint16_t findMode(int x, int y, int d)
 {
@@ -189,6 +188,7 @@ uint16_t findMode(int x, int y, int d)
 		if ( REGX(regs.eax) != 0x004F ) continue;
 
 		// Skip invalid modes
+		if ( !inf->physbase ) continue;
 		if ( x < inf->Xres || y < inf->Yres ) continue;
 
 		if (inf->Xres > 700)
@@ -239,18 +239,18 @@ static inline void *get_pdir()
 
 
 /* Plot a pixel (0xAARRGGBB format) at location (x,y) in specified color */
-static inline void putPixel(int x, int y, uint32_t color)
+static inline void putPixel(uint32_t x, uint32_t y, uint32_t color)
 {
 	const uint8_t nb_bytes = bpp/8;
 	long addr = (long)y * bytesperline + x * nb_bytes;
 
-	if (!screenPtr || !changed)
+	if (!screenPtr || is_console_mode())
 		return;
 
 	if (x > xres || y > yres)
 		return;
 
-	unsigned char *ptr = (unsigned char *)VIDEO_MEMORY;
+	unsigned char *ptr = (unsigned char *)screenBuf;//VIDEO_MEMORY;
 
 	for (int i = 0; i < nb_bytes; i++) {
 		*(ptr + addr + i) = (color >> 8*i) & 0xFF;
@@ -334,14 +334,17 @@ void set_vbe_mode(int mode)
 		printf("set_vbe_mode failed\n");
 	}
 	else {
-		changed = true;
-		//printf("set_vbe_mode done\n");
+		g_mode = mode;
+
+		if (!screenBuf) {
+			screenBuf = phys_alloc(0x800000);
+		}
 	}
 }
 
 bool is_console_mode()
 {
-	return !changed;
+	return (g_mode == 3);
 }
 
 
@@ -361,8 +364,10 @@ void init_vbe_mode(int mode)
 	printf("bytesperline : 0x%X\n", (int)bytesperline);
 	printf("screenPtr : 0x%X\n", (int)screenPtr);
 
-	if (!screenPtr)
+	if (!screenPtr && mode >= 0x100)
 		return;
+
+	g_mode = mode;
 
 	set_vbe_mode(mode);
 
@@ -437,7 +442,7 @@ int getModeInfo(int mode)
 	printf("modeInfo %X\n", mode);
 
 	// /* Ignore non-VBE modes */
-	if (mode < 0x100) return 0;
+	// if (mode < 0x100) return 0;
 
 	// in.x.ax = 0x4F01;
 	// in.x.cx = mode;
@@ -538,10 +543,46 @@ void list_modes(int min, int max)
 
 int init_graphics(unsigned int x, unsigned int y, unsigned int d)
 {
-	mode = findMode(x, y, d);
-	init_vbe_mode(mode);
+	g_mode = findMode(x, y, d);
+	init_vbe_mode(g_mode);
 
 	return (int)screenPtr;
+}
+
+void draw_screen()
+{
+	memcpy((void*)VIDEO_MEMORY, (void*)screenBuf, xres * yres * bpp/8);
+}
+
+char *img_data = NULL;
+uint16_t img_width = 0;
+uint16_t img_height = 0;
+
+void display_image()
+{
+	const uint32_t x = (xres - img_width) / 2;
+	const uint32_t y = (yres - img_height) / 2;
+
+	// Draw gradient bg
+	for (uint32_t i = 0; i < xres; i++)
+		for (uint32_t j = 0; j < yres; j++) {
+			if (i < x || i >= (img_width + x)
+				|| j < y || j >= (img_height + y))
+			putPixelRGB(i, j, i, (i+j), j);
+		}
+	uint32_t k = 0;
+
+	for (uint32_t j = y; j < img_height + y; j++)
+		for (uint32_t i = x; i < img_width + x; i++) {
+
+			const char b = img_data[k++];
+			const char g = img_data[k++];
+			const char r = img_data[k++];
+			const char a = img_data[k++];
+			(void)a;
+
+			putPixelRGB(i, j, r, g, b);
+		}
 }
 
 void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color)
@@ -553,19 +594,20 @@ void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t col
 	(void)h;
 	(void)color;
 
+	display_image();
 
-	// Draw gradient bg
-	for (int32_t i = 0; i < xres; i++)
-		for (int32_t j = 0; j < yres; j++) {
-			// Format couleur : 0xAARRGGBB
-			// putPixel(i, j, 0xFF000000
-			// 	| (i%256) * 0x00010000
-			// 	| ((i+j)%256) * 0x00000100
-			// 	| (j%256) * 0x000000FF
-			// 	);
-			putPixelRGB(i, j, i, (i+j), j);
-			// putPixelRGB(i, j, 0xFF, 0, 0);
-		}
+	// // Draw gradient bg
+	// for (int32_t i = 0; i < xres; i++)
+	// 	for (int32_t j = 0; j < yres; j++) {
+	// 		// Format couleur : 0xAARRGGBB
+	// 		// putPixel(i, j, 0xFF000000
+	// 		// 	| (i%256) * 0x00010000
+	// 		// 	| ((i+j)%256) * 0x00000100
+	// 		// 	| (j%256) * 0x000000FF
+	// 		// 	);
+	// 		putPixelRGB(i, j, i, (i+j), j);
+	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
+	// 	}
 	int32_t k = 0;
 	// for (int32_t j = 200; j < 200+161; j++)
 	// 	for (int32_t i = 400; i < 288+400; i++) {
@@ -602,6 +644,28 @@ void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t col
 
 			putPixelRGB(i, j, r, g, b);
 		}
+
+	draw_screen();
 }
 
+bool display(char *image)
+{
+	map_video_memory();
+
+	uint32_t size = 0;
+	void *data = atomicData(atomicOpen(image), &size);
+
+	if (data == NULL)
+		return false;
+
+	img_width = ((uint16_t*)data)[0];
+	img_height = ((uint16_t*)data)[1];
+
+	img_data = (char*)data + 4;
+
+	display_image();
+	draw_screen();
+
+	return true;
+}
 

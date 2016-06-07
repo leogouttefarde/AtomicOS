@@ -27,7 +27,7 @@ void ecrit_car(uint32_t lig, uint32_t col, char c);
 void place_curseur(uint8_t lig, uint8_t col);
 void efface_ecran(void);
 void traite_car(char c);
-void defilement(void);
+void scrollup(uint8_t lines);
 void console_putbytes(const char *chaine, int32_t taille);
 
 void banner();

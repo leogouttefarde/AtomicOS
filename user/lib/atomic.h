@@ -159,4 +159,6 @@ void atomicClose(File *file);
 
 bool atomicEOF(File *file);
 
+bool display(char *image);
+
 #endif

@@ -49,7 +49,7 @@ void ecrit_car(uint32_t lig, uint32_t col, char c)
 
 void place_curseur(uint8_t lig, uint8_t col)
 {
-	if (lig < NB_LIG && col < NB_COLS) {
+	if (lig < NB_LIG && col < NB_COLS && is_console_mode()) {
 		const uint16_t pos = col + lig * NB_COLS;
 
 		const uint16_t command_port = 0x3D4;
@@ -81,7 +81,7 @@ static inline void finir_ligne()
 	cur_col = 0;
 
 	if (cur_lig == (NB_LIG - 1))
-		defilement();
+		scrollup(1);
 
 	else
 		cur_lig++;
@@ -129,14 +129,21 @@ void traite_car(char c)
 	place_curseur(cur_lig, cur_col);
 }
 
-void defilement(void)
+void scrollup(uint8_t lines)
 {
+	if (lines < 1 || lines > NB_LIG)
+		return;
+
 	uint16_t *mem = (uint16_t*)VIDEO_MEMORY;
 
-	memmove(mem, mem + NB_COLS, sizeof(uint16_t)*NB_COLS*(NB_LIG-1));
+	memmove(mem, mem + (NB_COLS * lines),
+		sizeof(uint16_t) * NB_COLS * (NB_LIG-lines));
 
-	for (uint8_t j = 0; j < NB_COLS; j++)
-		ecrit_car(NB_LIG - 1, j, 0);
+	for (uint8_t i = lines; i > 0; i--) {
+		for (uint8_t j = 0; j < NB_COLS; j++) {
+			ecrit_car(NB_LIG - i, j, 0);
+		}
+	}
 }
 
 void console_putbytes(const char *chaine, int32_t taille)
