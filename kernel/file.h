@@ -19,4 +19,6 @@ void atomicClose(File *file);
 
 bool atomicEOF(File *file);
 
+void *atomicData(File *file, uint32_t *size);
+
 #endif

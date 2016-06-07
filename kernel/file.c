@@ -4,6 +4,7 @@
 #include "mem.h"
 #include <stdio.h>
 #include <string.h>
+#include "ice.h"
 
 hash_t files;
 
@@ -16,9 +17,20 @@ typedef struct File_ {
 } File;
 
 
+void write_file(const char *path, void *data, uint32_t size)
+{
+	File *file = atomicOpen(path);
+
+	if (file != NULL) {
+		atomicWrite(file, data, size);
+		atomicClose(file);
+	}
+}
+
 void init_fs()
 {
 	hash_init_string(&files);
+	write_file("ice_age.rgb", (void*)ice_bin, ice_bin_size);
 }
 
 File *atomicOpen(const char *path)
@@ -118,7 +130,6 @@ void atomicClose(File *file)
 	(void)file;
 }
 
-// Nothing to do
 bool atomicEOF(File *file)
 {
 	if (file == NULL) {
@@ -126,4 +137,16 @@ bool atomicEOF(File *file)
 	}
 
 	return (file->pos >= file->size) ? true : false;
+}
+
+void *atomicData(File *file, uint32_t *size)
+{
+	if (!file)
+		return NULL;
+
+	if (size) {
+		*size = file->size;
+	}
+
+	return file->data;
 }

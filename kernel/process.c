@@ -1254,6 +1254,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ret = atomicEOF((File*)arg0);
 		break;
 
+	case DISPLAY:
+		display((char*)arg0);
+		break;
+
 	default:
 		printf("Unknown syscall : %d\n", num);
 		break;

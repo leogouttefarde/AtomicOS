@@ -63,5 +63,6 @@
 #define ATOMICWRITE 54
 #define ATOMICCLOSE 55
 #define ATOMICEOF 56
+#define DISPLAY 57
 
 #endif

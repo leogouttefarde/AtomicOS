@@ -315,10 +315,9 @@ void keyboard_data(char *str)
 {
 	int len = strlen(str);
 	char first = str[0];
-	
+
 	if (len < 0)
 		return;
-	
 
 	if (len == 3) {
 		if (!strcmp(str, UP_ARROW)) {
@@ -355,23 +354,27 @@ void keyboard_data(char *str)
 			keyboard_data(c);
 		}
 	}
-		
-	if (len ==1) {
-		switch (first) {
-		case 27:
-			// Ignore ESC
-			inputGame = QUIT;
-			break;
 
+	if (len == 1) {
+		switch (first) {
+
+		// CTRL + C
 		case 3:
 			abort_shell_wait();
 			break;
 
-		// CTRL+L
-		// case 12:
-		// 	printf("\f");
-		// 	break;
+		// CTRL + L
+		case 12:
+			scrollup(lig_cour());
+			place_curseur(0, col_cour());
+			break;
 
+		// ESC
+		case 27:
+			inputGame = QUIT;
+			break;
+
+		// Backspace
 		case 127:
 			/*Cas du backspace : Si le tampon n'est pas vide 
 			  l'indice recule d'une case*/
