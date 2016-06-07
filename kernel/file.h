@@ -21,4 +21,8 @@ bool atomicEOF(File *file);
 
 void *atomicData(File *file, uint32_t *size);
 
+void atomicList();
+
+bool atomicExists(char *path);
+
 #endif

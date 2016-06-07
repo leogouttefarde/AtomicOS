@@ -64,5 +64,8 @@
 #define ATOMICCLOSE 55
 #define ATOMICEOF 56
 #define DISPLAY 57
+#define ATOMICLIST 58
+#define ATOMICEXISTS 59
+#define SET_CONSOLE_MODE 60
 
 #endif

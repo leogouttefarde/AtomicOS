@@ -104,15 +104,19 @@ void mouse_handler()
 		x += mouse_x;
 		y -= mouse_y;
 
-		if (x > 1000)x=1000;
-		if (y > 700)y=700;
-		// if (x > 79)x=79;
-		// if (y > 24)y=24;
-		if (x < 0) x = 0;
-		if (y < 0) y = 0;
+		if (x >= (int)get_screen_width())
+			x = get_screen_width() - 1;
+
+		if (y >= (int)get_screen_height())
+			y = get_screen_height() - 1;
+
+		if (x < 0)
+			x = 0;
+
+		if (y < 0)
+			y = 0;
 
 		fill_rectangle(x, y, 5, 5, 0);
-		//fill_rectangle(x+1, y+1, 3, 3, 0xFFFFFFFF);
 		ecrit_car(y, x, car);
 		reset_color();
 

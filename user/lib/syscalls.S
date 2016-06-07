@@ -696,3 +696,30 @@ display:
 	popl %ebp
 	ret
 
+	.text
+	.globl atomicList
+atomicList:
+	movl $ATOMICLIST, %eax
+	int $49
+	ret
+
+	.text
+	.globl atomicExists
+atomicExists:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $ATOMICEXISTS, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl set_console_mode
+set_console_mode:
+	movl $SET_CONSOLE_MODE, %eax
+	int $49
+	ret
+

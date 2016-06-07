@@ -161,4 +161,10 @@ bool atomicEOF(File *file);
 
 bool display(char *image);
 
+void atomicList();
+
+bool atomicExists(char *path);
+
+void set_console_mode();
+
 #endif

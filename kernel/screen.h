@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 
-#define VIDEO_MEMORY 0xB8000
+#define CONSOLE_MEMORY 0xB8000
 #define NB_COLS 80
 #define NB_LIG  25
 #define BG_COL  BLACK
@@ -12,7 +12,7 @@
 
 // Renvoie un pointeur sur la case mémoire
 // correspondant aux coordonnées fournies
-#define ptr_mem(lig, col) ((uint16_t*)(VIDEO_MEMORY + 2 * (lig * NB_COLS + col)))
+#define ptr_mem(lig, col) ((uint16_t*)(CONSOLE_MEMORY + 2 * (lig * NB_COLS + col)))
 
 typedef enum Color_ Color;
 

@@ -17,9 +17,9 @@ char commande[TAILLE_TAB];
 
 char *histo[TAILLE_HISTO];
 
-char *noms_commandes []={"autotest", "banner", "clear", "echo", "exit"
-			 ,"help","history" ,"kill", "ps", "reboot","sleep", 
-				   "snake", "test" ,"vesa"};
+char *noms_commandes []={"autotest", "banner", "clear", "echo", "exit",
+			 "help","history" ,"kill", "ps", "reboot","sleep", 
+			 "snake", "test" ,"vesa", "display" };
 int plus_recent = -1;
 unsigned int nb_histo=0;
 
@@ -231,26 +231,46 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "vesa")) {
+		bool loop = true;
+
+		resetInputGame();
 		set_video_mode();
+
+		while (loop) {
+			wait_clock(current_clock() + 3);
+			loop &= getInputGame() != QUIT;
+		}
+
+		set_console_mode();
+		print_banner();
+	}
+
+	else if (compare(mot_courant, "ls")) {
+		atomicList();
 	}
 
 	else if (compare(mot_courant, "display")) {
 		char *next = get_argument();
 
 		if (next != NULL) {
-			bool loop;
-			set_video_mode();
-			
-			loop = display(next);
+			if (atomicExists(next)) {
+				bool loop;
 
-			while (loop) {
-				wait_clock(current_clock() + 3);
+				resetInputGame();
+				loop = display(next);
 
-				loop &= getInputGame() != QUIT;
+				while (loop) {
+					wait_clock(current_clock() + 3);
+					loop &= getInputGame() != QUIT;
+				}
+
+				set_console_mode();
+				print_banner();
 			}
-
-			init_vbe_mode(0x3);
-			print_banner();
+			else {
+				printf("ERROR : %s did not match any image\n",
+					next);
+			}
 		}
 	}
 

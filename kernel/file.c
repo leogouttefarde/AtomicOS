@@ -4,7 +4,11 @@
 #include "mem.h"
 #include <stdio.h>
 #include <string.h>
-#include "ice.h"
+#include "images/ice.h"
+#include "images/lightning.h"
+#include "images/wolverine.h"
+#include "images/pikachu.h"
+#include "images/rider.h"
 
 hash_t files;
 
@@ -30,11 +34,19 @@ void write_file(const char *path, void *data, uint32_t size)
 void init_fs()
 {
 	hash_init_string(&files);
+
 	write_file("ice_age.rgb", (void*)ice_bin, ice_bin_size);
+	write_file("lightning.rgb", (void*)lightning_bin, lightning_bin_size);
+	write_file("wolverine.rgb", (void*)wolverine_bin, wolverine_bin_size);
+	write_file("pikachu.rgb", (void*)pikachu_bin, pikachu_bin_size);
+	write_file("rider.rgb", (void*)rider_bin, rider_bin_size);
 }
 
 File *atomicOpen(const char *path)
 {
+	if (path == NULL)
+		return NULL;
+
 	const int LEN = strlen(path);
 
 	if (LEN <= 0)
@@ -150,3 +162,28 @@ void *atomicData(File *file, uint32_t *size)
 
 	return file->data;
 }
+
+// Libération de chaque zone partagée utilisée
+void print_file(void *key, void *value, void *arg)
+{
+	(void)arg;
+	File *file = (File*)value;
+
+	if (file != NULL) {
+		printf("% 10d %s\n", file->size, (char*)key);
+	}
+}
+
+void atomicList()
+{
+	hash_for_each(&files, NULL, print_file);
+}
+
+bool atomicExists(char *path)
+{
+	if (path == NULL)
+		return NULL;
+
+	return hash_get(&files, (void*)path, NULL) ? true : false;
+}
+

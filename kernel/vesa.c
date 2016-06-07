@@ -4,11 +4,12 @@
 #include "vmem.h"
 #include <string.h>
 #include <stdio.h>
-// #include "ice.h"
-#include "cursor.h"
+#include "images/cursor.h"
+#include "images/bg.h"
 #include "vmem.h"
 #include "mem.h"
 #include "file.h"
+#include "screen.h"
 
 // #define VIDEO_MEMORY 0x60000000
 #define VIDEO_MEMORY 0xC0000000
@@ -91,7 +92,7 @@ typedef enum {
 } memModels;
 
 
-int g_mode = 3;
+int g_mode = 0;
 
 char mystr[256];
 char *get_str();
@@ -103,7 +104,7 @@ uint32_t xres, yres;
 int bytesperline;
 
 /* Old video mode number */
-int oldMode;
+int oldMode = 0;
 
 int bpp;
 
@@ -285,7 +286,7 @@ static inline void map_video_memory()
 {
 	void *pdir = get_pdir();
 
-	if (!screenPtr || get_physaddr(pdir, screenPtr))
+	if (!screenPtr || get_physaddr(pdir, (void*)VIDEO_MEMORY))
 		return;
 
 	const uint32_t size = xres*yres * bytesperline;
@@ -298,7 +299,66 @@ static inline void map_video_memory()
 	}
 }
 
+char *img_data = NULL;
+uint16_t img_width = 0;
+uint16_t img_height = 0;
 
+uint32_t get_screen_width()
+{
+	if (is_console_mode()) {
+		return NB_COLS;
+	}
+
+	return xres;
+}
+
+uint32_t get_screen_height()
+{
+	if (is_console_mode()) {
+		return NB_LIG;
+	}
+
+	return yres;
+}
+
+int get_vbe_mode()
+{
+	// union REGS in,out;
+	// in.x.ax = 0x4F03;
+	// int86(0x10,&in,&out);
+	// return out.x.bx;
+
+	struct bios_regs regs;
+	memset(&regs, 0, sizeof(struct bios_regs));
+
+	regs.eax = 0x4F03;
+
+	// regs.ebx = 0x0000; 
+	// regs.ecx = 0x0000;
+	// regs.edx = 0x0000;
+	// regs.esi = 0x0000;
+	// regs.edi = 0x0000;
+	regs.ebp = 0x100;
+	regs.esp = 0x100;
+	regs.eflags = 0x202;
+	regs.ds = 0x18;
+	regs.es = 0x18;
+	regs.fs = 0x18;
+	regs.gs = 0x18;
+	regs.ss = 0x18;
+
+	// printf("eax = %X\n", regs.eax);
+	do_bios_call(&regs, 0x10);
+
+	if (REGX(regs.eax) != 0x004F) {
+		printf("get_vbe_mode failed\n");
+		return 0;
+	}
+
+	printf("current mode : 0x%X\n", REGX(regs.ebx));
+
+	return REGX(regs.ebx);
+}
 
 void set_vbe_mode(int mode)
 {
@@ -310,22 +370,29 @@ void set_vbe_mode(int mode)
 
 	regs.eax = 0x4F02;
 
+	regs.ebx = mode;
+
 	// Use linear framebuffer
-	regs.ebx = mode | 0x4000; 
+	if (mode >= 0x100)
+		regs.ebx |= 0x4000;
 
 	// regs.ecx = 0x0000;
 	// regs.edx = 0x0000;
 	// regs.esi = 0x0000;
 	regs.es = 0x0000;
 	regs.edi = 0x5000;
-	regs.ebp = 0x5000;
-	regs.esp = 0x5000;
+	regs.ebp = 0x100;
+	regs.esp = 0x100;
 	regs.eflags = 0x202;
 	regs.ds = 0x18;
 	// regs.es = 0x18;
 	regs.fs = 0x18;
 	regs.gs = 0x18;
 	regs.ss = 0x18;
+
+	if (!oldMode) {
+		oldMode = get_vbe_mode();
+	}
 
 	// printf("eax = %X\n", regs.eax);
 	do_bios_call(&regs, 0x10);
@@ -336,6 +403,14 @@ void set_vbe_mode(int mode)
 	else {
 		g_mode = mode;
 
+		if (mode == oldMode) {
+			screenPtr = NULL;
+			img_data = NULL;
+		}
+		else {
+			map_video_memory();
+		}
+
 		if (!screenBuf) {
 			screenBuf = phys_alloc(0x800000);
 		}
@@ -344,13 +419,19 @@ void set_vbe_mode(int mode)
 
 bool is_console_mode()
 {
-	return (g_mode == 3);
+	return (g_mode == oldMode);
 }
 
+void set_console_mode()
+{
+	if (oldMode) {
+		set_vbe_mode(oldMode);
+	}
+}
 
 void init_vbe_mode(int mode)
 {
-	if (!getModeInfo(mode))
+	if (!getModeInfo(mode) && mode >= 0x100)
 		return;
 
 	xres = modeInfo->Xres;
@@ -370,36 +451,6 @@ void init_vbe_mode(int mode)
 	g_mode = mode;
 
 	set_vbe_mode(mode);
-
-	// map_video_memory();
-
-	// // Draw gradient bg
-	// for (int32_t i = 0; i < xres; i++)
-	// 	for (int32_t j = 0; j < yres; j++) {
-	// 		// Format couleur : 0xAARRGGBB
-	// 		// putPixel(i, j, 0xFF000000
-	// 		// 	| (i%256) * 0x00010000
-	// 		// 	| ((i+j)%256) * 0x00000100
-	// 		// 	| (j%256) * 0x000000FF
-	// 		// 	);
-	// 		putPixelRGB(i, j, i, (i+j), j);
-	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
-	// 	}
-
-	// int32_t k = 0;
-	// for (int32_t j = 200; j < 200+161; j++)
-	// 	for (int32_t i = 400; i < 288+400; i++) {
-
-	// 		if (k > ice_bin_size)break;
-
-	// 		const char b = ice_bin[k++];
-	// 		const char g = ice_bin[k++];
-	// 		const char r = ice_bin[k++];
-	// 		const char a = ice_bin[k++];
-	// 		(void)a;
-
-	// 		putPixelRGB(i, j, r, g, b);
-	// 	}
 }
 
 
@@ -430,7 +481,6 @@ int getVbeInfo()
 
 	return REGX(regs.eax) == 0x004F;
 }
-
 
 
 /* Get video mode information given a VBE mode number. We return 0 if
@@ -541,53 +591,97 @@ void list_modes(int min, int max)
 	}
 }
 
+void draw_screen();
+void display_bg();
+
 int init_graphics(unsigned int x, unsigned int y, unsigned int d)
 {
 	g_mode = findMode(x, y, d);
 	init_vbe_mode(g_mode);
+
+	display_bg();
+	draw_screen();
 
 	return (int)screenPtr;
 }
 
 void draw_screen()
 {
+	if (!screenPtr || (get_physaddr(get_pdir(), (void*)VIDEO_MEMORY) != screenPtr))
+		return;
+
 	memcpy((void*)VIDEO_MEMORY, (void*)screenBuf, xres * yres * bpp/8);
 }
 
-char *img_data = NULL;
-uint16_t img_width = 0;
-uint16_t img_height = 0;
+void draw_image(char *data, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
+{
+	uint32_t k = 0;
+
+	for (uint32_t j = y; j < h + y; j++)
+		for (uint32_t i = x; i < w + x; i++) {
+
+			const char b = data[k++];
+			const char g = data[k++];
+			const char r = data[k++];
+
+			putPixelRGB(i, j, r, g, b);
+		}
+}
+
+void display_bg()
+{
+	// Draw gradient bg
+	// for (uint32_t i = 0; i < xres; i++)
+	// 	for (uint32_t j = 0; j < yres; j++) {
+	// 		if (i < x || i >= (img_width + x)
+	// 			|| j < y || j >= (img_height + y))
+	// 		putPixelRGB(i, j, i, (i+j), j);
+	// 		// Format couleur : 0xAARRGGBB
+	// 		// putPixel(i, j, 0xFF000000
+	// 		// 	| (i%256) * 0x00010000
+	// 		// 	| ((i+j)%256) * 0x00000100
+	// 		// 	| (j%256) * 0x000000FF
+	// 		// 	);
+	// 	}
+
+	uint16_t *data = (uint16_t*)bg_bin;
+
+	uint16_t width = data[0];
+	uint16_t height = data[1];
+
+	char *rgb_data = (char*)data + 4;
+
+	// Draw background tiles
+	for (uint32_t i = 0; i < xres; i += width)
+		for (uint32_t j = 0; j < yres; j += height) {
+			// if (i < x || i >= (img_width + x)
+			// 	|| j < y || j >= (img_height + y))
+
+			draw_image(rgb_data, i, j, width, height);
+		}
+}
 
 void display_image()
 {
 	const uint32_t x = (xres - img_width) / 2;
 	const uint32_t y = (yres - img_height) / 2;
 
-	// Draw gradient bg
-	for (uint32_t i = 0; i < xres; i++)
-		for (uint32_t j = 0; j < yres; j++) {
-			if (i < x || i >= (img_width + x)
-				|| j < y || j >= (img_height + y))
-			putPixelRGB(i, j, i, (i+j), j);
-		}
-	uint32_t k = 0;
-
-	for (uint32_t j = y; j < img_height + y; j++)
-		for (uint32_t i = x; i < img_width + x; i++) {
-
-			const char b = img_data[k++];
-			const char g = img_data[k++];
-			const char r = img_data[k++];
-			const char a = img_data[k++];
-			(void)a;
-
-			putPixelRGB(i, j, r, g, b);
-		}
+	display_bg();
+	draw_image(img_data, x, y, img_width, img_height);
 }
 
 void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t color)
 {
-	// Mouse events may not occur from
+	// if (!oldMode) {
+	// 	oldMode = get_vbe_mode();
+	// 	g_mode = oldMode;
+	// }
+
+	// printf("current mode : 0x%X\n", oldMode);
+	if (!screenPtr)
+		return;
+
+	// Mouse events may occur from
 	// another process with a different memory mapping
 	map_video_memory();
 	(void)w;
@@ -596,54 +690,7 @@ void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t col
 
 	display_image();
 
-	// // Draw gradient bg
-	// for (int32_t i = 0; i < xres; i++)
-	// 	for (int32_t j = 0; j < yres; j++) {
-	// 		// Format couleur : 0xAARRGGBB
-	// 		// putPixel(i, j, 0xFF000000
-	// 		// 	| (i%256) * 0x00010000
-	// 		// 	| ((i+j)%256) * 0x00000100
-	// 		// 	| (j%256) * 0x000000FF
-	// 		// 	);
-	// 		putPixelRGB(i, j, i, (i+j), j);
-	// 		// putPixelRGB(i, j, 0xFF, 0, 0);
-	// 	}
-	int32_t k = 0;
-	// for (int32_t j = 200; j < 200+161; j++)
-	// 	for (int32_t i = 400; i < 288+400; i++) {
-
-	// 		if (k > ice_bin_size)break;
-
-	// 		const char b = ice_bin[k++];
-	// 		const char g = ice_bin[k++];
-	// 		const char r = ice_bin[k++];
-	// 		const char a = ice_bin[k++];
-	// 		(void)a;
-
-	// 		putPixelRGB(i, j, r, g, b);
-	// 	}
-
-
-	// for (uint32_t j = y; j < (y + h); j++) {
-	// 	for (uint32_t i = x; i < (x + w); i++) {
-	// 		putPixel(i, j, color);
-	// 	}
-	// }
-	// int32_t k = 0;
-	 k = 0;
-	for (uint32_t j = y; j < y+24; j++)
-		for (uint32_t i = x; i < 16+x; i++) {
-
-			if (k > cursor_bin_size)break;
-
-			const char b = cursor_bin[k++];
-			const char g = cursor_bin[k++];
-			const char r = cursor_bin[k++];
-			const char a = cursor_bin[k++];
-			(void)a;
-
-			putPixelRGB(i, j, r, g, b);
-		}
+	draw_image((char*)cursor_bin, x, y, 16, 24);
 
 	draw_screen();
 }

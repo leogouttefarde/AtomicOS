@@ -152,9 +152,9 @@ static inline bool is_valid_prio(int prio)
 }
 
 // Libération de chaque zone partagée utilisée
-void free_process_shmem(void *key,
-	__attribute__((__unused__)) void *value, void *arg)
+void free_process_shmem(void *key, void *value, void *arg)
 {
+	(void)value;
 	shm_release_proc((const char*)key, (Process*)arg);
 }
 
@@ -1190,8 +1190,8 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SET_VIDEO_MODE:
-		// ret = init_graphics(1366, 768, 32);
-		ret = init_graphics(1680, 1050, 32);
+		ret = init_graphics(1366, 768, 32);
+		// ret = init_graphics(1680, 1050, 32);
 		break;
 
 	case INIT_VBE_MODE:
@@ -1256,7 +1256,21 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case DISPLAY:
-		display((char*)arg0);
+		ret = init_graphics(1366, 768, 32);
+		// ret = init_graphics(1680, 1050, 32);
+		ret = display((char*)arg0);
+		break;
+
+	case ATOMICLIST:
+		atomicList();
+		break;
+
+	case ATOMICEXISTS:
+		ret = atomicExists((char*)arg0);
+		break;
+
+	case SET_CONSOLE_MODE:
+		set_console_mode();
 		break;
 
 	default:

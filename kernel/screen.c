@@ -134,7 +134,7 @@ void scrollup(uint8_t lines)
 	if (lines < 1 || lines > NB_LIG)
 		return;
 
-	uint16_t *mem = (uint16_t*)VIDEO_MEMORY;
+	uint16_t *mem = (uint16_t*)CONSOLE_MEMORY;
 
 	memmove(mem, mem + (NB_COLS * lines),
 		sizeof(uint16_t) * NB_COLS * (NB_LIG-lines));
