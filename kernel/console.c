@@ -199,11 +199,7 @@ unsigned long cons_read(char *string, unsigned long length)
 
 
 static void effacer_car_lig_cour() {
-	char bs [3];
-
-	bs[0]=8;
-	bs[1]=32;
-	bs[2]=8;
+	char bs []= {8,32,8};
 	console_putbytes(bs,3);
 }
 
@@ -220,19 +216,16 @@ static void afficher_echo(char car)
 
 	//Caractères affichés normalement
 	if ((32 <= car && car <= 126) || car==9) {
-		char chaine[1];
-		chaine[0]=car;
+		char chaine[] = {car};
 		console_putbytes(chaine,1);
 	}
 	
 	//caractères de contrôle
 	else if (car<32 && car !=13) {
-		char chaine [2];
-		chaine[0]='^';
-		// chaine[1] = 64+car;
-		chaine[1] = 96 + car;
+		char chaine [] = {'^', 96 + car};		
 		console_putbytes(chaine,2);
 	}
+
 	else {
 		switch (car) {
 			char chaine[1];
@@ -311,6 +304,14 @@ static void afficher_echo(char car)
 	}
 }
 
+void ecrire_clavier (char *str) {
+
+	for (unsigned int i=0; i < strlen(str); i++) {
+		char c []={str[i],0};
+		keyboard_data(c);
+	}		
+}
+
 void keyboard_data(char *str)
 {
 	int len = strlen(str);
@@ -332,29 +333,16 @@ void keyboard_data(char *str)
 			first=254;
 			inputGame = DOWN;
 		}
+
 		else if (!strcmp(str, LT_ARROW)) {
 			inputGame = LEFT;
-			
-		// 	if (col_cour() > 0) {
-		// 		place_curseur(lig_cour(), col_cour()-1);
-		// 		reculer();
-		// 	}
 		}
+
 		else if (!strcmp(str, RT_ARROW)) {
 			inputGame = RIGHT;
-		// 	if (col_cour() < NB_COLS) {
-		// 		place_curseur(lig_cour(), col_cour()+1);
-		// 		avancer();
-		// 	}
 		}
 	}
-	if (len > 1 && ! premier_car) {
-		for (int i=0; i<len; i++) {
-			char c []={str[i],0};
-			keyboard_data(c);
-		}
-	}
-
+	
 	if (len == 1) {
 		switch (first) {
 
@@ -420,13 +408,6 @@ void keyboard_data(char *str)
 
 	}
 }
-
-// void kbd_leds(unsigned char leds)
-// {
-// 	printf("leds %d\n", leds);
-//	// CAPS LOCK : 4
-//	// NUM LOCK : 2
-// }
 
 void reset_InputGame(void)
 {

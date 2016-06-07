@@ -455,13 +455,13 @@ cons_set_bg_color:
 	ret
 
 	.text
-	.globl keyboard_data
-keyboard_data:	
+	.globl ecrire_clavier
+ecrire_clavier:	
 	pushl %ebp
 	movl %esp, %ebp
 	pushl %ebx
 	movl 8(%ebp), %ebx
-	movl $KEYBOARD_DATA, %eax
+	movl $ECRIRE_CLAVIER, %eax
 	int $49
 	popl %ebx
 	popl %ebp

@@ -311,8 +311,6 @@ void ordonnance()
 	}
 }
 
-
-//! Code à factoriser !
 void bloque_io() {
 	Process *proc_io = cur_proc;
 	proc_io -> state = WAITIO;
@@ -322,12 +320,6 @@ void bloque_io() {
 
 void debloque_io() {
 	Process *p = NULL;
-
-	/*queue_for_each(p, &head_io, Process, queue) {
-
-		if (p->pid == pid)
-			break;
-			}*/
 	p = queue_out(&head_io, Process, queue);
 	Process *proc = p;
 	
@@ -346,30 +338,10 @@ void bloque_sema () {
 	Process *proc_sema = cur_proc;
 	
 	proc_sema->state = BLOCKEDSEMA;
-	// queue_add(proc_sema, &head_sema, Process, queue, prio);
 	ordonnance();
 }
 
 void debloque_sema(Process *p, uint8_t code) {
-	/*Process *p = NULL;
-
-	queue_for_each(p, &head_sema, Process, queue) {
-
-		if (p->pid == pid)
-			break;
-	}
-
-	Process *proc = p;
-	
-	if (proc != NULL) {
-		p = NULL;
-		queue_del(proc, queue);
-		proc->state = ACTIVABLE;
-		proc->code_reveil =  code;
-		pqueue_add(proc, &head_act);
-		}*/
-
-	// queue_del(p, queue);
 	p->code_reveil = code;
 	add_proc_activable(p);
 }
@@ -519,7 +491,6 @@ static bool finish_process(int pid)
 	}
 
 	if (proc->state == BLOCKEDSEMA) {
-		// queue_del(proc, queue);
 		queue_del(proc, sema_queue);
 		proc -> sema -> cpt++;
 	}
@@ -799,9 +770,6 @@ int kill(int pid)
 			// printf(" DYING");
 			break;
 		case BLOCKEDSEMA:
-			// queue_del(proc, queue);
-			// queue_del(proc, sema_queue);
-			// proc -> sema -> cpt++;
 			break;
 
 		default:
@@ -989,8 +957,6 @@ int chprio(int pid, int newprio)
 
 		//Cas des sémaphores
 		else if (proc->state == BLOCKEDSEMA) {
-			// queue_del(proc, queue);
-			// queue_add(proc, &head_sema, Process, queue, prio);
 			queue_del(proc, sema_queue);
 			queue_add(proc, proc -> sema -> file, Process, sema_queue, prio);		
 		}
@@ -1165,8 +1131,8 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		reset_color();
 		break;
 
-	case KEYBOARD_DATA:
-		keyboard_data((char*) arg0);
+	case ECRIRE_CLAVIER:
+		ecrire_clavier((char*) arg0);
 		break;
 
 	case CLEAR_LINE:

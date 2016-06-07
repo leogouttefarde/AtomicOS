@@ -376,12 +376,8 @@ int autocompleter() {
 	unsigned int nb = nb_commandes_possibles(false,&num_commande);
 
 	//S'il y a une seule commande possible, on la complète
-	if (nb==1) {
-		unsigned int taille_nom = strlen(noms_commandes[num_commande]);
-		for (unsigned int i = fin_commande; i < taille_nom; i ++) {
-			char ch [] ={noms_commandes[num_commande][i] , 0} ;
-			keyboard_data(ch);
-		}
+	if (nb==1) {		
+		ecrire_clavier (&(noms_commandes[num_commande][fin_commande] ) );
 		return RIEN;
 	}
 
@@ -393,21 +389,6 @@ int autocompleter() {
 	}
 	
 	return RIEN;
-}
-
-static void reecrire_commande () {
-	/*charge un commande de l'historique et la reecrit 
-	  dans le buffer du clavier*/
-
-	char c[strlen(histo[post_hist])+1];
-	unsigned int i=0;
-	while ( i < strlen(histo[post_hist])) {
-		c[i] = histo[post_hist][i];
-		i++;
-	}
-	c[i] = 0;
-	keyboard_data(c);
-	
 }
 
 int main()
@@ -439,7 +420,7 @@ int main()
 				
 				fleches_consec ++;
 				clear_line();
-				reecrire_commande();
+				ecrire_clavier (histo[post_hist]);
 				
 			}
 			reafficher=RIEN;
@@ -453,7 +434,7 @@ int main()
 				//S'il y a une commande à réafficher
 				if (post_hist != plus_recent) {
 					post_hist = (post_hist +1) % TAILLE_HISTO;
-					reecrire_commande();
+					ecrire_clavier (histo[post_hist]);
 					
 				}
 				else		
