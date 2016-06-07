@@ -399,7 +399,7 @@ int main()
 
 		debut_mot = 0;
 		fin_commande = cons_read(commande,TAILLE_TAB);
-		
+
 		//Si la commande se termine par une tabulation
 		if (commande[fin_commande]=='\t') {
 			commande[fin_commande]='\0';
@@ -461,6 +461,14 @@ int main()
 					mem_free(histo[plus_recent],1+strlen(histo[plus_recent]));			
 				else
 					nb_histo++;
+
+				/*Avant de recopier, on supprime les caractères 0 ajoutés
+				  artificiellement par la fonction extraire_mot*/
+				for (unsigned int i = 0; i <= fin_commande; i++) {
+					if (commande[i] == 0)
+						commande [i] = ' ';
+				}
+
 				/*On copie la commande qui vient 
 				  d'être exécutée dans l'historique*/
 				histo[plus_recent] = mem_alloc(fin_commande+2);
