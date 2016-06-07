@@ -17,6 +17,7 @@
 #include "processor_structs.h"
 #include "vesa.h"
 #include "kbd.h"
+#include "file.h"
 
 // Nombre de processus créés depuis le début
 static int32_t nb_procs = -1;
@@ -1230,6 +1231,27 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 
 	case WAIT_KEYBOARD:
 		wait_for_keyboard();
+		break;
+
+	case ATOMICOPEN:
+		if (IS_USER(arg0))
+		ret = (int)atomicOpen((char*)arg0);
+		break;
+
+	case ATOMICCLOSE:
+		atomicClose((File*)arg0);
+		break;
+
+	case ATOMICREAD:
+		ret = atomicRead((File*)arg0, (void*)arg1, arg2);
+		break;
+
+	case ATOMICWRITE:
+		ret = atomicWrite((File*)arg0, (void*)arg1, arg2);
+		break;
+
+	case ATOMICEOF:
+		ret = atomicEOF((File*)arg0);
 		break;
 
 	default:

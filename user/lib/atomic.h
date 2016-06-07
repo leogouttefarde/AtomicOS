@@ -2,6 +2,9 @@
 #ifndef __ATOMIC_H__
 #define __ATOMIC_H__
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #define CONS_READ_LINE 2000 //?
 #define WITH_SEM 200 //?
 
@@ -142,4 +145,18 @@ void keyboard_data(char *str);
 
 //Effacer la ligne courante dans la console
 void clear_line();
+
+
+typedef struct File_ File;
+
+File *atomicOpen(const char *path);
+
+int atomicRead(File *file, void *data, uint32_t size);
+
+int atomicWrite(File *file, void *data, uint32_t size);
+
+void atomicClose(File *file);
+
+bool atomicEOF(File *file);
+
 #endif
