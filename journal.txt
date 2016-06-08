@@ -210,6 +210,7 @@ Vendredi 3 juin :
 Azizi :
 
 Etienne :
+Autocomplétion dans le shell
 
 Léo :
 Debug du mode VESA sur ma machine personnelle.
@@ -222,6 +223,7 @@ Azizi :
 Début d'implémentation du système de fichiers.
 
 Etienne :
+Gestion de l'historique dans le shell
 
 Léo :
 Debug du mode VESA sur ma machine personnelle.
@@ -233,10 +235,19 @@ Mardi 7 juin :
 Azizi :
 
 Etienne :
+Fin de la gestion de l'hisorique
 
 Léo :
 Rédaction de la page web.
 Gestion de l'affichage d'images en mode graphique avec la commande display.
 
 
+Mercredi 7 juin :
 
+Azizi :
+
+Etienne :
+Nettoyage du code
+Correction de bugs mineurs
+
+Léo :

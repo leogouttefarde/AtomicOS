@@ -184,8 +184,8 @@ void usage()
 	printf("AtomicOS Shell Commands :\n");
 	cons_reset_color();
 
-	cmd_usage("    autocomp on", "Enable autocompletion");
-	cmd_usage("   autocomp off", "Disable autocompletion");
+	cmd_usage("          autocomp on", "Enable autocompletion");
+	cmd_usage("         autocomp off", "Disable autocompletion");
 	cmd_usage("             autotest", "Execute all tests");
 	cmd_usage("               banner", "Print the banner");
 	cmd_usage("                clear", "Clear the screen");
@@ -416,8 +416,18 @@ int autocompleter() {
 	unsigned int nb = nb_commandes_possibles(false,&num_commande);
 
 	//S'il y a une seule commande possible, on la complète
-	if (nb==1) {		
-		ecrire_clavier (&(noms_commandes[num_commande][fin_commande] ) );
+	if (nb==1) {
+		//reste de la commande à afficher
+		char *reste = &(noms_commandes[num_commande][fin_commande]); 
+		
+		//On créé une nouvelle chaine composée de reste et d'un espace
+		char a_afficher [2 + strlen(reste)];
+		a_afficher[0]=0;
+		strcat(a_afficher,reste);
+		strcat(a_afficher, " ");
+
+		ecrire_clavier (a_afficher);
+		
 		return RIEN;
 	}
 

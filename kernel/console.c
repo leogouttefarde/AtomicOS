@@ -132,12 +132,14 @@ unsigned long cons_look (char *string, unsigned long length, unsigned char car)
 	}
 	
 	indice_lec = indice_lec_sauv;
-	//reculer(&indice_ecr);
+
+	//On supprime le dernier caractère tapé
 	char c [] = {127,0};
 	bool anc_echo = echo;
 	echo=false;
 	keyboard_data(c);
 	echo=anc_echo;
+
 	string[i] = car;
 	return i;
 }
@@ -377,17 +379,14 @@ void keyboard_data(char *str)
 			break;
 
 		default:
-			// printf("_%X_\n", first);
 			/* Autres cas : Si le tampon n'est pas plein, ajout
 			   du caractere au tampon*/
 			if (cases_dispos>0) {
 				cases_dispos--;
 				tampon[indice_ecr]=first;
 				
-				if (first==13) {
-					nb_lig++;
-					// wake_proc_waitio();
-				}
+				if (first==13)
+					nb_lig++;				
 				
 				else if (first=='\t') {
 					anc_lig[indice_ecr]=(col_cour()>=72);
