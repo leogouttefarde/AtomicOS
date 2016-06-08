@@ -702,7 +702,7 @@ bool display(char *image)
 	uint32_t size = 0;
 	void *data = atomicData(atomicOpen(image), &size);
 
-	if (data == NULL)
+	if (data == NULL || size <= 4)
 		return false;
 
 	img_width = ((uint16_t*)data)[0];

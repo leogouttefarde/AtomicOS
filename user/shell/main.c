@@ -18,9 +18,9 @@ unsigned long fin_commande;
 
 char *histo[TAILLE_HISTO]; //On range les commandes précédemment exécutées ici
 
-char *noms_commandes[] = { "autotest", "banner", "clear", "display", "echo", "exit",
+char *noms_commandes[] = { "autotest", "banner", "cat", "clear", "display", "echo", "exit",
 				"help","kill", "ls", "ps", "reboot", "sleep",
-				"snake", "test", "vbe","vesa", "vesamodes" };
+				"snake", "test", "touch", "vbe","vesa", "vesamodes" };
 int plus_recent = -1; //position de la commande la + récente dans l'historique
 unsigned int nb_histo=0; //Nombre de commandes présentes dans l'historique
 unsigned int fleches_consec=0; /*Représente la position dans l'historique "abstrait"
@@ -173,24 +173,27 @@ void usage()
 	printf("AtomicOS Shell Commands :\n");
 	cons_reset_color();
 
-	cmd_usage("             autotest", "Execute all tests");
-	cmd_usage("               banner", "Print the banner");
-	cmd_usage("                clear", "Clear the screen");
-	cmd_usage("        display <img>", "Display a *.rgb image file");
-	cmd_usage("                   ps", "Display process informations");
-	cmd_usage("              echo on", "Enable keyboard input display");
-	cmd_usage("             echo off", "Disable keyboard input display");
-	cmd_usage("                 exit", "Exit the current shell");
-	cmd_usage("                 help", "Display this help");
-	cmd_usage("           kill <pid>", "Kill the corresponding process");
-	cmd_usage("                   ls", "Display available files");
-	cmd_usage("               reboot", "Reboot the computer");
-	cmd_usage("         sleep <secs>", "Sleep for secs seconds");
-	cmd_usage("                snake", "Play mini game SNAKE");
-	cmd_usage("            test <id>", "Execute the corresponding test (id in [0,22])");
-	cmd_usage("      vbe <hexModeId>", "Switch to a custom graphic mode");
-	cmd_usage("                 vesa", "Test graphic mode");
-	cmd_usage(" vesamodes <minWidth>", "Display available VESA modes");
+	// cmd_usage(" addline <file> <line>", "Adds a line to a file");
+	cmd_usage("              autotest", "Execute all tests");
+	cmd_usage("                banner", "Print the banner");
+	cmd_usage("            cat <file>", "Displays a file");
+	cmd_usage("                 clear", "Clear the screen");
+	cmd_usage("         display <img>", "Display a *.rgb image file");
+	cmd_usage("                    ps", "Display process informations");
+	cmd_usage("               echo on", "Enable keyboard input display");
+	cmd_usage("              echo off", "Disable keyboard input display");
+	cmd_usage("                  exit", "Exit the current shell");
+	cmd_usage("                  help", "Display this help");
+	cmd_usage("            kill <pid>", "Kill the corresponding process");
+	cmd_usage("                    ls", "Display available files");
+	cmd_usage("                reboot", "Reboot the computer");
+	cmd_usage("          sleep <secs>", "Sleep for secs seconds");
+	cmd_usage("                 snake", "Play mini game SNAKE");
+	cmd_usage("             test <id>", "Execute the corresponding test (id in [0,22])");
+	cmd_usage("          touch <name>", "Create an empty file");
+	cmd_usage("       vbe <hexModeId>", "Switch to a custom graphic mode");
+	cmd_usage("                  vesa", "Test graphic mode");
+	cmd_usage("  vesamodes <minWidth>", "Display available VESA modes");
 }
 
 static bool interpreter ()
@@ -286,6 +289,35 @@ static bool interpreter ()
 		if (next != NULL) {
 			init_vbe_mode(parse_hex(next));
 		}
+	}
+
+	else if (compare(mot_courant, "cat")) {
+		File *file = atomicOpen(get_argument());
+
+		if (file != NULL) {
+			char buf[32];
+			uint32_t nb = 0;
+
+			while ((nb = atomicRead(file, buf, sizeof(buf))) > 0) {
+				cons_write(buf, nb);
+			}
+
+			atomicClose(file);
+		}
+	}
+
+	// else if (compare(mot_courant, "addline")) {
+	// 	File *file = atomicOpen(get_argument());
+	// 	char *line = get_argument();
+
+	// 	if (file != NULL && line != NULL) {
+	// 		atomicWrite(file, line, strlen(line));
+	// 		atomicClose(file);
+	// 	}
+	// }
+
+	else if (compare(mot_courant, "touch")) {
+		atomicClose(atomicOpen(get_argument()));
 	}
 
 	else if (compare(mot_courant, "vesamodes")) {

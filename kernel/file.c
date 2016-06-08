@@ -96,6 +96,7 @@ uint32_t atomicRead(File *file, void *data, uint32_t size)
 	}
 
 	memcpy(data, (void*)((uint32_t)file->data + file->pos), len);
+	file->pos += len;
 
 	return len;
 }
