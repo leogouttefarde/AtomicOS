@@ -315,12 +315,18 @@ static bool interpreter ()
 		if (file != NULL) {
 			char buf[32];
 			uint32_t nb = 0;
+			uint32_t size = 0;
 
 			while ((nb = atomicRead(file, buf, sizeof(buf))) > 0) {
 				cons_write(buf, nb);
+				size += nb;
 			}
 
 			atomicClose(file);
+
+			if (size) {
+				printf("\n");
+			}
 		}
 	}
 

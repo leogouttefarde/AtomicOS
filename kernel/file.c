@@ -35,11 +35,15 @@ void init_fs()
 {
 	hash_init_string(&files);
 
+	const char *readme = "Welcome to AtomicOS\n"\
+				"We hope you have a great time here !";
+
 	write_file("ice_age.rgb", (void*)ice_bin, ice_bin_size);
 	write_file("lightning.rgb", (void*)lightning_bin, lightning_bin_size);
-	write_file("wolverine.rgb", (void*)wolverine_bin, wolverine_bin_size);
 	write_file("pikachu.rgb", (void*)pikachu_bin, pikachu_bin_size);
 	write_file("rider.rgb", (void*)rider_bin, rider_bin_size);
+	write_file("wolverine.rgb", (void*)wolverine_bin, wolverine_bin_size);
+	write_file("readme", (void*)readme, strlen(readme));
 }
 
 File *atomicOpen(const char *path)
