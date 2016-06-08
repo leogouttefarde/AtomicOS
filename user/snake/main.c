@@ -10,7 +10,11 @@
 #define INITIAL_STARTX 10
 #define INITIAL_STARTY 10
 #define INITIAL_LIFE 3
-#define MAX_SIZE 100
+#define MAX_SIZE 105 //La longueur max du serpent 
+                     //Doit etre multiple de DELTA_LENGTH et 
+                     //y ajoute INITIAL_SIZE
+#define DELTA_SCORE 10 //La valeur d'incrementation de score
+#define DELTA_LENGTH 5 //La valeur d'incrementation de longueur
 
 #define RAND_MAX 32767 //pour le générateur aléatoire
 
@@ -25,10 +29,12 @@ typedef struct coordinates{
 int start_column, start_line, width, height;
 int snakeSize, currentSize, life;
 int currentCurve = 0;
-Coordinates fruit, snakeHead, snakeBody[MAX_SIZE], curve[MAX_SIZE];
 int score = 0;
 
+Coordinates fruit, snakeHead, snakeBody[MAX_SIZE], curve[MAX_SIZE];
+
 bool hasReachMax=false; //pour savoir si on a atteint la capacité max de tampon
+bool endSet=false; 
 
 //==============================================================================
 
@@ -48,8 +54,9 @@ static void getCurve();
 static void generateFruit();
 //Une fonction élementaire pour tester l'égalité entres deux points
 static bool testEqual(Coordinates p1, Coordinates p2);
-//La création du fruit pour le serpent
+//La création du fruit pour le serpent au début ou après avoir mangé
 //Le prolongement de la taille du serpent quand le serpent mange un fruit
+//jusqu'à la limite de la taille
 static void getFruit();
 //La construction de l'encadrement du jeu après l'effacement de l'écran
 static void getBorder();
@@ -63,7 +70,7 @@ static void reset_snakeBody();
 static void delayTime_info();
 //Tester si le jeu est fini pour une vie du serpent
 static void endGame();
-//Pour faire bouger le serpent
+//Pour faire bouger le serpent jusqu'il tourne ou jusqu'à la partie est finie
 static void getMoving();
 //L'initialisation des paramètres du jeu
 static void initGame();
@@ -72,7 +79,6 @@ static void initGame();
 static unsigned long int next = 1;
 static int rand();
 static void srand();
-
 
 //==============================================================================
 
@@ -89,7 +95,9 @@ int main()
 
 	getFruit();
 	
-	getMoving();//commencement du jeu
+	while(true){
+		getMoving();//commencement & continuité du jeu
+	}
 
 	return 0;
 }
@@ -100,6 +108,7 @@ static void initGame()
 	/*L'initialisation de l'écran*/
 	start_column = 0;
 	start_line = 3;
+	//appels systemes pour connaitre la dimension de l'écran
 	width=getWidth();
 	height=getHeight();
 
@@ -220,7 +229,7 @@ static void goRight()
 	}
 }
 
-//Le dessin
+//Le dessin pour la partie courbée du serpent
 static void helper_getCurve(int i, int j1, int j2)
 {
 
@@ -236,38 +245,43 @@ static void helper_getCurve(int i, int j1, int j2)
 static void getCurve()
 {
 	int difference;
-	for(int i=currentCurve; i>=0&&currentSize<snakeSize; i--){
-		if(i<0){
-			if(hasReachMax){
-				i=MAX_SIZE+i; //tampon mode circulaire
+	int i=currentCurve;
+	while(currentSize<snakeSize){
+		int current = i;
+		int previous = i-1;
+		if(previous < 0){
+			if(hasReachMax){//tampon mode circulaire
+				previous = MAX_SIZE - 1;
+				i = MAX_SIZE;
 			}else{
 				break;
 			}
 		}
-		if(curve[i].y==curve[i-1].y){
-			difference=curve[i].x-curve[i-1].x;
+
+		if(curve[current].y==curve[previous].y){
+			difference=curve[current].x-curve[previous].x;
 			if(difference < 0){
 				for(int j=1; j<=(-1*difference); j++){
-					helper_getCurve(i,j,0);
+					helper_getCurve(current,j,0);
 					if(currentSize==snakeSize){
 						break;
 					}
 				}
 			}else if(difference > 0){	
 				for(int j=1; j<=difference; j++){
-					helper_getCurve(i,-1*j,0);
+					helper_getCurve(current,-1*j,0);
 					if(currentSize==snakeSize){
 						break;
 					}
 				}
 			}
-		}else if(curve[i].x==curve[i-1].x){
-			difference=curve[i].y-curve[i-1].y;
+		}else if(curve[current].x==curve[previous].x){
+			difference=curve[current].y-curve[previous].y;
 			if(difference < 0){
 				for(int j=1; 
 				    j<=(-1*difference) && currentSize<snakeSize; 
 				    j++){
-					helper_getCurve(i,0,j);
+					helper_getCurve(current,0,j);
 					if(currentSize==snakeSize){
 						break;
 					}
@@ -276,13 +290,15 @@ static void getCurve()
 				for(int j=1; 
 				    j<=difference && currentSize<snakeSize; 
 				    j++){
-					helper_getCurve(i,0,-1*j);
+					helper_getCurve(current,0,-1*j);
 					if(currentSize==snakeSize){
 						break;
 					}
 				}
 			}
 		}
+
+		i--;
 	}
 }
 
@@ -306,15 +322,16 @@ static bool testEqual(Coordinates p1, Coordinates p2)
 	return (p1.x==p2.x && p1.y==p2.y);
 }
 
-//La création du fruit pour le serpent
+//La création du fruit pour le serpent au début ou après avoir mangé
 //Le prolongement de la taille du serpent quand le serpent mange un fruit
+//jusqu'à la limite de la taille
 static void getFruit()
 {
 	if(testEqual(snakeHead, fruit)){
 		if (snakeSize<MAX_SIZE-1){
-			snakeSize+=5;
+			snakeSize+=DELTA_LENGTH;
 		}
-		score+=5;
+		score+=DELTA_SCORE;
 		generateFruit();
 	}else if(fruit.x==0){
 		generateFruit();
@@ -373,22 +390,24 @@ static void reset_snakeBody()
 }
 
 //Ralentir le temps et l'affichage info sur le jeu
-static void delayTime_info() // A MODIF
+static void delayTime_info()
 {
 	cons_set_fg_color(LIGHT_CYAN);
 	set_cursor(0, 10);
 	printf("LIFE: %d",life);
+
 	set_cursor(0, 25);
 	printf("SCORE: %d",score);
 	cons_reset_color();
-	// for(long long i=0; i<=(50000000); i++);
 
-	wait_clock(current_clock()+7); // A MODIF
+	//On ralentit le jeu pour avoir une meilleur expérience de jouer
+	wait_clock(current_clock()+7);
 }
 
 //Tester si le jeu est fini pour une vie du serpent
 static void endGame()
 {
+	//Pour savoir si le serpent touche son corps
 	bool isTouch = false;
 	for(int i=4; i<snakeSize; i++){
 		if(testEqual(snakeBody[0], snakeBody[i])){
@@ -397,13 +416,16 @@ static void endGame()
 		}
 	}
 
+	//Si le serpent touche le mur ou son corps
 	if(snakeHead.x <= start_line || snakeHead.x >= height || snakeHead.y <= start_column ||
 	   snakeHead.y >= width || isTouch){
 		life--;
 		if(life>0){
 			setSnakeHead(INITIAL_STARTX, INITIAL_STARTY, RIGHT);
 			currentCurve=0;
-			getMoving();
+			curve[0]=snakeHead;
+			hasReachMax=false;
+			endSet = true;
 		}else{
 			printf("\f");
 			printf("\n\n ..... GAME OVER ..... YOUR SCORE WAS %d ....\n\n", score);
@@ -412,9 +434,10 @@ static void endGame()
 	}
 }
 
-//Pour faire bouger le serpent
+//Pour faire bouger le serpent jusqu'qu'il tourne ou jusqu'à la partie est finie
 static void getMoving()
 {
+	//On continue dans la même direction tant qu'il n'y a pas d'entrée clavier
 	do{
 		getFruit();
 
@@ -445,31 +468,38 @@ static void getMoving()
 			break;
 		}
 		
+		//Pour savoir si le jeu est fini complètement ou juste une partie
 		endGame();
+		if(endSet){
+			endSet=false;
+			return;
+		}
 		
 	}while(!hasConsoleInput());
 
+	//Une entrée clavier detectée
 	int input = getInputGame();
-
+	
+	//Entrée clavier pour sortir
 	if(input==QUIT)
 	{
 		printf("\f");
 		exit(0);
 	}
 
-	//La modification de la direction du serpent si une entrée clavier valide
-	//est detecté
-	if((input==RIGHT&&snakeHead.direction!=LEFT&&snakeHead.direction!=RIGHT)||
-	   (input==LEFT&&snakeHead.direction!=RIGHT&&snakeHead.direction!=LEFT)||
-	   (input==UP&&snakeHead.direction!=DOWN&&snakeHead.direction!=UP)||
-	   (input==DOWN&&snakeHead.direction!=UP&&snakeHead.direction!=DOWN)){
+	//La modification de la direction du serpent si une entrée clavier 
+	//de direction valide est detecté
+	if((input==RIGHT && snakeHead.direction!=LEFT && snakeHead.direction!=RIGHT)||
+	   (input==LEFT && snakeHead.direction!=RIGHT && snakeHead.direction!=LEFT)||
+	   (input==UP && snakeHead.direction!=DOWN && snakeHead.direction!=UP)||
+	   (input==DOWN && snakeHead.direction!=UP && snakeHead.direction!=DOWN)){
 		currentCurve++;
-		if(currentCurve==MAX_SIZE){
-			currentCurve%=MAX_SIZE; //tampon mode circulaire
+		if(currentCurve == MAX_SIZE){
+			currentCurve %= MAX_SIZE; //tampon mode circulaire
 			hasReachMax = true;
 	        }
-		curve[currentCurve]=snakeHead;
-		snakeHead.direction=input;
+		curve[currentCurve] = snakeHead;
+		snakeHead.direction = input;
 
 		switch(input){
 		case LEFT:
@@ -488,8 +518,6 @@ static void getMoving()
 			break;
 		}
 	}
-	
-	getMoving();	
 }
 
 //==============================================================================
