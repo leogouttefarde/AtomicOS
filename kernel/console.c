@@ -38,7 +38,7 @@ const char DN_ARROW[] = { 0x1B, 0x5B, 0x42, 0 };
 const char RT_ARROW[] = { 0x1B, 0x5B, 0x43, 0 };
 const char LT_ARROW[] = { 0x1B, 0x5B, 0x44, 0 };
 
-bool autocomp = true;
+bool autocomp = false;
 bool tab_pressed = false;
 bool up=false;
 bool down = false;
@@ -70,6 +70,11 @@ void set_cmd(char *cmd)
 void cons_echo(int on)
 {
 	echo = on ? true : false;
+}
+
+void cons_complete (int on) 
+{
+	autocomp = on ? true : false;
 }
 
 void init_clavier(void)
@@ -385,7 +390,7 @@ void keyboard_data(char *str)
 				}
 				
 				else if (first=='\t') {
-					anc_lig[indice_ecr]=(col_cour()>=73);
+					anc_lig[indice_ecr]=(col_cour()>=72);
 					anc_col[indice_ecr]=col_cour();
 					if (autocomp) {
 						tab_pressed=true;

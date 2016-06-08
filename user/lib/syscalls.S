@@ -132,7 +132,21 @@ cons_read:
 	int $49
 	popl %ebx
 	popl %ebp
-	ret	
+	ret
+
+	.text
+	.globl cons_complete
+cons_complete:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $CONS_COMPLETE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
 
 	.text
 	.globl cons_echo
