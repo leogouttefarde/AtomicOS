@@ -216,7 +216,7 @@ static bool interpreter ()
 		echo();
 	}
 
-	else if (compare(mot_courant, "autocompletion")) {
+	else if (compare(mot_courant, "autocomp")) {
 		autocomp();
 	}
 
