@@ -18,9 +18,10 @@ unsigned long fin_commande;
 
 char *histo[TAILLE_HISTO]; //On range les commandes précédemment exécutées ici
 
-char *noms_commandes[] = { "autotest", "banner", "cat", "clear", "display", "echo", "exit",
+char *noms_commandes[] = { "autocomp", "autotest", "banner", "cat", "clear", "display", "echo", "exit",
 				"help","kill", "ls", "ps", "reboot", "sleep",
 				"snake", "test", "touch", "vbe","vesa", "vesamodes" };
+
 int plus_recent = -1; //position de la commande la + récente dans l'historique
 unsigned int nb_histo=0; //Nombre de commandes présentes dans l'historique
 unsigned int fleches_consec=0; /*Représente la position dans l'historique "abstrait"
@@ -77,7 +78,7 @@ static char *extraire_mot ()
 	return &(commande[indice_debut]);
 }
 
-static void echo ()
+static void on_off (void f (int) )
 {
 	char *mot_courant = extraire_mot();
 	char *mot_suivant = extraire_mot();
@@ -85,18 +86,29 @@ static void echo ()
 	if (!mot_suivant[0]) {
 
 		if (compare(mot_courant, "on")) {
-			cons_echo(1);
+			f(1);
 			return;
 		}
 
 		else if (compare(mot_courant, "off")) {
-			cons_echo(0);
+			f(0);
+			//cons_echo(0);
 			return;
 		}
 	}
 
-	printf("This command requires an argument : argument : 'on' or 'off'\n");
+	printf("This command requires exactly on argument : 'on' or 'off'\n");
 }
+
+static void echo ()
+{
+	on_off(cons_echo);
+}
+
+static void autocomp () {
+	on_off(cons_complete);
+}
+
 
 static inline char *get_argument()
 {
@@ -174,6 +186,8 @@ void usage()
 	cons_reset_color();
 
 	// cmd_usage(" addline <file> <line>", "Adds a line to a file");
+	cmd_usage("           autocomp on", "Enable autocompletion");
+	cmd_usage("          autocomp off", "Disable autocompletion");
 	cmd_usage("              autotest", "Execute all tests");
 	cmd_usage("                banner", "Print the banner");
 	cmd_usage("            cat <file>", "Displays a file");
@@ -204,6 +218,10 @@ static bool interpreter ()
 
 	if (compare(mot_courant, "echo")) {
 		echo();
+	}
+
+	else if (compare(mot_courant, "autocomp")) {
+		autocomp();
 	}
 
 	else if (compare(mot_courant, "ps")) {

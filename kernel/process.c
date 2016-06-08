@@ -1025,6 +1025,10 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		cons_echo(arg0);
 		break;
 
+	case CONS_COMPLETE:
+		cons_complete(arg0);
+		break;
+
 	case SCOUNT:
 		ret = scount(arg0);
 		break;

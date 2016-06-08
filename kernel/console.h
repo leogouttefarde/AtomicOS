@@ -25,4 +25,7 @@ void clear_line();
 //Ecrire dans le buffer du clavier
 void ecrire_clavier(char *str);
 
+//Activer ou desactiver l'autocompletion
+void cons_complete (int on);
+
 #endif

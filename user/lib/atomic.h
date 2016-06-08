@@ -146,6 +146,8 @@ void ecrire_clavier(char *str);
 //Effacer la ligne courante dans la console
 void clear_line();
 
+void cons_complete(int on);
+
 
 typedef struct File_ File;
 

@@ -72,6 +72,11 @@ void cons_echo(int on)
 	echo = on ? true : false;
 }
 
+void cons_complete (int on) 
+{
+	autocomp = on ? true : false;
+}
+
 void init_clavier(void)
 {
 	//Activation des interruptions claviers
@@ -385,7 +390,7 @@ void keyboard_data(char *str)
 				}
 				
 				else if (first=='\t') {
-					anc_lig[indice_ecr]=(col_cour()>=73);
+					anc_lig[indice_ecr]=(col_cour()>=72);
 					anc_col[indice_ecr]=col_cour();
 					if (autocomp) {
 						tab_pressed=true;

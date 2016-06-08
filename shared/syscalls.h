@@ -67,5 +67,6 @@
 #define ATOMICLIST 58
 #define ATOMICEXISTS 59
 #define SET_CONSOLE_MODE 60
+#define CONS_COMPLETE 61
 
 #endif
