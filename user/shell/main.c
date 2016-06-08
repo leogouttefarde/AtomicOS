@@ -187,6 +187,8 @@ void usage()
 	cmd_usage(" sleep <secs>", "Sleep for secs seconds");
 	cmd_usage("         vesa", "Test graphical mode");
 	cmd_usage("        snake", "Play mini game SNAKE");
+	cmd_usage("           ls", "List of images available");
+	cmd_usage("display <img>", "Print the chosen image from the list of images");
 }
 
 static bool interpreter ()
