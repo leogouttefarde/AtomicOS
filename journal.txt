@@ -251,3 +251,12 @@ Nettoyage du code
 Correction de bugs mineurs
 
 Léo :
+Nettoyage de code, ajout des commandes cat / touch
+et correction de bugs mineurs.
+
+
+Jeudi 8 juin :
+
+Préparation soutenance
+
+
