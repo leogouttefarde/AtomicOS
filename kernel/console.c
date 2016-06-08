@@ -38,7 +38,7 @@ const char DN_ARROW[] = { 0x1B, 0x5B, 0x42, 0 };
 const char RT_ARROW[] = { 0x1B, 0x5B, 0x43, 0 };
 const char LT_ARROW[] = { 0x1B, 0x5B, 0x44, 0 };
 
-bool autocomp = false;
+bool autocomp = true;
 bool tab_pressed = false;
 bool up=false;
 bool down = false;
