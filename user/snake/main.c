@@ -96,9 +96,9 @@ int main()
 	getFruit();
 	
 	while(true){
+		clear_line();
 		getMoving();//commencement & continuité du jeu
 	}
-
 	return 0;
 }
 

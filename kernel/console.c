@@ -21,8 +21,6 @@ void traitant_IT_33();
 
 bool echo=true;
 char tampon [TAILLE_TAMP];
-bool premier_car=true;
-
 int inputGame=0; 
 
 /*Tableaux servant à memoriser les positions des cararacteres
@@ -102,7 +100,7 @@ void clear_line() {
 		char c[] ={127,0};
 		bool anc_echo = echo;
 		
-		if (tampon[prec] == (char) 252 || tampon[prec] == (char) 254 || tampon[prec] == (char) 127) {
+		if (tampon[prec] == (char) 252 || tampon[prec] == (char) 254 || tampon[prec] == 127) {
 			echo=false;
 		}
 		keyboard_data(c);
@@ -193,7 +191,6 @@ unsigned long cons_read(char *string, unsigned long length)
 		}
 	}
 	string[i] = '\0'; //Fin de ligne
-
 	return i;
 }
 
@@ -401,7 +398,6 @@ void keyboard_data(char *str)
 				if (echo)
 					afficher_echo(first);
 			}
-			premier_car = false;
 			break;
 		}
 		
@@ -425,6 +421,8 @@ int test_InputGame(void)
 
 int get_InputGame(void)
 {
+	up=false;
+	down=false;
 	return inputGame;
 }
 

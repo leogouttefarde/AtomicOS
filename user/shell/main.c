@@ -187,10 +187,10 @@ void usage()
 	cmd_usage("               reboot", "Reboot the computer");
 	cmd_usage("         sleep <secs>", "Sleep for secs seconds");
 	cmd_usage("                snake", "Play mini game SNAKE");
+	cmd_usage("            test <id>", "Execute the corresponding test (id in [0,22])");
 	cmd_usage("      vbe <hexModeId>", "Switch to a custom graphic mode");
 	cmd_usage("                 vesa", "Test graphic mode");
 	cmd_usage(" vesamodes <minWidth>", "Display available VESA modes");
-	cmd_usage("               testNN", "Execute the corresponding test (NN in [0,22])");
 }
 
 static bool interpreter ()
