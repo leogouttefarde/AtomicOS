@@ -22,4 +22,7 @@ void wait_for_keyboard(void);
 //Effacer la ligne courante
 void clear_line();
 
+//Ecrire dans le buffer du clavier
+void ecrire_clavier(char *str);
+
 #endif

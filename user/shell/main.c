@@ -10,18 +10,32 @@
 #define TAILLE_TAB 2000
 #define TAILLE_HISTO 50
 
+char commande[TAILLE_TAB]; //La commande en cours de traitement
+//Une commande est consituée de plusieurs mots
 unsigned long debut_mot;
 unsigned long fin_mot;
 unsigned long fin_commande;
-char commande[TAILLE_TAB];
 
-char *histo[TAILLE_HISTO];
+char *histo[TAILLE_HISTO]; //On range les commandes précédemment exécutées ici
 
-char *noms_commandes []={"autotest", "banner", "clear", "echo", "exit",
-			 "help","history" ,"kill", "ps", "reboot","sleep", 
-			 "snake", "test" ,"vesa", "display" };
-int plus_recent = -1;
-unsigned int nb_histo=0;
+char *noms_commandes[] = { "autotest", "banner", "clear", "echo", "exit",
+				"help","kill", "ps", "reboot", "sleep",
+				"snake", "test" ,"vesa", "display" };
+int plus_recent = -1; //position de la commande la + récente dans l'historique
+unsigned int nb_histo=0; //Nombre de commandes présentes dans l'historique
+unsigned int fleches_consec=0; /*Représente la position dans l'historique "abstrait"
+				 (pas celle dans le tableau histo)*/
+
+int post_hist=-1; //Représente la position actuelle dans le tableau histo
+
+typedef enum affichage {
+   RIEN,
+   NOUV_COMMANDE,
+   ANC_COMMANDE,
+} affichage;
+
+affichage reafficher=NOUV_COMMANDE;
+
 
 static bool compare(const char *mot_courant, const char *nom_commande)
 {
@@ -153,14 +167,6 @@ void cmd_usage(char *cmd, char *usage)
 	printf("\n");
 }
 
-static void history() {
-	unsigned int comm = plus_recent; 
-	for (unsigned int i = 0; i < nb_histo; i++) {
-		printf ("%i %s\n", i+1, histo[comm]);
-		comm = (comm > 0) ? comm -1 : TAILLE_HISTO-1;		
-	}
-}
-
 void usage()
 {
 	cons_set_fg_color(LIGHT_CYAN);
@@ -169,7 +175,7 @@ void usage()
 
 	cmd_usage("     autotest", "Execute all tests");
 	cmd_usage("       banner", "Print the banner");
-	cmd_usage("       testNN", "To execute a test from 1 to 22, type test1, test2, ..., test22");
+	cmd_usage("    test <id>", "Execute the corresponding test");
 	cmd_usage("        clear", "Clear the screen");
 	cmd_usage("           ps", "Display process informations");
 	cmd_usage("      echo on", "Enable keyboard input display");
@@ -209,10 +215,6 @@ static bool interpreter ()
 	else if (compare(mot_courant, "help")) {
 		usage();
 	}
-	else if (compare(mot_courant, "history")) {
-		history();
-	}
-
 	else if (compare(mot_courant, "sleep")) {
 
 		char *next = get_argument();
@@ -284,7 +286,6 @@ static bool interpreter ()
 
 	else if (compare(mot_courant, "vesamodes")) {
 		char *arg0 = get_argument();
-		// char *arg1 = get_argument();
 
 		int min = 1000;
 		int max = 4000;
@@ -299,15 +300,24 @@ static bool interpreter ()
 	else if (compare(mot_courant, "autotest")) {
 		child = start("autotest", 4000, 42, NULL);
 	}
+	
+	else if (compare(mot_courant, "test")) {
+		char *arg0 = get_argument();
 
-	else if (!strncmp(mot_courant, "test", 4)) {
-		child = start(mot_courant, 4000, 128, NULL);
+		//Si le numero du test fait > 2 caracteres
+		if (strlen(arg0) > 2)
+			error=true;
+		
+		else {
+			char nom_test [7]= "test";
+			strcat(nom_test,arg0);
+			child = start(nom_test, 4000, 128, NULL);
 
-		if (child < 0) {
-			error = true;
+			if (child < 0) {
+				error = true;
+			}
 		}
 	}
-
 	else if (compare(mot_courant, "snake")) {
 
 		// 1MB stack
@@ -336,9 +346,13 @@ static bool interpreter ()
 }
 
 static unsigned int nb_commandes_possibles(bool afficher, int *numero_commande) {
+	/*Compte le nombre de commandes possibles étant donnés les caractères 
+	  que l'utilisateur a déjà tapé au clavier. Si afficher est à vrai,
+	ces commandes sont également affichées*/
 
 	int nb_commandes = sizeof(noms_commandes)/sizeof(char *);
 	int res = 0;
+
 	for (int i =0; i < nb_commandes; i++) {
 		if ( strlen(noms_commandes[i]) >= fin_commande) {
 			bool est_candidat =true;
@@ -359,44 +373,41 @@ static unsigned int nb_commandes_possibles(bool afficher, int *numero_commande) 
 	return res;
 }
 
-static void afficher_msg (int reaf) {
-	if (reaf == -1)
+static void afficher_msg (affichage reaf) {
+	//Affichage du message "AtomicOS>"
+	if (reaf == RIEN)
 		return;
+
 	cons_set_fg_color(LIGHT_CYAN);
 	printf("AtomicOS>");
 	cons_reset_color();
-	if (reaf==1) {
+
+	//Si on doit en plus suivre le message par une commande préexistante
+	if (reaf == ANC_COMMANDE) {
 		for (unsigned int i = 0; i <fin_commande; i++)
 			printf("%c",commande[i]);
 	}
 }
 
-int reafficher=0;
-int post_hist=-1; 
-unsigned int fleches_consec=0;
 int autocompleter() {
+
 	int num_commande;
 	unsigned int nb = nb_commandes_possibles(false,&num_commande);
-	if (nb==1) {
-		unsigned int taille_nom = strlen(noms_commandes[num_commande]);
-		for (unsigned int i = fin_commande; i < taille_nom; i ++) {
-			char ch[2];
-			ch[0]=noms_commandes[num_commande][i];
-			ch[1]=0;	
-			keyboard_data(ch);
-		}
-		return -1;
+
+	//S'il y a une seule commande possible, on la complète
+	if (nb==1) {		
+		ecrire_clavier (&(noms_commandes[num_commande][fin_commande] ) );
+		return RIEN;
 	}
 
+	//Sinon, s'il y a plusieurs possibilités, on les affiche 1 à 1 
 	else if (nb > 0) {
 		printf ("\n");
 		nb_commandes_possibles(true,&num_commande);		
-		return 1;
-	}
-	else {
-		return -1;
+		return ANC_COMMANDE;
 	}
 	
+	return RIEN;
 }
 
 int main()
@@ -409,94 +420,86 @@ int main()
 		debut_mot = 0;
 		fin_commande = cons_read(commande,TAILLE_TAB);
 
+		//Si la commande se termine par une tabulation
 		if (commande[fin_commande]=='\t') {
 			commande[fin_commande]='\0';
 			reafficher=autocompleter();
 		}
 
+		//Si la commande se termine par une flèche vers le haut
 		else if (commande[fin_commande]==(char)252) {
-
+			
+			//Si on n'a pas déjà parcouru tout l'historique
 			if (fleches_consec + 1 <= nb_histo) {
-				if (post_hist==-1) {
-					post_hist = plus_recent;
-				}
-				else {
-					
+
+				if (post_hist==-1)
+					post_hist = plus_recent;				
+				else					
 					post_hist = (post_hist > 0) ? post_hist -1 : TAILLE_HISTO-1;
-				}
+				
 				fleches_consec ++;
 				clear_line();
-				char c[strlen(histo[post_hist])+1];
-				unsigned int i=0;
-				while ( i < strlen(histo[post_hist])) {
-					c[i] = histo[post_hist][i];
-					i++;
-				}
-				c[i] = 0;
-				keyboard_data(c);
+				ecrire_clavier (histo[post_hist]);
+				
 			}
-			reafficher=-1;
+			reafficher=RIEN;
 		}
+
+		//Si la commande se termine par une flèche vers le bas
 		else if (commande[fin_commande]==(char)254) {
 			if (post_hist != -1) {
 				clear_line();
 
+				//S'il y a une commande à réafficher
 				if (post_hist != plus_recent) {
-					//printf("DONE");
 					post_hist = (post_hist +1) % TAILLE_HISTO;
-					char c[strlen(histo[post_hist])+1];
-					//char c[(int)histo[post_hist]+1];
-					unsigned int i=0;
-				while ( i < strlen(histo[post_hist])) {
-					c[i] = histo[post_hist][i];
-					i++;
-				}
-				c[i] = 0;
-				keyboard_data(c);
-					/*for (unsigned int i = 0; i < strlen(histo[post_hist]); i ++) {
-						char c[] ={histo[post_hist][i],0} ;
-						//printf("%s",c);
-						keyboard_data(c);
-						}*/
+					ecrire_clavier (histo[post_hist]);
 					
 				}
-				else  {					
+				else		
 					post_hist=-1;
-				}
+				
 				fleches_consec --;
 
 			}
-			reafficher=-1;
+			reafficher=RIEN;
 			
 		}
+		//Dans le cas où la commande termine par un appui sur Entrée	
+		else  {
 			
-		else if (fin_commande > 0){
-			
-			fin_commande--;
-			execute = interpreter(commande);
+			//Si la commande  n'est pas vide
+			if (fin_commande > 0) {
+				fin_commande--;
+				execute = interpreter(commande);
 
-			plus_recent = (plus_recent + 1) % TAILLE_HISTO;
+				plus_recent = (plus_recent + 1) % TAILLE_HISTO;
 
-			if (nb_histo == TAILLE_HISTO) {
-				//printf("%u",strlen(histo[plus_recent]));
-				//mem_free(histo[plus_recent],2+strlen(histo[plus_recent]));
-				mem_free(histo[plus_recent],1+strlen(histo[plus_recent]));
+				/*Si besoin, on libère la commande qui était déjà 
+				  cette place dans l'historique*/
+				if (nb_histo == TAILLE_HISTO)
+					mem_free(histo[plus_recent],1+strlen(histo[plus_recent]));			
+				else
+					nb_histo++;
+
+				/*Avant de recopier, on supprime les caractères 0 ajoutés
+				  artificiellement par la fonction extraire_mot*/
+				for (unsigned int i = 0; i <= fin_commande; i++) {
+					if (commande[i] == 0)
+						commande [i] = ' ';
+				}
+
+				/*On copie la commande qui vient 
+				  d'être exécutée dans l'historique*/
+				histo[plus_recent] = mem_alloc(fin_commande+2);
+				memcpy(histo[plus_recent],commande,fin_commande+2);
 			}
-			else {
-				nb_histo++;
-			}
-			histo[plus_recent] = mem_alloc(fin_commande+2);
-			memcpy(histo[plus_recent],commande,fin_commande+2);
 
 			fleches_consec=0;
-			reafficher=0;
+			reafficher=NOUV_COMMANDE;
 			post_hist=-1;
 		}
-		else {
-			fleches_consec=0;
-			reafficher=0;
-			post_hist=-1;
-		}
+		
 	}
 
 	return 0;
