@@ -310,23 +310,30 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "cat")) {
-		File *file = atomicOpen(get_argument());
+		char *name = get_argument();
 
-		if (file != NULL) {
-			char buf[32];
-			uint32_t nb = 0;
-			uint32_t size = 0;
+		if (atomicExists(name)) {
+			File *file = atomicOpen(name);
 
-			while ((nb = atomicRead(file, buf, sizeof(buf))) > 0) {
-				cons_write(buf, nb);
-				size += nb;
+			if (file != NULL) {
+				char buf[32];
+				uint32_t nb = 0;
+				uint32_t size = 0;
+
+				while ((nb = atomicRead(file, buf, sizeof(buf))) > 0) {
+					cons_write(buf, nb);
+					size += nb;
+				}
+
+				atomicClose(file);
+
+				if (size) {
+					printf("\n");
+				}
 			}
-
-			atomicClose(file);
-
-			if (size) {
-				printf("\n");
-			}
+		}
+		else {
+			printf("%s : file not found\n", name);
 		}
 	}
 
