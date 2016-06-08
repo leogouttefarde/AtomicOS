@@ -1160,8 +1160,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case SET_VIDEO_MODE:
-		ret = init_graphics(1366, 768, 32);
-		// ret = init_graphics(1680, 1050, 32);
+		ret = init_graphics(SCREEN_WIDTH, SCREEN_HEIGHT, 32);
 		break;
 
 	case INIT_VBE_MODE:
@@ -1226,8 +1225,6 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case DISPLAY:
-		init_vbe_mode(findMode(1366, 768, 32));
-		// init_vbe_mode(findMode(1680, 1050, 32));
 		ret = display((char*)arg0);
 		break;
 

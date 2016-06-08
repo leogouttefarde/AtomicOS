@@ -697,8 +697,6 @@ void fill_rectangle(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t col
 
 bool display(char *image)
 {
-	map_video_memory();
-
 	uint32_t size = 0;
 	void *data = atomicData(atomicOpen(image), &size);
 
@@ -711,6 +709,10 @@ bool display(char *image)
 	// Check data size
 	if (size < (4 + (uint32_t)img_width * img_height * 3))
 		return false;
+
+	init_vbe_mode(findMode(SCREEN_WIDTH, SCREEN_HEIGHT, 32));
+
+	map_video_memory();
 
 	img_data = (char*)data + 4;
 

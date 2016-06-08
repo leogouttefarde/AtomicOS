@@ -5,6 +5,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SCREEN_WIDTH 1366
+#define SCREEN_HEIGHT 768
+// #define SCREEN_WIDTH 1680
+// #define SCREEN_HEIGHT 1050
+
 void set_vesa();
 uint16_t findMode(int x, int y, int d);
 void set_vbe_mode(int mode);

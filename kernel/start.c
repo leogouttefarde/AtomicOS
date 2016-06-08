@@ -14,7 +14,6 @@
 void kernel_start(void)
 {
 	banner();
-	//	call_debugger();
 
 	init_process();
 	init_time();
@@ -24,13 +23,6 @@ void kernel_start(void)
 	init_mouse();
 	init_fs();
 
-	// initGraphics(1366, 768, 32);
-
-	// while(1)
-	// 	hlt();
-
-	// start("autotest", 4000, 10, NULL);
-	//start("test_fs", 4000, 128, NULL);
 	launch_new_shell();
 
 	idle();

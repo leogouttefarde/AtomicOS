@@ -281,21 +281,29 @@ static bool interpreter ()
 
 		if (next != NULL) {
 			if (atomicExists(next)) {
+				bool start;
 				bool loop;
 
 				resetInputGame();
-				loop = display(next);
+				start = display(next);
+				loop = start;
 
 				while (loop) {
 					wait_clock(current_clock() + 3);
 					loop &= getInputGame() != QUIT;
 				}
 
-				set_console_mode();
-				print_banner();
+				if (start) {
+					set_console_mode();
+					print_banner();
+				}
+				else {
+					printf("error : %s is not a "\
+						"valid image\n", next);
+				}
 			}
 			else {
-				printf("ERROR : %s did not match any image\n",
+				printf("%s : file not found\n",
 					next);
 			}
 		}
