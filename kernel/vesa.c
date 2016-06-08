@@ -591,8 +591,8 @@ void list_modes(int min, int max)
 	}
 }
 
-void draw_screen();
-void display_bg();
+static inline void draw_screen();
+static inline void display_bg();
 
 int init_graphics(unsigned int x, unsigned int y, unsigned int d)
 {
@@ -605,7 +605,7 @@ int init_graphics(unsigned int x, unsigned int y, unsigned int d)
 	return (int)screenPtr;
 }
 
-void draw_screen()
+static inline void draw_screen()
 {
 	if (!screenPtr || (get_physaddr(get_pdir(), (void*)VIDEO_MEMORY) != screenPtr))
 		return;
@@ -613,7 +613,7 @@ void draw_screen()
 	memcpy((void*)VIDEO_MEMORY, (void*)screenBuf, xres * yres * bpp/8);
 }
 
-void draw_image(char *data, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
+static inline void draw_image(char *data, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 {
 	uint32_t k = 0;
 
@@ -628,7 +628,7 @@ void draw_image(char *data, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
 		}
 }
 
-void display_bg()
+static inline void display_bg()
 {
 	// Draw gradient bg
 	// for (uint32_t i = 0; i < xres; i++)
@@ -661,7 +661,7 @@ void display_bg()
 		}
 }
 
-void display_image()
+static inline void display_image()
 {
 	const uint32_t x = (xres - img_width) / 2;
 	const uint32_t y = (yres - img_height) / 2;
@@ -707,6 +707,10 @@ bool display(char *image)
 
 	img_width = ((uint16_t*)data)[0];
 	img_height = ((uint16_t*)data)[1];
+
+	// Check data size
+	if (size < (4 + (uint32_t)img_width * img_height * 3))
+		return false;
 
 	img_data = (char*)data + 4;
 
