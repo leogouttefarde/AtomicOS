@@ -58,8 +58,6 @@ ctx_sw:
 	.globl start_proc
 start_proc:
 	pushl $0x4b
-	# pushf
-	# push $0x7ffffff8
 	pushl %esp
 	pushl $0x202
 	pushl $0x43

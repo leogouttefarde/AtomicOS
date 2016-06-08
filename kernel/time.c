@@ -53,9 +53,8 @@ void init_time()
 	init_freq(SCHEDFREQ);
 	masque_IRQ(0, false);
 
-	// Crashes gdb somehow, enable later
-	//if (0)
-		read_rtc();
+	// Crashes gdb somehow
+	read_rtc();
 }
 
 /**
@@ -135,25 +134,6 @@ static unsigned char get_RTC_register(int reg)
 	outb(reg, cmos_address);
 	return inb(cmos_data);
 }
-
-
-// // Calcul dst (pas besoin en fait)
-// // http://stackoverflow.com/questions/5590429/calculating-daylight-saving-time-from-only-date
-// static bool is_dst(int day, int month, int year)
-// {
-// // Calculate day of week for Daylight savings time.
-// int dow = (day + (int)(2.6 * (((month + 12 - 3) % 12) + 1) - 0.2) - 40 + 
-//       (month < 3 ? year-1 : year) + (int)((month < 3 ? year-1 : year)/4) + 5) % 7;
-// if (month < 3 || month > 10)  return false; 
-// if (month > 3 && month < 10)  return true; 
-
-// int previousSunday = day - dow;
-
-// if (month == 3) return previousSunday >= 25;
-// if (month == 10) return previousSunday < 25;
-
-// return false; // this line never gonna happend
-// }
 
 // Source : http://wiki.osdev.org/CMOS#Reading_All_RTC_Time_and_Date_Registers
 static void read_rtc()

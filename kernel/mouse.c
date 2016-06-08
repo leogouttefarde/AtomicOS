@@ -27,11 +27,8 @@ void mouse_handler()
 
 	// Discard invalid packets
 	if (!cycle && ((packet & 0xC0) || !(packet & 0x8))) {
-		// printf("mouse error : 0x%X\n", packet);
 		return;
 	}
-
-	// printf("mouse says : 0x%X\n", packet);
 
 	switch (cycle) {
 	case 0:
@@ -50,18 +47,6 @@ void mouse_handler()
 
 		char car = '@';
 
-		// if (packets[0] & 0x20) {
-		// 	mouse_y = -mouse_y;
-			// printf(" yneg ");
-		// }
-			// mouse_y |= 0xFFFFFF00; //delta-y is a negative value
-
-		// if (packets[0] & 0x10) {
-		// 	mouse_x = -mouse_x;
-			// printf(" xneg ");
-		// }
-			// mouse_x |= 0xFFFFFF00; //delta-x is a negative value
-
 		if (packets[0] & 0x4) {
 			// printf("Middle button is pressed!n");
 			set_bg_color(WHITE);
@@ -77,29 +62,6 @@ void mouse_handler()
 			set_bg_color(BLUE);
 			car = ' ';
 		}
-
-		// const int min = 0;
-
-
-		// if (mouse_x > min && x < 79) {
-		// 	// printf("RIGHT\n");
-		// 	x++;
-		// }
-
-		// else if (mouse_x < -min && x >0) {
-		// 	// printf("LEFT\n");
-		// 	x--;
-		// }
-
-		// if (mouse_y < -min && y < 24) {
-		// 	// printf("DOWN\n");
-		// 	y++;
-		// }
-
-		// else if (mouse_y > min && y > 0) {
-		// 	// printf("UP\n");
-		// 	y--;
-		// }
 
 		x += mouse_x;
 		y -= mouse_y;
@@ -120,21 +82,15 @@ void mouse_handler()
 		ecrit_car(y, x, car);
 		reset_color();
 
-		// printf("mouse x %d  y %d\n", x, y);
-		// printf("mouse x %d  y %d\n", mouse_x, mouse_y);
-		// cycle++;
 		break;
-	// case 3:
-	// 	packets[3]=inb(0x60);
-	// 	cycle=0;
-	// 	break;
 	}
 }
 
 void mouse_wait(uint8_t a_type)
 {
-	uint32_t _time_out=100000;
-	if(a_type==0)
+	uint32_t _time_out = 100000;
+
+	if(a_type == 0)
 	{
 		while(_time_out--)
 		{
@@ -179,7 +135,7 @@ uint8_t mouse_read()
 
 void init_mouse()
 {
-	uint8_t _status;  //unsigned char
+	uint8_t _status;
 
 	//Enable the auxiliary mouse device
 	mouse_wait(1);

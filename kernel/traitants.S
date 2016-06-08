@@ -20,42 +20,31 @@ traitant_IT_32:
 
 #traitant clavier
 	.text
-# cette directive sert a rendre l'etiquette publique
 	.globl traitant_IT_33
-#debut du traitant
 traitant_IT_33:
 	call set_kernel_protection
-# sauvegarde des registres importants
 	pushl %eax
 	pushl %edx
 	pushl %ecx
-# appel a la fonction C realisant le traitant
 	call traitant_clavier
-# restauration des registres importants
 	popl %ecx
 	popl %edx
 	popl %eax
 	call set_user_protection
-# fin du traitant
 	iret
 
-#traitant clavier
+#traitant souris
 	.text
-# cette directive sert a rendre l'etiquette publique
 	.globl traitant_IT_44
-#debut du traitant
 traitant_IT_44:
 	pusha
 	call set_kernel_protection
-# sauvegarde des registres importants
 	pushl %eax
 	pushl %ebx
 	pushl %esi
 	pushl %edx
 	pushl %ecx
-# appel a la fonction C realisant le traitant
 	call mouse_handler
-# restauration des registres importants
 	popl %ecx
 	popl %edx
 	popl %esi
@@ -63,27 +52,12 @@ traitant_IT_44:
 	popl %eax
 	call set_user_protection
 	popa
-# fin du traitant
 	iret
 
-#traitant d'appels système
+#traitant syscall
 	.text
-# cette directive sert a rendre l'etiquette publique
 	.globl traitant_IT_49
-#debut du traitant
 traitant_IT_49:
-# # sauvegarde des registres importants
-# 	pushl %eax
-# 	pushl %edx
-# 	pushl %ecx
-# # appel a la fonction C realisant le traitant
-# 	call syscall
-# # restauration des registres importants
-# 	popl %ecx
-# 	popl %edx
-# 	popl %eax
-# # fin du traitant
-# 	iret
 	call set_kernel_protection
 
 	pushl %edi

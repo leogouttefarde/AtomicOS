@@ -17,6 +17,7 @@ int free_page(void *page)
 	return phys_free(page, PAGESIZE);
 }
 
+// Inspired from http://wiki.osdev.org/Paging#Manipulation
 // Gets the physical address of a virtual address
 void *get_physaddr(uint32_t *pd, void *virtualaddr)
 {
@@ -50,6 +51,7 @@ static inline bool is_valid_page(void *ptr)
 	return true;
 }
 
+// Inspired from http://wiki.osdev.org/Paging#Manipulation
 // Maps a virtual address to a physical address
 bool map_page(uint32_t *pd, void *physaddr, void *virtualaddr, uint16_t flags)
 {

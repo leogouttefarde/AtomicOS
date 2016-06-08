@@ -63,7 +63,7 @@ typedef struct Process_ {
 	int ppid;
 
 	union {
-		int retval;		// Valeur de retour de ZOMBIE
+		int retval;	// Valeur de retour de ZOMBIE
 		int waitpid;	// pid à attendre en WAITPID
 	} s;
 
@@ -223,5 +223,6 @@ void sleep_clock(uint32_t clocks);
 
 void launch_new_shell();
 void abort_shell_wait();
+void setup_exceptions();
 
 #endif

@@ -30,7 +30,6 @@ static Process *cur_proc = NULL;
 static link head_act = LIST_HEAD_INIT(head_act);
 static link head_sleep = LIST_HEAD_INIT(head_sleep);
 static link head_dead = LIST_HEAD_INIT(head_dead);
-// static link head_sema = LIST_HEAD_INIT(head_sema);
 static link head_io = LIST_HEAD_INIT(head_io);
 
 typedef struct FreePid_ {
@@ -388,13 +387,10 @@ void sleep_clock(uint32_t clocks)
 
 void idle(void)
 {
-	// sti();
-
 	for (;;) {
 		sti();
 		hlt();
 		cli();
-		//affiche_etats();
 	}
 }
 
@@ -526,7 +522,7 @@ void page_fault_handler(int address, int error_code)
 
 void exception_handler()
 {
-	printf("ERROR : An exception occured\n");
+	printf("ERROR : An exception occurred\n");
 	autokill();
 }
 
@@ -534,7 +530,7 @@ void exception_handler_pop(int error_code)
 {
 	error_code = error_code;
 
-	printf("ERROR : An exception occured\n");
+	printf("ERROR : An exception occurred\n");
 	// printf("Error code : 0x%X\n", code);
 	autokill();
 }
@@ -571,6 +567,11 @@ bool init_process()
 	// Syscall handler
 	init_traitant_IT_user(49, (int)traitant_IT_49);
 
+	return (proc != NULL);
+}
+
+void setup_exceptions()
+{
 	// Error handlers
 	init_traitant_IT(0, (int)exception_IT);
 
@@ -588,8 +589,6 @@ bool init_process()
 
 	// Page fault handler
 	init_traitant_IT(14, (int)page_fault_IT);
-
-	return (proc != NULL);
 }
 
 int get_new_pid()
@@ -754,26 +753,7 @@ int kill(int pid)
 			queue_del(proc, queue);
 			break;
 
-		case ZOMBIE:
-			// printf(" ZOMBIE");
-			break;
-
-		case WAITPID:
-			// printf(" WAITPID");
-			break;
-
-		case CHOSEN:
-			// printf(" CHOSEN");
-			break;
-
-		case DYING:
-			// printf(" DYING");
-			break;
-		case BLOCKEDSEMA:
-			break;
-
 		default:
-			// printf(" ??");
 			// Rien à faire
 			break;
 		}
@@ -786,7 +766,6 @@ int kill(int pid)
 			// On le tue directement si ce n'est pas le processus actuel
 			// et qu'il n'est pas devenu un zombie
 			if (proc->state == DYING) {
-				//pqueue_add(proc, &head_dead); // quid crash observé sur ceci?
 				free_process(proc); // Intéret d'une liste de mourants?!!
 			}
 		}
@@ -798,7 +777,6 @@ int kill(int pid)
 
 		ret = 0;
 	}
-
 
 	return ret;
 }

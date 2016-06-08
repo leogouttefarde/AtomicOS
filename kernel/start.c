@@ -23,8 +23,11 @@ void kernel_start(void)
 	init_mouse();
 	init_fs();
 
-	launch_new_shell();
+	// Setup exceptions at last to avoid any
+	// startup exception catching from the idle process
+	setup_exceptions();
 
+	launch_new_shell();
 	idle();
 
 	// On ne doit jamais sortir de kernel_start

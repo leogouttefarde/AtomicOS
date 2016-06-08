@@ -34,10 +34,10 @@ typedef struct MsgQueue_ {
 	struct MsgQueue_ *next;
 } MsgQueue;
 
-// Liste complete de files
+// Conteneur des files
 static MsgQueue *queues[NB_QUEUES];
 
-// Nombre de file créées depuis le début
+// Nombre de files créées depuis le début
 static int created_queues = 0;
 
 // Nombre de files disponibles
@@ -48,7 +48,7 @@ typedef struct MsgList_ {
 	MsgQueue *tail;
 } MsgList;
 
-//liste des files disponibles après la détruction
+//liste des files disponibles après la destruction
 static MsgList list_queues = { NULL, NULL };
 
 static inline MsgQueue *extractHead (MsgList *list)
@@ -404,7 +404,7 @@ int preceive(int fid, int *message)
 	return 0;
 }
 
-//renvoie l'état courant d'une fil
+// Renvoie l'état courant d'une file
 int pcount(int fid, int *count)
 {
 	MsgQueue *queue = get_queue(fid);
