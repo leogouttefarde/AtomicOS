@@ -44,61 +44,61 @@ static int pid_index = 1;
 void ctx_sw(uint32_t *old_ctx, uint32_t *new_ctx, uint32_t **old_cr3, uint32_t *new_cr3);
 void start_proc();
 
-// Affiche l'état des processus
-void affiche_etats(void)
+void print_processes(void)
 {
 	Process *proc;
 
-	printf("Affichage des processus\n");
+	printf("  PID  PPID  PRIO  STATE       CMD\n");
 
 	for (uint32_t i = 0; i < MAX_NB_PROCS; i++) {
 		proc = procs[i];
 
 		if (proc != NULL) {
-			char *state = "NONE";
+			char *state = "NONE       ";
 
 			switch (proc->state) {
 			case CHOSEN:
-				state = "CHOSEN";
+				state = "CHOSEN     ";
 				break;
 
 			case ACTIVABLE:
-				state = "ACTIVABLE";
+				state = "ACTIVABLE  ";
 				break;
 
 			case ASLEEP:
-				state = "ASLEEP";
+				state = "ASLEEP     ";
 				break;
 
 			case DYING:
-				state = "DYING";
+				state = "DYING      ";
 				break;
 
 			case ZOMBIE:
-				state = "ZOMBIE";
+				state = "ZOMBIE     ";
 				break;
 
 			case WAITPID:
-				state = "WAITPID";
+				state = "WAITPID    ";
 				break;
 				
 			case BLOCKEDSEMA:
-				state = "BLOCKEDSEMA";
+				state = "WAITSEM    ";
 				break;
 				
 			case WAITMSG:
-				state = "WAITMSG";
+				state = "WAITMSG    ";
 				break;
 
 			case WAITIO:
-				state = "WAITIO";
+				state = "WAITIO     ";
 				break;
 
 			default:
 				break;
 			}
 
-			printf("    processus numero %d : %s dans l'etat %s\n", proc->pid, proc->name, state);
+			printf(" % 4d  % 4d   % 3d  %s %s\n", proc->pid,
+				proc->ppid, proc->prio, state, proc->name);
 		}
 	}
 }
@@ -303,7 +303,6 @@ void ordonnance()
 
 			// Changement de processus courant si nécessaire.
 			if (cur_proc != prev) {
-				// affiche_etats();
 				ctx_sw(prev->regs, cur_proc->regs, &prev->pdir, cur_proc->pdir);
 			}
 		}
@@ -1098,7 +1097,7 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		break;
 
 	case AFFICHE_ETATS:
-		affiche_etats();
+		print_processes();
 		break;
 
 	case CONS_SET_FG_COLOR:

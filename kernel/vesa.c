@@ -12,7 +12,7 @@
 #include "screen.h"
 
 // #define VIDEO_MEMORY 0x60000000
-#define VIDEO_MEMORY 0xC0000000
+#define VIDEO_MEMORY 0xB0000000
 
 #define BESTFIT(a,b) ((a-b) > 0 ? a-b : b-a)
 
@@ -547,7 +547,8 @@ static inline void draw_screen()
 	if (!screenPtr || (get_physaddr(get_pdir(), (void*)VIDEO_MEMORY) != screenPtr))
 		return;
 
-	memcpy((void*)VIDEO_MEMORY, (void*)screenBuf, xres * yres * bpp/8);
+	// memcpy((void*)VIDEO_MEMORY, (void*)screenBuf, xres * yres * bpp/8);
+	memcpy((void*)VIDEO_MEMORY, (void*)screenBuf, bytesperline * yres);
 }
 
 static inline void draw_image(char *data, uint32_t x, uint32_t y, uint32_t w, uint32_t h)
