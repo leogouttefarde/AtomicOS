@@ -4,13 +4,11 @@
 Extensions :
 http://ensiwiki.ensimag.fr/index.php/Projet_syst%C3%A8me_:_sp%C3%A9cification#Pour_aller_plus_loin
 
-- ps à formatter correctement
 - activation des leds selon les appuis clavier (verr num, caps lock)
 - driver son carte mère (testable à l'imag)
 - éditeur de fichiers
-- ls, cat, rm, mv
+- rm, mv
 - Améliorer le shell (cmds asynchrones avec & etc)
-- mode graphique VESA (affichage d'images)
 
 
 Mineur :
