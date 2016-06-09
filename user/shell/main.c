@@ -78,12 +78,35 @@ static char *extraire_mot ()
 	return &(commande[indice_debut]);
 }
 
+static inline char *get_argument()
+{
+	char *mot_courant = extraire_mot();
+
+	if (!mot_courant[0] || extraire_mot()[0]) {
+		printf("This command requires a unique argument\n");
+
+		return NULL;
+	}
+
+	return mot_courant;
+}
+
+
+
+static inline int parse_hex(char *str)
+{
+	return strtol(str, NULL, 16);
+}
+
+static inline int parse_int(char *str)
+{
+	return strtol(str, NULL, 10);
+}
+
 static void on_off (void f (int) )
 {
 	char *mot_courant = extraire_mot();
-	char *mot_suivant = extraire_mot();
-	
-	if (!mot_suivant[0]) {
+	if (mot_courant != 0 && ! extraire_mot()[0] ) {
 
 		if (compare(mot_courant, "on")) {
 			f(1);
@@ -100,6 +123,7 @@ static void on_off (void f (int) )
 	printf("This command requires exactly on argument : 'on' or 'off'\n");
 }
 
+
 static void echo ()
 {
 	on_off(cons_echo);
@@ -109,29 +133,6 @@ static void autocomp () {
 	on_off(cons_complete);
 }
 
-
-static inline char *get_argument()
-{
-	char *mot_courant = extraire_mot();
-
-	if (!mot_courant[0] || extraire_mot()[0]) {
-		printf("This command requires an additional argument\n");
-
-		return NULL;
-	}
-
-	return mot_courant;
-}
-
-static inline int parse_hex(char *str)
-{
-	return strtol(str, NULL, 16);
-}
-
-static inline int parse_int(char *str)
-{
-	return strtol(str, NULL, 10);
-}
 
 static void kill_proc ()
 {
@@ -379,11 +380,8 @@ static bool interpreter ()
 	else if (compare(mot_courant, "test")) {
 		char *arg0 = get_argument();
 
-		//Si le numero du test fait > 2 caracteres
-		if (strlen(arg0) > 2)
-			error=true;
-		
-		else {
+		//Si le numero du test fait <= 2 caracteres
+		if ( arg0 !=0 && strlen(arg0) <= 2) {
 			char nom_test [7]= "test";
 			strcat(nom_test,arg0);
 			child = start(nom_test, 4000, 128, NULL);
@@ -392,6 +390,8 @@ static bool interpreter ()
 				error = true;
 			}
 		}
+		else if (arg0 != 0 && strlen(arg0) > 2)
+			error = true;
 	}
 	else if (compare(mot_courant, "snake")) {
 
