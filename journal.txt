@@ -208,6 +208,7 @@ la plupart des autres machines testées dont celles de l'Ensimag).
 Vendredi 3 juin :
 
 Azizi :
+Debut de l'implémentation du système de fichiers simple.
 
 Etienne :
 Autocomplétion dans le shell
@@ -220,7 +221,7 @@ Réflexion sur l'implémentation du système de fichiers.
 Lundi 6 juin :
 
 Azizi :
-Début d'implémentation du système de fichiers.
+Fin de l'implémentation du système de fichiers simple
 
 Etienne :
 Gestion de l'historique dans le shell
@@ -233,6 +234,7 @@ Finalisation de l'implémentation du système de fichiers.
 Mardi 7 juin :
 
 Azizi :
+Début de l'Editeur simple & Lecteur simple du texte ASCII
 
 Etienne :
 Fin de la gestion de l'hisorique
@@ -245,6 +247,7 @@ Gestion de l'affichage d'images en mode graphique avec la commande display.
 Mercredi 7 juin :
 
 Azizi :
+Poursuite de l'Editeur simple & Lecteur simple du texte ASCII
 
 Etienne :
 Nettoyage du code
