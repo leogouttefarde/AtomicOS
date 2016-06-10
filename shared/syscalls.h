@@ -70,5 +70,6 @@
 #define CONS_COMPLETE 61
 #define ATOMICDELETE 62
 #define ATOMICRENAME 63
+#define ATOMICCOPY 64
 
 #endif

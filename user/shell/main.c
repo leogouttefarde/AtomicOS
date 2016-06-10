@@ -20,7 +20,7 @@ char *histo[TAILLE_HISTO]; //On range les commandes précédemment exécutées i
 
 char *noms_commandes[] = { "autocomp", "autotest", "banner", "cat", "clear", "display", "echo", "exit",
 				"help","kill", "ls", "ps", "reboot", "sleep",
-				"snake", "test", "touch", "vbe","vesa", "vesamodes", "rm", "mv" };
+				"snake", "test", "touch", "vbe","vesa", "vesamodes", "rm", "mv", "cp" };
 
 int plus_recent = -1; //position de la commande la + récente dans l'historique
 unsigned int nb_histo=0; //Nombre de commandes présentes dans l'historique
@@ -223,7 +223,8 @@ void usage()
 	cmd_usage("             test <id>", "Execute the corresponding test (id in [0,22])");
 	cmd_usage("          touch <name>", "Create an empty file");
 	cmd_usage("             rm <name>", "Delete a file");
-	cmd_usage("    mv <name1> <name2>", "Rename a file");
+	cmd_usage("    mv <name1> <name2>", "Rename a file to name2");
+	cmd_usage("    cp <name1> <name2>", "Copy a file to another file named name2");
 	cmd_usage("       vbe <hexModeId>", "Switch to a custom graphic mode");
 	cmd_usage("                  vesa", "Test graphic mode");
 	cmd_usage("  vesamodes <minWidth>", "Display available VESA modes");
@@ -383,6 +384,20 @@ static bool interpreter ()
 
 		if (atomicExists(name1)) {
 			atomicRename(name1, name2);
+		}
+		else {
+			printf("%s : file not found\n", name1);
+		}
+	}
+
+	else if (compare(mot_courant, "cp")) {
+
+		char *name1;
+		char *name2;
+		get_two_arguments(&name1, &name2);
+
+		if (atomicExists(name1)) {
+			atomicCopy(name1, name2);
 		}
 		else {
 			printf("%s : file not found\n", name1);

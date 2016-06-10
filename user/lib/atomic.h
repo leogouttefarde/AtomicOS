@@ -171,6 +171,8 @@ void set_console_mode();
 
 int atomicDelete(char *path);
 
+int atomicCopy(char *path1, char *path2);
+
 int atomicRename(char *path1, char *path2);
 
 #endif

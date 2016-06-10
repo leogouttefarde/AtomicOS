@@ -201,7 +201,7 @@ uint32_t atomicDelete(char *path)
 	return hash_del(&files, (void*)path);
 }
 
-uint32_t atomicRename(char *path1, char *path2)
+uint32_t atomicCopy(char *path1, char *path2)
 {
 	if (path1 == NULL || path2 == NULL){
 		return -1;		
@@ -211,23 +211,31 @@ uint32_t atomicRename(char *path1, char *path2)
 
 	if (oldFile == NULL) {
 		return -1;
-	}else{
-		atomicDelete(path2);
-
-		File *newFile = atomicOpen(path2);
-
-		newFile -> pos = oldFile -> pos;
-		newFile -> size = oldFile -> size;
-		newFile -> buf_size = oldFile -> buf_size;
-
-		newFile -> data = mem_alloc(newFile -> size);		
-		memcpy(newFile -> data, oldFile -> data, newFile -> size);
-
-		atomicClose(newFile);
+	}
 	
-		atomicDelete(path1);
+	atomicDelete(path2);
 
+	File *newFile = atomicOpen(path2);
+
+	newFile -> pos = oldFile -> pos;
+	newFile -> size = oldFile -> size;
+	newFile -> buf_size = oldFile -> buf_size;
+
+	newFile -> data = mem_alloc(newFile -> size);		
+	memcpy(newFile -> data, oldFile -> data, newFile -> size);
+
+	atomicClose(newFile);
+		
+	return 0;
+}
+
+uint32_t atomicRename(char *path1, char *path2)
+{
+	if(atomicCopy(path1, path2) == 0){
+		atomicDelete(path1);
 		return 0;
 	}
+
+	return -1;
 }
 

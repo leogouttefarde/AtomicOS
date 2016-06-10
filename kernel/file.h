@@ -27,6 +27,8 @@ bool atomicExists(char *path);
 
 uint32_t atomicDelete(char *path);
 
+uint32_t atomicCopy(char *path1, char *path2);
+
 uint32_t atomicRename(char *path1, char *path2);
 
 #endif
