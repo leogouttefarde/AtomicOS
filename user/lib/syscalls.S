@@ -731,6 +731,33 @@ atomicExists:
 	ret
 
 	.text
+	.globl atomicDelete
+atomicDelete:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl $ATOMICDELETE, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
+	.globl atomicRename
+atomicRename:
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %ebx
+	movl 8(%ebp), %ebx
+	movl 12(%ebp), %ecx
+	movl $ATOMICRENAME, %eax
+	int $49
+	popl %ebx
+	popl %ebp
+	ret
+
+	.text
 	.globl set_console_mode
 set_console_mode:
 	movl $SET_CONSOLE_MODE, %eax

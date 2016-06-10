@@ -1213,6 +1213,14 @@ int syscall(int num, int arg0, int arg1, int arg2, int arg3, int arg4)
 		ret = atomicExists((char*)arg0);
 		break;
 
+	case ATOMICDELETE:
+		ret = atomicDelete((char*)arg0);
+		break;
+
+	case ATOMICRENAME:
+		ret = atomicRename((char*)arg0, (char*)arg1);
+		break;
+
 	case SET_CONSOLE_MODE:
 		set_console_mode();
 		break;

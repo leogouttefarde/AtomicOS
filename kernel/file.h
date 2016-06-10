@@ -25,4 +25,8 @@ void atomicList();
 
 bool atomicExists(char *path);
 
+uint32_t atomicDelete(char *path);
+
+uint32_t atomicRename(char *path1, char *path2);
+
 #endif

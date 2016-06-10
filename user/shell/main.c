@@ -20,7 +20,7 @@ char *histo[TAILLE_HISTO]; //On range les commandes précédemment exécutées i
 
 char *noms_commandes[] = { "autocomp", "autotest", "banner", "cat", "clear", "display", "echo", "exit",
 				"help","kill", "ls", "ps", "reboot", "sleep",
-				"snake", "test", "touch", "vbe","vesa", "vesamodes" };
+				"snake", "test", "touch", "vbe","vesa", "vesamodes", "rm", "mv" };
 
 int plus_recent = -1; //position de la commande la + récente dans l'historique
 unsigned int nb_histo=0; //Nombre de commandes présentes dans l'historique
@@ -91,7 +91,23 @@ static inline char *get_argument()
 	return mot_courant;
 }
 
+void get_two_arguments(char **arg1, char **arg2)
+{
+	char *mot1 = extraire_mot();
 
+	char *mot2 = extraire_mot();
+
+	if (!mot1[0] || !mot2[0] || extraire_mot()[0]) {
+		printf("This command requires exactly 2 arguments\n");
+
+		*arg1=NULL;
+		*arg2=NULL;
+		return;
+	}
+
+	*arg1 = mot1;
+	*arg2 = mot2;
+}
 
 static inline int parse_hex(char *str)
 {
@@ -206,6 +222,8 @@ void usage()
 	cmd_usage("                 snake", "Play mini game SNAKE");
 	cmd_usage("             test <id>", "Execute the corresponding test (id in [0,22])");
 	cmd_usage("          touch <name>", "Create an empty file");
+	cmd_usage("             rm <name>", "Delete a file");
+	cmd_usage("    mv <name1> <name2>", "Rename a file");
 	cmd_usage("       vbe <hexModeId>", "Switch to a custom graphic mode");
 	cmd_usage("                  vesa", "Test graphic mode");
 	cmd_usage("  vesamodes <minWidth>", "Display available VESA modes");
@@ -343,6 +361,31 @@ static bool interpreter ()
 		}
 		else {
 			printf("%s : file not found\n", name);
+		}
+	}
+
+	else if (compare(mot_courant, "rm")) {
+		char *name = get_argument();
+
+		if (atomicExists(name)) {
+			atomicDelete(name);
+		}
+		else {
+			printf("%s : file not found\n", name);
+		}
+	}
+
+	else if (compare(mot_courant, "mv")) {
+
+		char *name1;
+		char *name2;
+		get_two_arguments(&name1, &name2);
+
+		if (atomicExists(name1)) {
+			atomicRename(name1, name2);
+		}
+		else {
+			printf("%s : file not found\n", name1);
 		}
 	}
 

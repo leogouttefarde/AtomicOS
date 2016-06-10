@@ -192,3 +192,42 @@ bool atomicExists(char *path)
 	return hash_get(&files, (void*)path, NULL) ? true : false;
 }
 
+uint32_t atomicDelete(char *path)
+{
+	if (path == NULL){
+		return -1;		
+	}
+
+	return hash_del(&files, (void*)path);
+}
+
+uint32_t atomicRename(char *path1, char *path2)
+{
+	if (path1 == NULL || path2 == NULL){
+		return -1;		
+	}
+
+	File *oldFile = hash_get(&files, (void*)path1, NULL);
+
+	if (oldFile == NULL) {
+		return -1;
+	}else{
+		atomicDelete(path2);
+
+		File *newFile = atomicOpen(path2);
+
+		newFile -> pos = oldFile -> pos;
+		newFile -> size = oldFile -> size;
+		newFile -> buf_size = oldFile -> buf_size;
+
+		newFile -> data = mem_alloc(newFile -> size);		
+		memcpy(newFile -> data, oldFile -> data, newFile -> size);
+
+		atomicClose(newFile);
+	
+		atomicDelete(path1);
+
+		return 0;
+	}
+}
+
