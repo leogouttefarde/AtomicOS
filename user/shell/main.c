@@ -18,9 +18,9 @@ unsigned long fin_commande;
 
 char *histo[TAILLE_HISTO]; //On range les commandes précédemment exécutées ici
 
-char *noms_commandes[] = { "autocomp", "autotest", "banner", "cat", "clear", "display", "echo", "exit",
-				"help","kill", "ls", "ps", "reboot", "sleep",
-				"snake", "test", "touch", "vbe","vesa", "vesamodes", "rm", "mv", "cp" };
+char *noms_commandes[] = { "addline", "autocomp", "autotest", "banner", "cat", "clear", "cp", "display", "echo", "exit",
+				"help","kill", "ls", "mv", "ps", "reboot", "rm", "sleep",
+				"snake", "test", "touch", "vbe","vesa", "vesamodes" };
 
 int plus_recent = -1; //position de la commande la + récente dans l'historique
 unsigned int nb_histo=0; //Nombre de commandes présentes dans l'historique
@@ -202,29 +202,27 @@ void usage()
 	printf("AtomicOS Shell Commands :\n");
 	cons_reset_color();
 
-	// cmd_usage(" addline <file> <line>", "Adds a line to a file");
-	cmd_usage("           autocomp on", "Enable autocompletion");
-	cmd_usage("          autocomp off", "Disable autocompletion");
+	cmd_usage(" addline <file> <line>", "Adds a line to a file");
+	cmd_usage("     autocomp on / off", "Enable / Disable autocompletion");
 	cmd_usage("              autotest", "Execute all tests");
 	cmd_usage("                banner", "Print the banner");
 	cmd_usage("            cat <file>", "Displays a file");
 	cmd_usage("                 clear", "Clear the screen");
+	cmd_usage("    cp <name1> <name2>", "Copy a file to another file named name2");
 	cmd_usage("         display <img>", "Display a *.rgb image file");
 	cmd_usage("                    ps", "Display process informations");
-	cmd_usage("               echo on", "Enable keyboard input display");
-	cmd_usage("              echo off", "Disable keyboard input display");
+	cmd_usage("         echo on / off", "Enable / Disable keyboard input display");
 	cmd_usage("                  exit", "Exit the current shell");
-	cmd_usage("                  help", "Display this help");
+	//cmd_usage("                  help", "Display this help");
 	cmd_usage("            kill <pid>", "Kill the corresponding process");
 	cmd_usage("                    ls", "Display available files");
+	cmd_usage("    mv <name1> <name2>", "Rename a file to name2");
 	cmd_usage("                reboot", "Reboot the computer");
+	cmd_usage("             rm <name>", "Delete a file");
 	cmd_usage("          sleep <secs>", "Sleep for secs seconds");
 	cmd_usage("                 snake", "Play mini game SNAKE");
 	cmd_usage("             test <id>", "Execute the corresponding test (id in [0,22])");
 	cmd_usage("          touch <name>", "Create an empty file");
-	cmd_usage("             rm <name>", "Delete a file");
-	cmd_usage("    mv <name1> <name2>", "Rename a file to name2");
-	cmd_usage("    cp <name1> <name2>", "Copy a file to another file named name2");
 	cmd_usage("       vbe <hexModeId>", "Switch to a custom graphic mode");
 	cmd_usage("                  vesa", "Test graphic mode");
 	cmd_usage("  vesamodes <minWidth>", "Display available VESA modes");
@@ -391,9 +389,9 @@ static bool interpreter ()
 	}
 
 	else if (compare(mot_courant, "cp")) {
-
 		char *name1;
 		char *name2;
+
 		get_two_arguments(&name1, &name2);
 
 		if (atomicExists(name1)) {
@@ -404,15 +402,31 @@ static bool interpreter ()
 		}
 	}
 
-	// else if (compare(mot_courant, "addline")) {
-	// 	File *file = atomicOpen(get_argument());
-	// 	char *line = get_argument();
+	else if (compare(mot_courant, "addline")) {
+		char *path = NULL;
+		char *line = NULL;
 
-	// 	if (file != NULL && line != NULL) {
-	// 		atomicWrite(file, line, strlen(line));
-	// 		atomicClose(file);
-	// 	}
-	// }
+		get_two_arguments(&path, &line);
+
+		if (path) {
+			File *file = atomicOpen(path);
+
+			if (file != NULL && line != NULL) {
+				char buf[128];
+
+				while (!atomicEOF(file)) {
+					atomicRead(file, buf, sizeof(buf));
+				}
+
+				atomicWrite(file, line, strlen(line));
+				atomicWrite(file, "\n", 1);
+				atomicClose(file);
+			}
+			else {
+				printf("%s : file not found\n", path);
+			}
+		}
+	}
 
 	else if (compare(mot_courant, "touch")) {
 		atomicClose(atomicOpen(get_argument()));
@@ -469,6 +483,7 @@ static bool interpreter ()
 
 	if (error) {
 		printf("%s : command not found\n", mot_courant);
+		usage();
 	}
 
 	if (child > 0) {
